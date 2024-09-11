@@ -1,46 +1,50 @@
-"use client"
+"use client";
 
-import React, { useState } from 'react';
-import axios from 'axios';
-import {useRouter} from 'next/navigation';
-import {Button} from '@/components/ui/button'
-import {Label} from '@/components/ui/label'
-import {Input} from '@/components/ui/input'
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import Instance from "../api/BackendApi"
 
 const AdminLogin = () => {
-  const [mail, setMail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [loading, setLoading] = useState(false); 
+  const [mail, setMail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-
   const handleSubmit = async (e) => {
-    
     e.preventDefault();
-    setError('');
-    setSuccess('');
-    setLoading(true); 
-
+    setError("");
+    setSuccess("");
+    setLoading(true);
+  
     try {
-      const response =  await axios.post('http://localhost:3001/admin/login', { mail, password });
-
+      const response = await Instance.post("/admin/login", {
+        mail,
+        password,
+      });
+  
       if (response.status === 200 && response.data.status) {
-        localStorage.setItem('auth-token', response.headers['auth-token']);
-        setSuccess('Login successful!');
+        // Save the token and admin ID to localStorage
+        localStorage.setItem("auth-token", response.headers["auth-token"]);
+        setSuccess("Login successful!");
+  
+        router.push(`/admin/dashboard/${response.data.users.employee_id}`);
+        // console.log(response.data.users.employee_id);
         
-        router.push('/admin/dashboard')
-      } 
+      }
     } catch (err) {
-      setError('An error occurred. Please try again.');
+      setError("An error occurred. Please try again.");
     } finally {
       setLoading(false);
     }
   };
-
+  
   return (
-    <div className="admin-login-container">
+    <div className="h-screen w-56 m-auto">
       <form onSubmit={handleSubmit} className="admin-login-form dark:bg-white">
         <h2>Admin Login</h2>
         <div>
@@ -64,7 +68,7 @@ const AdminLogin = () => {
           />
         </div>
         <Button type="submit" disabled={loading}>
-          {loading ? 'Logging in...' : 'Login'}
+          {loading ? "Logging in..." : "Login"}
         </Button>
         {error && <p className="error-message">{error}</p>}
         {success && <p className="success-message">{success}</p>}

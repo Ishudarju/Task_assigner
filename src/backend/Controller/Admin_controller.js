@@ -19,11 +19,10 @@ export const admin_check = (req, res) => {
           JWT_SECRET,
           { expiresIn: "5h" }
         );
-        console.log(token);
         return res.status(200).header("auth-token", token).json({
           status: true,
           message: "Success",
-          // data: users,
+          users,
         });
       } else {
         return res.status(401).json({
@@ -42,21 +41,26 @@ export const admin_check = (req, res) => {
 
 export const authMiddleware = (req, res, next) => {
   const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.startsWith("Bearer ") ? authHeader.split(" ")[1] : "";
+  const token = authHeader?.split(" ")[1] || "";
 
   if (!token) {
-    return res.status(401).json({ status: false, message: "Token not provided" });
+    return res
+      .status(200)
+      .json({ status: false, message: "Token not provided" });
   }
 
   jwt.verify(token, JWT_SECRET, (err, decoded) => {
     if (err) {
       if (err.name === "TokenExpiredError") {
-        return res.status(401).json({ status: false, statusCode: 700, message: "Token expired" });
+        return res
+          .status(200)
+          .json({ status: false, statusCode: 700, message: "Token expired" });
       } else {
-        return res.status(401).json({ status: false, message: "Invalid token" });
+        return res
+          .status(401)
+          .json({ status: false, message: "Invalid token" });
       }
     }
-
     req.user = decoded;
     next();
   });

@@ -1,10 +1,10 @@
 import React from 'react'
-import SignInPage from '@/components/AdminLogin'
+import AdminLogin from '@/components/AdminLogin'  
 
 const page = () => {
   return (
     <div>
-      <SignInPage />
+      <AdminLogin />
     </div>
   )
 }
