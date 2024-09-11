@@ -42,7 +42,8 @@ export const admin_check = (req, res) => {
 export const authMiddleware = (req, res, next) => {
   const authHeader = req.headers["authorization"];
   const token = authHeader?.split(" ")[1] || "";
-
+  console.log(token);
+  
   if (!token) {
     return res
       .status(200)

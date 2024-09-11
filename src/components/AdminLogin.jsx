@@ -28,8 +28,8 @@ const AdminLogin = () => {
       });
   
       if (response.status === 200 && response.data.status) {
-        // Save the token and admin ID to localStorage
         localStorage.setItem("auth-token", response.headers["auth-token"]);
+
         setSuccess("Login successful!");
   
         router.push(`/admin/dashboard/${response.data.users.employee_id}`);
@@ -45,7 +45,7 @@ const AdminLogin = () => {
   
   return (
     <div className="h-screen w-56 m-auto">
-      <form onSubmit={handleSubmit} className="admin-login-form dark:bg-white">
+      <form onSubmit={handleSubmit} className="admin-login-form">
         <h2>Admin Login</h2>
         <div>
           <Label htmlFor="mail">Email:</Label>
@@ -67,7 +67,7 @@ const AdminLogin = () => {
             required
           />
         </div>
-        <Button type="submit" disabled={loading}>
+        <Button type="submit" size="lg" disabled={loading}>
           {loading ? "Logging in..." : "Login"}
         </Button>
         {error && <p className="error-message">{error}</p>}
