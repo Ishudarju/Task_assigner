@@ -1,5 +1,7 @@
 import { ThemeProvider } from '@/components/ThemeProvider';
 import '@/styles/globals.css';
+import {Toaster} from "@/components/ui/toaster"
+// import Header from '@/components/Header'
 
 export const metadata = {
   title: 'Task_assigner',
@@ -10,8 +12,13 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          {children}
+        {/* <Header/> */}
+        <ThemeProvider attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange>
+          <main>{children}</main>
+          <Toaster/>
         </ThemeProvider>
       </body>
     </html>

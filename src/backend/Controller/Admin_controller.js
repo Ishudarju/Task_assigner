@@ -19,9 +19,10 @@ export const admin_check = (req, res) => {
           JWT_SECRET,
           { expiresIn: "5h" }
         );
-        return res.status(200).header("auth-token", token).json({
+        return res.status(200).json({
           status: true,
           message: "Success",
+          token,
           users,
         });
       } else {
@@ -40,9 +41,9 @@ export const admin_check = (req, res) => {
 };
 
 export const authMiddleware = (req, res, next) => {
-  const authHeader = req.headers["authorization"];
-  const token = authHeader?.split(" ")[1] || "";
-  console.log(token);
+  const token = req.headers["authorization"];
+  // const token = authHeader?.split(" ")[1] || "";
+  // console.log(token);
   
   if (!token) {
     return res
@@ -68,8 +69,8 @@ export const authMiddleware = (req, res, next) => {
 };
 
 export const admin_dashboard = (req, res) => {
-  console.log(req.user);
-  res.status(200).json({ message: "success" });
+  // console.log(req.user);
+  res.status(200).json({ message: "success",data:req.user,});
 };
 
 export const getAllUserEmpMail = async (req, res) => {
