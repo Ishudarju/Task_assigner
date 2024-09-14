@@ -31,7 +31,7 @@
 
 :root {
   --background: #171717;
-  --foreground: #fffff;
+  --foreground: #ffffff;
 }
 
 @media (prefers-color-scheme: white) {

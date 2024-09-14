@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import Instance from "../api/BackendApi";
+import Instance from "@/api/BackendApi";
 import Image from "next/image";
 import { HandIcon } from "lucide-react";
 import { motion } from "framer-motion";
@@ -40,7 +40,7 @@ const AdminLogin = () => {
           variant: "success",
         });
         setTimeout(() => {
-          router.push(`/admin/dashboard/page`);
+          router.push(`/`);
         }, 2000);
         // console.log(response.data.users.employee_id);
       }
@@ -56,15 +56,15 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="h-screen flex items-center justify-center m-auto dark:bg-black/80 ">
-      <div className="flex items-center justify-center gap-32 px-16 py-5 border border-foreground rounded-xl shadow-lg">
+    <div className="h-screen flex items-center justify-center m-auto">
+      <div className="flex items-center justify-center gap-32 px-16 py-5 border border-primary rounded-xl shadow-lg">
       <motion.div
         initial={{ x: -10, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         exit={{ x: -10, opacity: 0 }}
       >
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <h4 className="inline-flex items-center gap-4">
+          <h4 className="inline-flex items-center gap-4 text-primary">
             Welcome Back <HandIcon />
           </h4>
           <p className="text-muted-foreground">
@@ -72,7 +72,7 @@ const AdminLogin = () => {
             Sing in and get started on your projects.
           </p>
           <div>
-            <Label htmlFor="mail">Email</Label>
+            <Label htmlFor="mail"  className="text-primary dark:text-primary">Email</Label>
             <Input
               type="email"
               id="mail"
@@ -80,10 +80,11 @@ const AdminLogin = () => {
               value={mail}
               onChange={(e) => setMail(e.target.value)}
               required
+              className="text-primary"
             />
           </div>
           <div>
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password" className="text-primary dark:text-primary">Password</Label>
             <Input
               type="password"
               id="password"
@@ -91,6 +92,7 @@ const AdminLogin = () => {
               placeholder="Password"
               onChange={(e) => setPassword(e.target.value)}
               required
+              className="text-primary"
             />
           </div>
           <Button type="submit" size="lg" disabled={loading}>
