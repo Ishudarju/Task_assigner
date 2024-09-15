@@ -30,7 +30,7 @@ const Header = () => {
       } catch (error) {
         console.error("Error fetching admin data:", error);
         setError("Failed to fetch data.");
-        router.push('/login')
+        router.push('/auth')
       }
     };
 

@@ -1,6 +1,7 @@
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import "@/styles/globals.css";
-import { Toaster } from "@/components/ui/toaster";
+import { ToastContainer } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
 // import Header from '@/components/Header'
 
 export const metadata = {
@@ -19,8 +20,8 @@ export default function RootLayout({ children }) {
           enableSystem
           disableTransitionOnChange
         >
+          <ToastContainer />
           <main className="bg-white dark:bg-foreground">{children}</main>
-          <Toaster />
         </ThemeProvider>
       </body>
     </html>
