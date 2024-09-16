@@ -9,7 +9,7 @@ const Mainlayout = ({ children }) => {
         <div className="hidden md:block h-[100vh] w-[300px]">
           <Sidebars />
         </div>
-        <div className="p-5 w-screen md:max-w-[1140px]">{children}</div>
+        <div className="p-5 xl w-screen">{children}</div>
       </div>
     </>
   );

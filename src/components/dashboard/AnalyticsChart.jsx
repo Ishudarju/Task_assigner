@@ -21,7 +21,7 @@ import data from '@/data/analytics';
 const AnalyticsChart = () => {
   return (
     <>
-      <Card>
+      <Card className="w-full">
         <CardHeader>
           <CardTitle>Analytics For This Year</CardTitle>
           <CardDescription>Views Per Month</CardDescription>

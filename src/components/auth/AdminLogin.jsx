@@ -37,7 +37,7 @@ const AdminLogin = () => {
         toast.success("Login successful! Redirecting to the dashboard...");
         setTimeout(() => {
           router.push(`/admin`);
-        }, 2000);
+        }, 1000);
       }
     } catch (err) {
       toast.error("Login failed! Please check your credentials and try again.");

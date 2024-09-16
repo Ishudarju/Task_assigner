@@ -39,7 +39,7 @@ const UserLogin = () => {
         toast.success("Login successful! Redirecting to the dashboard...");
         setTimeout(() => {
         //   router.push(`/user`);
-        }, 2000);
+        }, 1000);
       }
     // } catch (err) {
     //   toast.error("Login failed! Please check your credentials and try again.");

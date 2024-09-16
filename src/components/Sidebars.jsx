@@ -7,9 +7,10 @@ import {
   User,
   CreditCard,
   Settings,
-} from "lucide-react"; // Icon imports
+} from "lucide-react";
 import Link from "next/link";
-import { role } from "@/data/data";
+import { role } from "@/data/data"; // Import role statically
+
 
 const menuItems = [
   {
@@ -18,7 +19,7 @@ const menuItems = [
       {
         title: "Dashboard",
         icon: <User className="h-4 w-4" />,
-        href: "/",
+        href: "/admin",
         visible: ["admin", "tl", "hr", "employee"],
       },
       {
@@ -48,7 +49,7 @@ const menuItems = [
       {
         title: "Task",
         icon: <User className="h-4 w-4" />,
-        href: "/task",
+        href: "/list/task",
         visible: ["admin", "tl", "hr", "employee"],
       },
       {
@@ -66,36 +67,50 @@ const menuItems = [
     ],
   },
 ];
+
 const SidebarMenu = () => {
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-
-  const toggleProfileMenu = () => {
-    setIsProfileOpen((prev) => !prev);
-  };
-
+  
   return (
-
-    <div className="text-sm dark:bg-primary-foreground bg-primary-foreground h-screen">
-      {menuItems.map((i) => (
+    <div className="bg-primary-foreground dark:bg-primary-foreground h-screen p-4">
+      {menuItems.map((section) => (
         <div
-          key={i.title}
+          key={section.title}
           className="flex flex-col gap-2 text-primary dark:text-primary font-light"
         >
-          {i.items.map((item) => {
+          {section.items.map((item) => {
             if (item.visible.includes(role)) {
               return (
                 <Link
                   href={item.href}
                   key={item.title}
-                  className="flex items-center justify-center lg:justify-start gap-4 text-primary dark:text-primary"
+                  className="flex items-center gap-4 p-2 rounded-lg hover:bg-primary-200 dark:hover:bg-primary-700 transition-colors"
                 >
+                  {item.icon}
                   <span>{item.title}</span>
                 </Link>
               );
             }
+            return null; // Don't render if role is not visible
           })}
         </div>
       ))}
+
+      {/* <div className="mt-4">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="w-full">
+              Profile
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem>Profile Settings</DropdownMenuItem>
+            <DropdownMenuItem>Logout</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <DropdownMenu>
+
+        </DropdownMenu>
+      </div> */}
     </div>
   );
 };
