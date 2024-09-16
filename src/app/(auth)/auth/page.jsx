@@ -1,9 +1,8 @@
-import AdminLogin from "@/components/auth/AdminLogin";
-
+import UserLogin from "@/components/auth/UserLogin"
 const AuthPage = () => {
   return (
     <>
-      <AdminLogin />
+    <UserLogin/>
     </>
   );
 };

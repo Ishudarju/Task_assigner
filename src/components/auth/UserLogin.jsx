@@ -11,7 +11,7 @@ import { HandIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 
-const AdminLogin = () => {
+const UserLogin = () => {
   const [mail, setMail] = useState("");
   const [password, setPassword] = useState("");
   // const [error, setError] = useState("");
@@ -25,25 +25,27 @@ const AdminLogin = () => {
     // setSuccess("");
     setLoading(true);
 
-    try {
-      const response = await Instance.post("/admin/login", {
-        mail,
-        password,
-      });
-
+    // try {
+        const response = await Instance.post("/user/login", {
+            mail,
+            password,
+        });
+      
+        console.log(response)
       if (response.status === 200 && response.data.status) {
         localStorage.setItem("auth-token", response.data.token);
-
+        console.log(response);
+        
         toast.success("Login successful! Redirecting to the dashboard...");
         setTimeout(() => {
-          router.push(`/admin`);
+        //   router.push(`/user`);
         }, 2000);
       }
-    } catch (err) {
-      toast.error("Login failed! Please check your credentials and try again.");
-    } finally {
-      setLoading(false);
-    }
+    // } catch (err) {
+    //   toast.error("Login failed! Please check your credentials and try again.");
+    // } finally {
+    //   setLoading(false);
+    // }
   };
 
   return (
@@ -118,4 +120,4 @@ const AdminLogin = () => {
   );
 };
 
-export default AdminLogin;
+export default UserLogin;

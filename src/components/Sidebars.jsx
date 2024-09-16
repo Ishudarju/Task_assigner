@@ -1,8 +1,71 @@
-'use client';
-import { useState } from 'react';
-import { LayoutDashboard, Newspaper, Folders, User, CreditCard, Settings } from 'lucide-react'; // Icon imports
-import Link from 'next/link';
+"use client";
+import { useState } from "react";
+import {
+  LayoutDashboard,
+  Newspaper,
+  Folders,
+  User,
+  CreditCard,
+  Settings,
+} from "lucide-react"; // Icon imports
+import Link from "next/link";
+import { role } from "@/data/data";
 
+const menuItems = [
+  {
+    title: "MENU",
+    items: [
+      {
+        title: "Dashboard",
+        icon: <User className="h-4 w-4" />,
+        href: "/",
+        visible: ["admin", "tl", "hr", "employee"],
+      },
+      {
+        title: "Manager",
+        icon: <User className="h-4 w-4" />,
+        href: "/user/manager",
+        visible: ["admin"],
+      },
+      {
+        title: "HR",
+        icon: <CreditCard className="h-4 w-4" />,
+        href: "/user/hr",
+        visible: ["admin"],
+      },
+      {
+        title: "TeamLeader",
+        icon: <User className="h-4 w-4" />,
+        href: "/user/tl",
+        visible: ["admin"],
+      },
+      {
+        title: "Employee",
+        icon: <User className="h-4 w-4" />,
+        href: "/user/employee",
+        visible: ["admin"],
+      },
+      {
+        title: "Task",
+        icon: <User className="h-4 w-4" />,
+        href: "/task",
+        visible: ["admin", "tl", "hr", "employee"],
+      },
+      {
+        title: "Verify",
+        icon: <User className="h-4 w-4" />,
+        href: "/verify",
+        visible: ["admin"],
+      },
+      {
+        title: "Ticket",
+        icon: <User className="h-4 w-4" />,
+        href: "/ticket",
+        visible: ["admin", "tl", "employee", "manager"],
+      },
+    ],
+  },
+];
 const SidebarMenu = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
@@ -11,78 +74,28 @@ const SidebarMenu = () => {
   };
 
   return (
-    <div className="w-64 h-screen dark:bg-primary-foreground bg-primary-foreground p-4 ">
-      <ul className="space-y-2">
-        {/* Dashboard */}
-        <li>
-          <Link href="/" className="flex items-center p-2 hover:bg-gray-200 text-black dark:text-popover-foreground dark:hover:bg-muted-foreground rounded-md">
-            <LayoutDashboard className="mr-2 h-4 w-4" />
-            <span>Dashboard</span>
-          </Link>
-        </li>
 
-        {/* Posts */}
-        <li>
-          <Link href="/post" className="flex items-center p-2 hover:bg-gray-200 text-black dark:text-popover-foreground dark:hover:bg-muted-foreground rounded-md">
-            <Newspaper className="mr-2 h-4 w-4" />
-            <span>Posts</span>
-          </Link>
-        </li>
-
-        {/* Categories */}
-        <li>
-          <Link href="#" className="flex items-center p-2 hover:bg-gray-200 text-black dark:text-popover-foreground dark:hover:bg-muted-foreground rounded-md">
-            <Folders className="mr-2 h-4 w-4" />
-            <span>Categories</span>
-          </Link>
-        </li>
-
-        {/* Separator */}
-        <hr className="my-2 border-gray-300" />
-
-        {/* Profile with toggler */}
-        <li>
-          <button
-            onClick={toggleProfileMenu}
-            className="w-full text-left flex items-center p-2 hover:bg-gray-200 text-black dark:text-popover-foreground dark:hover:bg-muted-foreground rounded-md"
-          >
-            <User className="mr-2 h-4 w-4" />
-            <span>Profile</span>
-          </button>
-
-          {/* Profile Submenu (conditionally rendered) */}
-          {isProfileOpen && (
-            <ul className="pl-6 space-y-1">
-              <li>
-                <Link href="/profile/view" className="flex items-center p-2 hover:bg-gray-200 text-black dark:text-popover-foreground dark:hover:bg-muted-foreground rounded-md">
-                  <span>View Profile</span>
+    <div className="text-sm dark:bg-primary-foreground bg-primary-foreground h-screen">
+      {menuItems.map((i) => (
+        <div
+          key={i.title}
+          className="flex flex-col gap-2 text-primary dark:text-primary font-light"
+        >
+          {i.items.map((item) => {
+            if (item.visible.includes(role)) {
+              return (
+                <Link
+                  href={item.href}
+                  key={item.title}
+                  className="flex items-center justify-center lg:justify-start gap-4 text-primary dark:text-primary"
+                >
+                  <span>{item.title}</span>
                 </Link>
-              </li>
-              <li>
-                <Link href="/profile/edit" className="flex items-center p-2 hover:bg-gray-200 text-black dark:text-popover-foreground dark:hover:bg-muted-foreground rounded-md">
-                  <span>Edit Profile</span>
-                </Link>
-              </li>
-            </ul>
-          )}
-        </li>
-
-        {/* Billing */}
-        <li>
-          <Link href="#" className="flex items-center p-2 hover:bg-gray-200 text-black dark:text-popover-foreground dark:hover:bg-muted-foreground rounded-md">
-            <CreditCard className="mr-2 h-4 w-4" />
-            <span>Billing</span>
-          </Link>
-        </li>
-
-        {/* Settings */}
-        <li>
-          <Link href="#" className="flex items-center p-2 hover:bg-gray-200 text-black dark:text-popover-foreground dark:hover:bg-muted-foreground rounded-md">
-            <Settings className="mr-2 h-4 w-4" />
-            <span>Settings</span>
-          </Link>
-        </li>
-      </ul>
+              );
+            }
+          })}
+        </div>
+      ))}
     </div>
   );
 };

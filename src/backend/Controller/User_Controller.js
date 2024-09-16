@@ -52,7 +52,7 @@ export const user_login = (req, res) => {
 
   UserModel.findOne({ mail: mail.toLowerCase() })
     .then((users) => {
-      if (users.mail == mail || users.password == password) {
+      if (users.mail == mail && users.password == password) {
         const token = jwt.sign(
           {
             id: users._id,
