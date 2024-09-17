@@ -1,9 +1,10 @@
-// import AnalyticsChart from "@/components/dashboard/AnalyticsChart";
+import AuthPage from "../(auth)/auth/page";
 
+AuthPage
 const Main = () => {
   return (
     <div className=" dark:bg-foreground">
-      {/* <AnalyticsChart /> */}
+      <AuthPage/>
     </div>
   );
 };

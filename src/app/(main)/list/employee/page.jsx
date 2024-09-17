@@ -1,9 +1,9 @@
-import TaskManagement from "@/components/dashboard/Task";
+import GetAllUsers from "@/components/dashboard/GetAllUsers";
 
 const page = () => {
   return (
     <div>
-      <TaskManagement />
+      <GetAllUsers />
     </div>
   );
 };

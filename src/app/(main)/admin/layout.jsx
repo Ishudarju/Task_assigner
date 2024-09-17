@@ -6,8 +6,8 @@ const Mainlayout = ({ children }) => {
     <>
       <Header />
       <div className="flex justify-between">
-        <div className="hidden md:block h-[100vh] w-[300px]">
-          <Sidebars />
+        <div className="hidden md:block h-[100vh] w-[100px]">
+          <Sidebars /> 
         </div>
         <div className="p-5 xl w-screen">{children}</div>
       </div>

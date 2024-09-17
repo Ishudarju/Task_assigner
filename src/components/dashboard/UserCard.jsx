@@ -5,7 +5,7 @@ import {
   CardContent,
   CardHeader,
   CardDescription,
-} from "./ui/card";
+} from "../ui/card";
 
 const UserCard = ({ type, total, description }) => {
   return (

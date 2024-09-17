@@ -29,7 +29,7 @@ export const createTask = async (req, res) => {
     !project_title ||
     !project_description ||
     !project_ownership ||
-    !assigned_by ||
+    !assigned_by &&
     !assigned_to ||
     !report_to ||
     !start_date ||
@@ -55,7 +55,7 @@ export const createTask = async (req, res) => {
     })
       .then((task) => {
         res.status(200).json({
-          status: "Success",
+          status: "success",
           message: "task created successfully",
           data: task,
         });
