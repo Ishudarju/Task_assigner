@@ -82,23 +82,25 @@ export const user_dashboard = async (req, res) => {
 
   const { id, role, mail } = req.user;
   let result = "";
-  if (role === 'hr') {
+  if (role === "hr") {
     // For HR, get overall tasks with specific statuses
     result = await TaskModel.find({
-      status: { $in: ["Pending", "Completed", "In progress"] }
+      status: { $in: ["Pending", "Completed", "In progress"] },
     });
   } else {
     // For other users, get tasks assigned to the specific user ID
     result = await TaskModel.find({
       assigned_to: id,
-      status: { $in: ["Pending", "Completed", "In progress"] }
+      status: { $in: ["Pending", "Completed", "In progress"] },
     });
   }
 
   console.log("id", id);
-  const pendingTasks = result.filter(task => task.status === "Pending");
-  const completedTasks = result.filter(task => task.status === "Completed");
-  const inProgressTasks = result.filter(task => task.status === "In progress");
+  const pendingTasks = result.filter((task) => task.status === "Pending");
+  const completedTasks = result.filter((task) => task.status === "Completed");
+  const inProgressTasks = result.filter(
+    (task) => task.status === "In progress"
+  );
   // const result = await TaskModel.find({ assigned_to: id });
   // const result_count = await TaskModel.find({
   //   assigned_to: id,
@@ -109,11 +111,10 @@ export const user_dashboard = async (req, res) => {
     result,
     pendingTasks,
     completedTasks,
-    inProgressTasks
-
+    inProgressTasks,
   };
 
-  // console.log("task_count :", result_count); 
+  // console.log("task_count :", result_count);
 
   console.log(`user dashbroad ${role}`);
   res.status(200).json({ message: "users", result: data });
@@ -301,6 +302,9 @@ export const getAllEmployee = async (req, res) => {
       break;
     case "manager":
       excluding_roles = ["hr", role, "admin,"];
+      break;
+    case "admin":
+      excluding_roles = [role];
       break;
     default:
       res.status(200).json({ message: "No authorization" });

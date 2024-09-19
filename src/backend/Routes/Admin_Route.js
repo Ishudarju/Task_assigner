@@ -11,10 +11,12 @@ adminRoute.get("/dashboard", Admin.authMiddleware, Admin.admin_dashboard);
 adminRoute.post("/createTask", Admin.authMiddleware, Task.createTask);
 adminRoute.post("/editStatus", Task.editTaskStatus);
 adminRoute.post("/getAllTask", Task.getAllTask);
-adminRoute.post("/getTask",Task.getTask)
+adminRoute.post("/getTask",Task.getTask);
+adminRoute.post("/deleteTask",Task.deleteTask)
 adminRoute.post("/getEmpMails", User.getAllUserEmpMail);
+adminRoute.post("/getAllEmployee", Admin.authMiddleware, User.getAllEmployee);
 adminRoute.post("/create", Admin.authMiddleware, User.createUser);
-adminRoute.post("/update",Admin.authMiddleware, User.updateUser)
+adminRoute.post("/update",Admin.authMiddleware, User.updateUser)    
 adminRoute.post("/delete", Admin.authMiddleware, User.deleteUser);
 adminRoute.post("/findById", Admin.authMiddleware, User.findById);
 adminRoute.post("/updateTicket",Admin.authMiddleware,Ticket.updateTicket)

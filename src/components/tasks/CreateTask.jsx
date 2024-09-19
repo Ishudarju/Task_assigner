@@ -8,12 +8,18 @@ import {
   DialogTitle,
   DialogFooter,
   DialogDescription,
-} from "./ui/dialog";
-import { Input } from "./ui/input";
-import { Textarea } from "./ui/textarea";
-import { Button } from "./ui/button";
-import { Select, SelectItem, SelectTrigger, SelectContent, SelectValue } from "./ui/select";
-import { Label } from "./ui/label";
+} from "../ui/dialog";
+import { Input } from "../ui/input";
+import { Textarea } from "../ui/textarea";
+import { Button } from "../ui/button";
+import {
+  Select,
+  SelectItem,
+  SelectTrigger,
+  SelectContent,
+  SelectValue,
+} from "../ui/select";
+import { Label } from "../ui/label";
 import Instance from "@/api/BackendApi"; // Axios instance
 import { toast, ToastContainer } from "react-toastify";
 
@@ -23,10 +29,10 @@ const CreateTask = () => {
     project_description: "",
     project_ownership: "",
     assigned_to: "",
-    assigned_by: "", 
+    // assigned_by: "",
     report_to: "",
     status: "Not started",
-    priority: "Normal",
+    priority: "Low",
     start_date: "",
     end_date: "",
     task_description: "",
@@ -36,11 +42,10 @@ const CreateTask = () => {
     e.preventDefault();
     try {
       const response = await Instance.post("/admin/createTask", formData);
-      console.log(response);
-      
       if (response.data.status === "success") {
         toast.success(response.data.message);
-      } else if (response.data.status === "failure"){
+        onclose();
+      } else if (response.data.status === "failure") {
         toast.error(response.data.message);
       }
     } catch (error) {
@@ -75,7 +80,9 @@ const CreateTask = () => {
               id="project_title"
               name="project_title"
               value={formData.project_title}
-              onChange={(e) => handleSelectChange("project_title", e.target.value)}
+              onChange={(e) =>
+                handleSelectChange("project_title", e.target.value)
+              }
               required
             />
 
@@ -84,7 +91,9 @@ const CreateTask = () => {
               id="project_description"
               name="project_description"
               value={formData.project_description}
-              onChange={(e) => handleSelectChange("project_description", e.target.value)}
+              onChange={(e) =>
+                handleSelectChange("project_description", e.target.value)
+              }
               required
             />
 
@@ -93,7 +102,9 @@ const CreateTask = () => {
               id="task_description"
               name="task_description"
               value={formData.task_description}
-              onChange={(e) => handleSelectChange("task_description", e.target.value)}
+              onChange={(e) =>
+                handleSelectChange("task_description", e.target.value)
+              }
               required
             />
 
@@ -107,9 +118,9 @@ const CreateTask = () => {
                 <SelectValue placeholder="Select priority" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Very High">Very High</SelectItem>
+                <SelectItem value="Critical">Very High</SelectItem>
                 <SelectItem value="High">High</SelectItem>
-                <SelectItem value="Normal">Normal</SelectItem>
+                <SelectItem value="Regular">Normal</SelectItem>
                 <SelectItem value="Low">Low</SelectItem>
               </SelectContent>
             </Select>
@@ -124,7 +135,7 @@ const CreateTask = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="Not started">Not started</SelectItem>
-                <SelectItem value="In Progress">In Progress</SelectItem>
+                <SelectItem value="In progress">In Progress</SelectItem>
                 <SelectItem value="Completed">Completed</SelectItem>
               </SelectContent>
             </Select>
@@ -135,7 +146,9 @@ const CreateTask = () => {
               id="project_ownership"
               name="project_ownership"
               value={formData.project_ownership}
-              onChange={(e) => handleSelectChange("project_ownership", e.target.value)}
+              onChange={(e) =>
+                handleSelectChange("project_ownership", e.target.value)
+              }
               required
             />
 
@@ -144,7 +157,9 @@ const CreateTask = () => {
               id="assigned_to"
               name="assigned_to"
               value={formData.assigned_to}
-              onChange={(e) => handleSelectChange("assigned_to", e.target.value)}
+              onChange={(e) =>
+                handleSelectChange("assigned_to", e.target.value)
+              }
               required
             />
 
@@ -180,7 +195,9 @@ const CreateTask = () => {
           </div>
 
           <DialogFooter>
-            <Button type="submit">Create Task</Button>
+            <Button type="submit" className="mt-4">
+              Create Task
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

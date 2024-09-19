@@ -65,6 +65,10 @@ const taskScheme = new mongoose.Schema({
   skill_imp_reviewed_by: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "user",
+  },
+  is_deleted: {
+    type: Boolean,
+    default: false,
   }
 });
 

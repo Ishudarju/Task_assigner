@@ -1,9 +1,8 @@
-import TaskManagement from "@/components/dashboard/Task";
-
+import Task from "@/components/dashboard/Task"
 const page = () => {
   return (
     <div>
-      <TaskManagement />
+      <Task />
     </div>
   );
 };

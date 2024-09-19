@@ -69,7 +69,7 @@ const menuItems = [
         id: 8,
         title: "Ticket",
         icon: <User className="h-4 w-4" />,
-        href: "/ticket",
+        href: "/list/ticket",
         visible: ["admin", "tl", "employee", "manager"],
       },
     ],

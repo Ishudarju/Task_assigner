@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Instance from "@/api/BackendApi"; // Axios instance
 import Image from "next/image";
 import Link from "next/link";
-import logo from "../../public/Dark_nature.jpeg";
+// import logo from "../../public/Dark_nature.jpeg";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -49,13 +49,13 @@ const Header = () => {
   return (
     <div className="bg-primary-foreground dark:bg-primary-foreground text-white py-2 px-5 flex justify-between">
       <Link href="/">
-        <Image
+        {/* <Image
           src={logo}
           alt="TraversyPress"
           width={30}
           height={30}
           className="rounded-full"
-        />
+        /> */}
       </Link>
 
       <div className="flex items-center gap-2 pr-5">
