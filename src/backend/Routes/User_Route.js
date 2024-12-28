@@ -2,18 +2,19 @@ import express from "express";
 import * as User from "../Controller/User_Controller.js";
 import * as Admin from "../Controller/Admin_controller.js";
 import * as Ticket from "../Controller/Ticket_controller.js";
-import * as Task from "../Controller/Task_Controller.js";
+import * as Task from "../Controller/Task_controller.js";
+import * as Project from "../Controller/Project_controller.js";
 import multer from "multer";
 
 const userRoute = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
-userRoute.post("/login",User.user_login);
+userRoute.post("/login", User.user_login);
 
 userRoute.post("/create", User.createUser);
 
 // hr,manager,team lead,employee - dashbroad
-userRoute.get("/dashboard", User.authMiddleware, User.user_dashboard);
+userRoute.post("/dashboard", User.authMiddleware, User.user_dashboard);
 
 // userRoute.post("/update",createUser);
 userRoute.post("/getAllEmployee", User.authMiddleware, User.getAllEmployee);
@@ -27,5 +28,6 @@ userRoute.post("/importXLSX", upload.single("file"), User.importXLSX);
 
 userRoute.post("/createTicket", User.authMiddleware, Ticket.createTicket);
 userRoute.post("/deleteTicket", Ticket.deleteTicket);
+userRoute.get("/getAllProjects",User.authMiddleware,Project.getAllProjects)
 
 export default userRoute;

@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -26,21 +25,25 @@ const AdminLogin = () => {
     setLoading(true);
 
     try {
-      const response = await Instance.post("/admin/login", {
-        mail,
-        password,
-      });
+    const response = await Instance.post("/admin/login", {
+      mail,
+      password,
+    });
+    console.log(response.data);
 
-      if (response.status === 200 && response.data.status) {
-        localStorage.setItem("auth-token", response.data.token);
+    if (response.status === 200 && response.data.status) {
+      localStorage.setItem("auth-token", response.data.token);
 
-        toast.success("Login successful! Redirecting to the dashboard...");
-        setTimeout(() => {
-          router.push(`/admin`);
-        }, 1000);
-      }
+      toast.success("Login successful! Redirecting to the dashboard...");
+      setTimeout(() => {
+        router.push(`/admin`);
+      }, 1000);
+    } else {
+      // Handling backend-specific error response
+      toast.error(response.data.message || "Login failed. Please try again.");
+    }
     } catch (err) {
-      toast.error("Login failed! Please check your credentials and try again.");
+      toast.error(err.message);
     } finally {
       setLoading(false);
     }

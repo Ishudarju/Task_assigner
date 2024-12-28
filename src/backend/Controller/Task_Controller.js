@@ -1,10 +1,251 @@
 import { TaskModel } from "../Model/Task_scheme.js";
+import { UserModel } from "../Model/User_scheme.js";
 
 export const createTask = async (req, res) => {
   const {
-    project_title,
-    project_description,
-    project_ownership,
+    project,
+    assigned_to,
+    assigned_by,
+    report_to,
+    status = "Not started",
+    priority = "Low",
+    start_date,
+    end_date,
+    task_description,
+  } = req.body;
+
+  const { id, role } = req.user;
+
+  if (
+    !project ||
+    !assigned_to ||
+    !report_to ||
+    !start_date ||
+    !end_date ||
+    !task_description
+  ) {
+    return res.status(400).json({
+      status: false,
+      message: "Please provide all required fields for task creation",
+    });
+  }
+
+  if (role !== "admin" && role !== "team lead" && role !== "manager") {
+    return res.status(403).json({ status: false, message: "No Authorization" });
+  }
+
+  try {
+    const newTask = new TaskModel({
+      project,
+      assigned_to,
+      assigned_by: id,
+      report_to,
+      status,
+      priority,
+      start_date,
+      end_date,
+      task_description,
+    });
+
+    const task = await newTask.save();
+    return res.status(201).json({
+      status: "Success",
+      message: "Task created successfully",
+      data: task,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      status: false,
+      message: "Failure in task creation",
+    });
+  }
+};
+
+export const deleteTask = async (req, res) => {
+  const { id, role } = req.body;
+
+  if (role !== "admin") {
+    return res.status(403).json({ status: false, message: "No Authorization" });
+  }
+
+  try {
+    const task = await TaskModel.findByIdAndUpdate(
+      id,
+      { is_deleted: true },
+      { new: true }
+    );
+
+    if (!task) {
+      return res.status(404).json({ status: false, message: "Task not found" });
+    }
+
+    return res.status(200).json({
+      status: true,
+      message: "Task deleted successfully",
+    });
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ status: false, message: "Error deleting task" });
+  }
+};
+
+export const editTaskStatus = async (req, res) => {
+  const { _id, status, task_description } = req.body;
+
+  if (!_id) {
+    return res.status(400).json({ status: false, message: "Invalid Task ID" });
+  }
+
+  try {
+    const result = await TaskModel.updateOne(
+      { _id },
+      { $set: { status, task_description } }
+    );
+
+    if (result.nModified === 0) {
+      return res
+        .status(404)
+        .json({ status: false, message: "Task not found or not updated" });
+    }
+
+    return res.status(200).json({
+      status: "Success",
+      message: "Task status updated successfully",
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ status: false, message: error.message });
+  }
+};
+
+// export const getAllTask = async (req, res) => {
+//   try {
+//     const tasks = await TaskModel.find({ is_deleted: false });
+
+//     return res.status(200).json({
+//       status: true,
+//       message: "All tasks fetched successfully",
+//       data: tasks,
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     return res
+//       .status(500)
+//       .json({ status: false, message: "Error fetching tasks" });
+//   }
+// };
+
+export const getAllTask = async (req, res) => {
+    try {
+      const tasks = await TaskModel.find({ is_deleted: false })
+        .populate({
+          path: "assigned_to",
+          select: "name email", // Populate with specific fields from User schema
+        })
+        .populate({
+          path: "assigned_by",
+          select: "name email",
+        })
+        .populate({
+          path: "report_to",
+          select: "name email",
+        })
+        .populate({
+          path: "project",
+          select: "project_name", // Assuming this points to a Project schema
+        });
+  
+      return res.status(200).json({
+        status: true,
+        message: "All tasks fetched successfully",
+        data: tasks,
+      });
+    } catch (error) {
+      console.error("Error fetching tasks:", error);
+      return res
+        .status(500)
+        .json({ status: false, message: "Error fetching tasks" });
+    }
+  };
+// export const getAllTask = async (req, res) => {
+//   const { limit = 10, page } = req.params; // Default limit is 10 tasks per page
+
+//   // Convert limit and page to numbers
+//   const taskLimit = parseInt(limit, 10);
+//   const taskPage = parseInt(page, 10);
+
+//   try {
+//     const tasks = await TaskModel.find({ is_deleted: false })
+//       .skip((taskPage - 1) * taskLimit) // Skip tasks for previous pages
+//       .limit(taskLimit) // Limit the number of tasks
+//       .populate({
+//         path: "assigned_to",
+//         select: "name email",
+//       })
+//       .populate({
+//         path: "assigned_by",
+//         select: "name email",
+//       })
+//       .populate({
+//         path: "report_to",
+//         select: "name email",
+//       })
+//       .populate({
+//         path: "project",
+//         select: "project_name",
+//       });
+
+//     // Total count of tasks
+//     const totalTasks = await TaskModel.countDocuments({ is_deleted: false });
+
+//     return res.status(200).json({
+//       status: true,
+//       message: "All tasks fetched successfully",
+//       data: tasks,
+//       pagination: {
+//         totalTasks,
+//         currentPage: taskPage,
+//         totalPages: Math.ceil(totalTasks / taskLimit),
+//       },
+//     });
+//   } catch (error) {
+//     console.error("Error fetching tasks:", error);
+//     return res
+//       .status(500)
+//       .json({ status: false, message: "Error fetching tasks" });
+//   }
+// };
+
+export const getTask = async (req, res) => {
+  const { id } = req.body;
+
+  try {
+    const task = await TaskModel.findOne({ _id: id, is_deleted: false });
+
+    if (!task) {
+      return res.status(404).json({ status: false, message: "Task not found" });
+    }
+
+    return res.status(200).json({
+      status: true,
+      message: "Task fetched successfully",
+      data: task,
+    });
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ status: false, message: "Error fetching task" });
+  }
+};
+
+export const updateTask = async (req, res) => {
+  const {
+    id,
+    project,
     assigned_to,
     assigned_by,
     report_to,
@@ -14,179 +255,14 @@ export const createTask = async (req, res) => {
     end_date,
     task_description,
   } = req.body;
-  // const status = "pending";
-  const exact_date = new Date();
-  const formattedDate = new Intl.DateTimeFormat("en-IN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-  // const due_date = formattedDate.format(exact_date);
-  // const starting_date =  formattedDate.format(start_date)
+  const { role } = req.user;
 
-  const { id, role } = req.user;
-  if (
-    !project_title ||
-    !project_description ||
-    !project_ownership ||
-    !assigned_by ||
-    !assigned_to ||
-    !report_to ||
-    !start_date ||
-    !end_date
-  ) {
-    res.status(200).json({
-      status: false,
-      message: "Please Enter requried Field for Task Creation",
-    });
-  } else if (role == "admin" || "team lead" || "manager") {
-    await TaskModel.create({
-      project_title,
-      project_description,
-      project_ownership,
-      assigned_to,
-      assigned_by: id,
-      report_to,
-      status,
-      priority,
-      start_date,
-      end_date,
-      task_description,
-    })
-      .then((task) => {
-        res.status(200).json({
-          status: "Success",
-          message: "task created successfully",
-          data: task,
-        });
-      })
-      .catch((err) => {
-        res.status(200).json({
-          status: "failure",
-          message: "Failure in Task Creation",
-        });
-      });
-  } else {
-    return res.status(200).json({ status: false, message: "No Authorization" });
-  }
-};
-
-export const deleteTask = async (req, res) => {
-  const { id } = req.body;
-  try {
-    if ((req.user.role = "admin")) {
-      const is_deleted = true;
-      await TaskModel.findByIdAndUpdate({ _id: id }, { is_deleted: is_deleted })
-        .then((deletedTask) => {
-          return res 
-            .status(200)
-            .json({ status: true, message: "Successfully Deleted" });
-        })
-        .catch((err) => {
-          return res
-            .status(200)
-            .json({ status: false, message: "Invaild Deletion" });
-        });
-    } else {
-      return res
-        .status(200)
-        .json({ status: false, message: "No Authorization" });
-    }
-  } catch {
-    return res
-      .status(200)
-      .json({ status: false, message: "Internal Server Error" });
-  }
-};
-
-export const editTaskStatus = async (req, res) => {
-  const id = req?.body?.id;
-  const Task_status = req?.body?.status;
-  const task_dec = req?.body?.task_description;
-  console.log(id);
-
-  if (!id) {
-    return res.status(400).json({ status: false, message: "Invalid Update" });
+  if (role !== "admin") {
+    return res.status(403).json({ status: false, message: "No Authorization" });
   }
 
-  try {
-    const result = await TaskModel.updateOne(
-      { _id: id },
-      { $set: { status: Task_status, task_description: task_dec } }
-    );
-
-    console.log(result);
-
-    if (result.nModified === 0) {
-      return res
-        .status(404)
-        .json({ status: false, message: "Task not found or not updated" });
-    }
-
-    return res
-      .status(200)
-      .json({ status: "success", message: "Task Updated Successfully" });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ status: "error", message: err.message });
-  }
-};
-
-export const getAllTask = async (req, res) => {
-  try {
-    const tasks = await TaskModel.find({ is_deleted: false });
-    console.log("tasks", tasks); // Ensure you log the actual tasks for debugging
-
-    return res.status(200).json({
-      status: true,
-      message: "Get All Tasks",
-      data: tasks,
-    });
-  } catch (err) {
-    console.error("Error fetching tasks:", err); // Log the error for debugging
-
-    return res.status(500).json({
-      status: false,
-      message: "Internal Server Error",
-    });
-  }
-};
-
-
-export const getTask = async (req, res) => {
-  const { id } = req?.body;
-  try {
-    await TaskModel.find({ _id: id, is_deleted: false })
-      .then((task) => {
-        if (!task) {
-          return res
-            .status(200)
-            .json({ status: false, message: "Task Not Found" });
-        } else {
-          return res.status(200).json({
-            status: true,
-            message: "Successfully Data Fetched",
-            data: task,
-          });
-        }
-      })
-      .catch((error) => {
-        return res
-          .status(200)
-          .json({ status: false, message: "Error while Finding User" });
-      });
-  } catch {
-    return res
-      .status(200)
-      .json({ status: false, message: "Internal Server Error" });
-  }
-};
-
-export const updateTask = async (req, res) => {
-  const {
-    project_title,
-    project_description,
-    project_ownership,
+  const updatedTask = {
+    project,
     assigned_to,
     assigned_by,
     report_to,
@@ -195,215 +271,177 @@ export const updateTask = async (req, res) => {
     start_date,
     end_date,
     task_description,
-  } = req?.body;
-  if (req.user.role == "admin") {
-    const updateTask = {
-      project_title,
-      project_description,
-      project_ownership,
-      assigned_to,
-      assigned_by,
-      report_to,
-      status,
-      priority,
-      start_date,
-      end_date,
-      task_description,
-    };
-    await TaskModel.findByIdAndUpdate({ _id: req.body.id }, updateTask, {
+  };
+
+  try {
+    const task = await TaskModel.findByIdAndUpdate(id, updatedTask, {
       new: true,
-    }).then((updatedTask) => {
-      return res.status(200).json({
-        status: true,
-        message: "Updated Successfully",
-        data: updateTask,
-      });
     });
-  } else {
+
+    if (!task) {
+      return res.status(404).json({ status: false, message: "Task not found" });
+    }
+
+    return res.status(200).json({
+      status: true,
+      message: "Task updated successfully",
+      data: task,
+    });
+  } catch (error) {
+    console.error(error);
     return res
-      .status(200)
-      .json({ status: "false", message: "No authoraization" });
+      .status(500)
+      .json({ status: false, message: "Error updating task" });
   }
 };
 
 export const create_skill_Improvement = async (req, res) => {
-  const { id, message } = req?.body;
+  const { id, message } = req.body;
+
+  if (req.user.role !== "employee") {
+    return res.status(403).json({ status: false, message: "No Authorization" });
+  }
+
   try {
-    if (req.user.role == "employee") {
-      await TaskModel.findByIdAndUpdate(
-        { _id: id },
-        {
-          $set: {
-            skill_improvement: {
-              comments: {
-                sentFromId: req.user.id,
-                message: message,
-                date: new Date(),
-              },
-            },
+    const task = await TaskModel.findByIdAndUpdate(
+      id,
+      {
+        $push: {
+          skill_improvement: {
+            sentFromId: req.user.id,
+            message,
+            date: new Date(),
           },
         },
-        { new: true }
-      )
-        .then((createdSkill) => {
-          return res.status(200).json({
-            status: true,
-            message: "Created Skill Improvement Successfully",
-            data: createdSkill,
-          });
-        })
-        .catch((err) => {
-          return res
-            .status(200)
-            .json({ status: true, message: "Error Filling Skill Improvrment" });
-        });
-    } else {
-      return res
-        .status(200)
-        .json({ status: false, message: "No Authorization" });
-    }
-  } catch {
+      },
+      { new: true }
+    );
+
+    return res.status(200).json({
+      status: true,
+      message: "Skill improvement added successfully",
+      data: task,
+    });
+  } catch (error) {
+    console.error(error);
     return res
-      .status(200)
-      .json({ status: false, message: "Internal Server Error" });
+      .status(500)
+      .json({ status: false, message: "Error adding skill improvement" });
   }
 };
 
 export const update_skill_Improvement = async (req, res) => {
-  const { id, message, skills_approval_status } = req?.body;
-  let updateQuery = {};
+  const { id, message, skills_approval_status } = req.body;
+
+  if (req.user.role !== "team lead" && req.user.role !== "manager") {
+    return res.status(403).json({ status: false, message: "No Authorization" });
+  }
+
   try {
-    if (req.user.role == "team lead" || req.user.role === "manager") {
-      updateQuery = {
-        $push: {
-          skill_improvement: {
-            comments: {
-              sentFromId: req.user.id,
-              message: message,
-              date: new Date(),
-            },
-          },
+    const updateQuery = {
+      $push: {
+        skill_improvement: {
+          sentFromId: req.user.id,
+          message,
+          date: new Date(),
         },
+      },
+    };
+
+    if (req.user.role === "manager" || req.user.role === "admin") {
+      updateQuery.$set = {
+        skills_approval_status,
+        skill_imp_reviewed_by: req.user.id,
       };
-      if (req.user.role === "manager" || req.user.role === "admin") {
-        updateQuery.$set = {
-          skills_approval_status: skills_approval_status || "", //"Pending", "Approved", "Rejected"
-          skill_imp_reviewed_by: req.user.id || "",
-        };
-      }
-    } else {
-      return res
-        .status(200)
-        .json({ status: false, message: "No Authorization" });
     }
-    await TaskModel.findByIdAndUpdate({ _id: id }, updateQuery, {
+
+    const task = await TaskModel.findByIdAndUpdate(id, updateQuery, {
       new: true,
-    })
-      .then((updateSkill) => {
-        return res.status(200).json({
-          status: true,
-          message: "Skill Improvement added successfully",
-          data: updateSkill,
-        });
-      })
-      .catch((err) => {
-        return res
-          .status(200)
-          .json({ status: false, message: "Error in Creating" });
-      });
-  } catch {
+    });
+
+    return res.status(200).json({
+      status: true,
+      message: "Skill improvement updated successfully",
+      data: task,
+    });
+  } catch (error) {
+    console.error(error);
     return res
-      .status(200)
-      .json({ status: false, message: "Internal Server Error" });
+      .status(500)
+      .json({ status: false, message: "Error updating skill improvement" });
   }
 };
 
 export const create_growth_assessment = async (req, res) => {
-  const { id, message } = req?.body;
+  const { id, message } = req.body;
+
+  if (req.user.role !== "employee") {
+    return res.status(403).json({ status: false, message: "No Authorization" });
+  }
+
   try {
-    if (req.user.role == "employee") {
-      await TaskModel.findByIdAndUpdate(
-        { _id: id },
-        {
-          $set: {
-            growth_assessment: {
-              comments: {
-                sentFromId: req.user.id,
-                message: message,
-                date: new Date(), // Current date and time
-              },
-            },
+    const task = await TaskModel.findByIdAndUpdate(
+      id,
+      {
+        $push: {
+          growth_assessment: {
+            sentFromId: req.user.id,
+            message,
+            date: new Date(),
           },
         },
-        { new: true }
-      )
-        .then((createdGrowth) => {
-          return res.status(200).json({
-            status: true,
-            message: "Growth Assessment Created Successfully",
-            data: createdGrowth,
-          });
-        })
-        .catch((err) => {
-          return res
-            .status(200)
-            .json({ status: true, message: "Invalid Submission" });
-        });
-    } else {
-      return res
-        .status(200)
-        .json({ status: false, message: "No Authorization" });
-    }
-  } catch {
+      },
+      { new: true }
+    );
+
+    return res.status(200).json({
+      status: true,
+      message: "Growth assessment created successfully",
+      data: task,
+    });
+  } catch (error) {
+    console.error(error);
     return res
-      .status(200)
-      .json({ status: false, message: "Internal Server Error" });
+      .status(500)
+      .json({ status: false, message: "Error creating growth assessment" });
   }
 };
 
 export const update_growth_assessment = async (req, res) => {
-  const { id, message } = req?.body;
-  let updateQuery = {};
+  const { id, message } = req.body;
+
+  if (
+    req.user.role !== "team lead" &&
+    req.user.role !== "manager" &&
+    req.user.role !== "admin"
+  ) {
+    return res.status(403).json({ status: false, message: "No Authorization" });
+  }
+
   try {
-    if (
-      req.user.role == "team lead" ||
-      req.user.role === "manager" ||
-      req.user.role === "admin"
-    ) {
-      updateQuery = {
+    const task = await TaskModel.findByIdAndUpdate(
+      id,
+      {
         $push: {
           growth_assessment: {
-            comments: {
-              sentFromId: req.user.id,
-              message: message,
-              date: new Date(),
-            },
+            sentFromId: req.user.id,
+            message,
+            date: new Date(),
           },
         },
-      };
-    } else {
-      return res
-        .status(200)
-        .json({ status: false, message: "No Authorization" });
-    }
-    await TaskModel.findByIdAndUpdate({ _id: id }, updateQuery, {
-      new: true,
-    })
-      .then((updateSkill) => {
-        return res.status(200).json({
-          status: true,
-          message: "Growth Assessment update successfully",
-          data: updateSkill,
-        });
-      })
-      .catch((err) => {
-        return res
-          .status(200)
-          .json({ status: false, message: "Error in Creating" });
-      });
-  } catch {
+      },
+      { new: true }
+    );
+
+    return res.status(200).json({
+      status: true,
+      message: "Growth assessment updated successfully",
+      data: task,
+    });
+  } catch (error) {
+    console.error(error);
     return res
-      .status(200)
-      .json({ status: false, message: "Internal Server Error" });
+      .status(500)
+      .json({ status: false, message: "Error updating growth assessment" });
   }
 };
