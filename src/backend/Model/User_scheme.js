@@ -23,7 +23,7 @@ const UserScheme = new mongoose.Schema({
   },
   admin_verify: {
     type: String,
-    default: false //true
+    default: false, //true
   },
   employee_id: {
     type: String,
@@ -33,11 +33,15 @@ const UserScheme = new mongoose.Schema({
   },
   starting_date: {
     type: String,
-    required:true
+    required: true,
   },
-  lastWorking_date : {
+  lastWorking_date: {
     type: String,
-  }
+  },
+  is_deleted: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 export const UserModel = mongoose.model("user", UserScheme);

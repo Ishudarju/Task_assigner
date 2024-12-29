@@ -145,7 +145,7 @@ const TaskManagement = () => {
               </TableCell>
               <TableCell
                 className={`text-primary w-[100px] rounded-md text-center  ${getpriority(
-                  taskdetail.priority
+                  taskDetails.priority
                 )}`}
               >
                 {taskdetail.priority}
@@ -168,7 +168,7 @@ const TaskManagement = () => {
                           onClose={handleCloseDialog}
                           onUpdate={handleUpdateTask} // Update task in list
                         />
-                      </DropdownMenuItem>
+                      </DropdownMenuItem> 
                     </DropdownMenuContent>
                   )}
                 </DropdownMenu>

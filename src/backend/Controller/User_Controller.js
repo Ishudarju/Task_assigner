@@ -22,6 +22,8 @@ export const authMiddleware = (req, res, next) => {
   // token = token.split(" ")[1];
 
   jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    // console.log(decoded);
+
     if (err) {
       if (err.name === "TokenExpiredError") {
         return res
@@ -30,7 +32,7 @@ export const authMiddleware = (req, res, next) => {
       } else {
         return res
           .status(200)
-          .json({ status: false, message: "Invalid token" });
+          .json({ status: false, message: "Invssalid token" });
       }
     }
 
@@ -49,6 +51,35 @@ export const authMiddleware = (req, res, next) => {
 
 export const user_login = (req, res) => {
   const { mail, password } = req.body;
+  UserModel.findOne({ mail: mail.toLowerCase() })
+    .select("-password -__v -createdAt -updatedAt")
+    .then((users) => {
+      if (users.mail == mail && users.password == password) {
+        const token = jwt.sign(
+          {
+            id: users._id,
+            role: users.role,
+            mail: users.mail,
+            admin_verify: users.admin_verify,
+          },
+
+          JWT_SECRET,
+          { expiresIn: "5h" }
+        ); // Token expiry time
+        // console.log(token);
+        return res.status(200).json({
+          status: true,
+          message: "Success",
+          data: users,
+          token,
+        });
+      }
+    })
+    .catch((err) => {
+      return res
+        .status(200)
+        .json({ status: false, message: "Email and password are required" });
+    });
 
   UserModel.findOne({ mail: mail.toLowerCase() })
     .then((users) => {
@@ -60,13 +91,28 @@ export const user_login = (req, res) => {
             mail: users.mail,
             admin_verify: users.admin_verify,
           },
+
           JWT_SECRET,
           { expiresIn: "5h" }
         ); // Token expiry time
-        return res.status(200).header("auth-token", token).json({
+        // console.log(token);
+        const userData = {
+          _id: users._id,
+          name: users.name,
+          phone: users.phone,
+          mail: users.mail,
+          role: users.role,
+          admin_verify: users.admin_verify,
+          employee_id: users.employee_id,
+          department: users.department,
+          // starting_date: users.starting_date,
+          // lastWorking_date: users.lastWorking_date,
+        };
+        return res.status(200).json({
           status: true,
           message: "Success",
-          data: users,
+          data: userData,
+          token,
         });
       }
     })
@@ -78,24 +124,24 @@ export const user_login = (req, res) => {
 };
 
 export const user_dashboard = async (req, res) => {
-  console.log(req.user);
+  // console.log(req.user);
 
   const { id, role, mail } = req.user;
   let result = "";
   if (role === "hr") {
     // For HR, get overall tasks with specific statuses
     result = await TaskModel.find({
-      status: { $in: ["Pending", "Completed", "In progress"] },
+      status: { $in: ["Pending", "Completed", "Not started", "In progress"] },
     });
   } else {
     // For other users, get tasks assigned to the specific user ID
     result = await TaskModel.find({
       assigned_to: id,
-      status: { $in: ["Pending", "Completed", "In progress"] },
+      status: { $in: ["Pending", "Completed", "Not started", "In progress"] },
     });
   }
 
-  console.log("id", id);
+  // console.log("id", id);
   const pendingTasks = result.filter((task) => task.status === "Pending");
   const completedTasks = result.filter((task) => task.status === "Completed");
   const inProgressTasks = result.filter(
@@ -232,17 +278,48 @@ export const updateUser = async (req, res) => {
     });
 };
 
+// export const deleteUser = async (req, res) => {
+//   const { id } = req?.body;
+//   try {
+//     await UserModel.deleteOne({ _id: id });
+//     return res
+//       .status(200)
+//       .json({ status: true, message: "User Deleted Successfully" });
+//   } catch (error) {
+//     return res
+//       .status(200)
+//       .json({ status: false, message: "Error in deleting user" });
+//   }
+// };
 export const deleteUser = async (req, res) => {
-  const { id } = req?.body;
+  const { id } = req.body; // Safely access the body object
+  if (!id) {
+    return res
+      .status(400)
+      .json({ status: false, message: "User ID is required" });
+  }
+
   try {
-    await UserModel.deleteOne({ _id: id });
+    // Update the `is_deleted` field to true
+    const updatedUser = await UserModel.findByIdAndUpdate(
+      id,
+      { $set: { is_deleted: true } },
+      { new: true } // Return the updated document
+    );
+
+    if (!updatedUser) {
+      return res
+        .status(404)
+        .json({ status: false, message: "User not found" });
+    }
+
     return res
       .status(200)
-      .json({ status: true, message: "User Deleted Successfully" });
+      .json({ status: true, message: "User deleted successfully", user: updatedUser });
   } catch (error) {
     return res
-      .status(200)
-      .json({ status: false, message: "Error in deleting user" });
+      .status(500)
+      .json({ status: false, message: "Error in deleting user", error: error.message });
   }
 };
 
@@ -314,6 +391,7 @@ export const getAllEmployee = async (req, res) => {
   try {
     result = await UserModel.find({
       role: { $nin: excluding_roles },
+      is_deleted: false,
     });
     res.status(200).json({
       data: result,
@@ -389,3 +467,8 @@ export const importXLSX = async (req, res) => {
     });
   }
 };
+export const empid_generate = async (req, res) => {
+  const emp_id = Math.floor(1000 + Math.random() * 9000);
+  return res.status(200).json({ status: true, emp_id });
+ }
+
