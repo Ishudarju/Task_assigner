@@ -125,22 +125,31 @@ export const createProject = async (req, res) => {
 // };
 export const getAllProjects = async (req, res) => {
   try {
-    // Fetching projects with active status and populating ownership details
+    const { page = 1, limit = 10 } = req.query;
+
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+
     const projects = await ProjectModel.find({ is_deleted: false })
-      .populate("project_ownership", "name mail");
+      .populate("project_ownership", "name mail")
+      .sort({ createdAt: -1 })
+      .skip((pageNumber - 1) * limitNumber)
+      .limit(limitNumber);
 
     const totalProjects = await ProjectModel.countDocuments({
       is_deleted: false,
-    });
+    }); 
 
     return res.status(200).json({
       status: true,
-      data: projects,
-      total: totalProjects, // Corrected key
+      data: {
+        total: totalProjects,
+        projects,
+      },
       message: "Projects fetched successfully",
     });
   } catch (error) {
-    console.error("Error fetching projects:", error.message);
+    console.error("Error fetching projects:", error.message); // Improved logging
     return res.status(500).json({
       status: false,
       message: "An error occurred while fetching projects",
