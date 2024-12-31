@@ -28,6 +28,7 @@ const projectSchema = new mongoose.Schema(
     },
     endDate: {
       type: Date,
+      default: Date.now,
     },
     project_status: {
       type: String,
