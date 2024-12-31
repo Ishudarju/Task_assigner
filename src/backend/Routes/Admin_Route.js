@@ -31,6 +31,7 @@ adminRoute.post(
 );
 
 adminRoute.post("/createProject",Admin.authMiddleware,Project.createProject)
+adminRoute.post("/updateProject",Admin.authMiddleware,Project.updateProject)
 adminRoute.post("/getAllProjects",Admin.authMiddleware,Project.getAllProjects)
 
 export default adminRoute;

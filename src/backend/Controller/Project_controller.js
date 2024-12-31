@@ -9,6 +9,7 @@ export const createProject = async (req, res) => {
     endDate,
     project_status,
     estimated_hours,
+    teamMembers, // New field for team members
   } = req.body;
 
   const { role } = req.user; // Extract role from the authenticated user
@@ -27,17 +28,58 @@ export const createProject = async (req, res) => {
       message: "Project name is required",
     });
   }
-  console.log(req.user);
+  if (!project_name || typeof project_name !== "string" || project_name.trim() === "") {
+    return res.status(400).json({
+      status: false,
+      message: "Project name is required and must be a valid string.",
+    });
+  }
+
+  if (startDate && isNaN(Date.parse(startDate))) {
+    return res.status(400).json({
+      status: false,
+      message: "Invalid start date format.",
+    });
+  }
+
+  if (endDate && isNaN(Date.parse(endDate))) {
+    return res.status(400).json({
+      status: false,
+      message: "Invalid end date format.",
+    });
+  }
+
+  if (!estimated_hours || typeof estimated_hours !== "number" || estimated_hours <= 0) {
+    return res.status(400).json({
+      status: false,
+      message: "Estimated hours are required and must be a positive number.",
+    });
+  }
+
+  if (teamMembers && !Array.isArray(teamMembers)) {
+    return res.status(400).json({
+      status: false,
+      message: "Team members must be an array.",
+    });
+  }
+  const uniqueTeamMembers = new Set(teamMembers);
+  if (uniqueTeamMembers.size !== teamMembers.length) {
+    return res.status(400).json({
+      status: false,
+      message: "Duplicate team members are not allowed.",
+    });
+  }
   try {
     // Create a new project
     const newProject = new ProjectModel({
       project_name,
       project_description,
-      project_ownership : req.user.id,
+      project_ownership: req.user.id,
       startDate,
       endDate,
       project_status,
       estimated_hours,
+      teamMembers, // Include team members
     });
 
     const project = await newProject.save();
@@ -57,35 +99,12 @@ export const createProject = async (req, res) => {
 };
 
 // Fetch all projects
-// export const getAllProjects = async (req, res) => {
-//   try {
-//     const projects = await ProjectModel.find({ is_deleted: false }).populate(
-//       "project_ownership",
-//       "name email"
-//     ); // Populating team member details
-//     const totalProjects = await ProjectModel.countDocuments({
-//       is_deleted: false,
-//     });
-
-//     return res.status(200).json({
-//       status: true,
-//       data: projects,
-//       totl: totalProjects,
-//       message: "Projects fetched successfully",
-//     });
-//   } catch (error) {
-//     console.error("Error fetching projects:", error);
-//     return res.status(500).json({
-//       status: false,
-//       message: "An error occurred while fetching projects",
-//     });
-//   }
-// };
 export const getAllProjects = async (req, res) => {
   try {
-    // Fetching projects with active status and populating ownership details
+    // Fetching projects with active status and populating ownership and team member details
     const projects = await ProjectModel.find({ is_deleted: false })
-      .populate("project_ownership", "name mail");
+      .populate("project_ownership", "name email")
+      .populate("teamMembers", "name email");
 
     // Counting total active projects
     const totalProjects = await ProjectModel.countDocuments({ is_deleted: false });
@@ -93,11 +112,11 @@ export const getAllProjects = async (req, res) => {
     return res.status(200).json({
       status: true,
       data: projects,
-      total: totalProjects, // Corrected key
+      total: totalProjects,
       message: "Projects fetched successfully",
     });
   } catch (error) {
-    console.error("Error fetching projects:", error.message); // Improved logging
+    console.error("Error fetching projects:", error.message);
     return res.status(500).json({
       status: false,
       message: "An error occurred while fetching projects",
@@ -105,15 +124,14 @@ export const getAllProjects = async (req, res) => {
   }
 };
 
-
 // Fetch a single project by ID
 export const getProjectById = async (req, res) => {
   const { id } = req.params;
 
   try {
     const project = await ProjectModel.findById(id)
-      .populate("teamMembers", "name email")
-      .populate("tasks", "task_name status");
+      .populate("project_ownership", "name mail")
+      .populate("teamMembers", "name mail");
 
     if (!project || project.is_deleted) {
       return res.status(404).json({
@@ -137,36 +155,118 @@ export const getProjectById = async (req, res) => {
 
 // Update a project
 export const updateProject = async (req, res) => {
-  const { id } = req.params;
-  const updateData = req.body;
+  const { id } = req.body;
+  console.log(req.query);
+  const {
+    project_name,
+    startDate,
+    endDate,
+    estimated_hours,
+    teamMembers,
+    ...otherFields
+  } = req.body;
 
-  try {
-    const project = await ProjectModel.findByIdAndUpdate(
-      id,
-      { $set: updateData },
-      { new: true }
-    );
+  if (!id) {
+    return res.status(400).json({
+      status: false,
+      message: "Project ID is required.",
+    });
+  }
 
-    if (!project || project.is_deleted) {
-      return res.status(404).json({
+  // Validation
+  if (project_name && (typeof project_name !== "string" || project_name.trim() === "")) {
+    return res.status(400).json({
+      status: false,
+      message: "Project name must be a valid string.",
+    });
+  }
+
+  if (startDate && isNaN(Date.parse(startDate))) {
+    return res.status(400).json({
+      status: false,
+      message: "Invalid start date format.",
+    });
+  }
+
+  if (endDate && isNaN(Date.parse(endDate))) {
+    return res.status(400).json({
+      status: false,
+      message: "Invalid end date format.",
+    });
+  }
+
+  if (estimated_hours && (typeof estimated_hours !== "number" || estimated_hours <= 0)) {
+    return res.status(400).json({
+      status: false,
+      message: "Estimated hours must be a positive number.",
+    });
+  }
+
+  if (teamMembers) {
+    if (!Array.isArray(teamMembers)) {
+      return res.status(400).json({
         status: false,
-        message: "Project not found or already deleted",
+        message: "Team members must be an array.",
       });
     }
+
+    // Check for duplicate team members in the input
+    const uniqueTeamMembers = new Set(teamMembers);
+    if (uniqueTeamMembers.size !== teamMembers.length) {
+      return res.status(400).json({
+        status: false,
+        message: "Duplicate team members are not allowed.",
+      });
+    }
+  }
+
+  try {
+    // Retrieve the existing project
+    const existingProject = await ProjectModel.findById(id);
+
+    if (!existingProject || existingProject.is_deleted) {
+      return res.status(404).json({
+        status: false,
+        message: "Project not found or already deleted.",
+      });
+    }
+
+    // Merge existing team members with new ones, avoiding duplicates
+    const updatedTeamMembers = teamMembers
+      ? [...new Set([...(existingProject.teamMembers || []), ...teamMembers])]
+      : existingProject.teamMembers;
+
+    // Update the project with merged team members and other fields
+    const updatedProject = await ProjectModel.findByIdAndUpdate(
+      id,
+      {
+        $set: {
+          ...otherFields,
+          project_name,
+          startDate,
+          endDate,
+          estimated_hours,
+          teamMembers: updatedTeamMembers,
+        },
+      },
+      { new: true }
+    );
 
     return res.status(200).json({
       status: true,
       message: "Project updated successfully",
-      data: project,
+      data: updatedProject,
     });
   } catch (error) {
     console.error("Error updating project:", error);
     return res.status(500).json({
       status: false,
-      message: "An error occurred while updating the project",
+      message: "An error occurred while updating the project.",
     });
   }
 };
+
+
 
 // Soft delete a project
 export const deleteProject = async (req, res) => {
