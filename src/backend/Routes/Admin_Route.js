@@ -32,12 +32,7 @@ adminRoute.post(
   Ticket.getTicketByCategory
 );
 
-adminRoute.post("/createProject", Admin.authMiddleware, Project.createProject);
-adminRoute.post(
-  "/getAllProjects",
-  Admin.authMiddleware,
-  Project.getAllProjects
-);
-adminRoute.put("/updateProject", Admin.authMiddleware, Project.updateProject);
+adminRoute.post("/createProject",Admin.authMiddleware,Project.createProject)
+adminRoute.post("/getAllProjects",Admin.authMiddleware,Project.getAllProjects)
 
 export default adminRoute;

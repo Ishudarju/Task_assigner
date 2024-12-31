@@ -16,6 +16,12 @@ const projectSchema = new mongoose.Schema(
       ref: "user", // Assuming the ownership refers to a user
       required: true,
     },
+    teamMembers: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "user", // Reference to users who are team members
+      },
+    ],
     startDate: {
       type: Date,
       default: Date.now,
