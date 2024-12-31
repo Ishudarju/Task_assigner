@@ -16,13 +16,17 @@ adminRoute.post("/getAllTask", Task.getAllTask);
 adminRoute.post("/getTask", Task.getTask);
 adminRoute.delete("/deleteTask/:id", Task.deleteTask);
 adminRoute.post("/getEmpMails", User.getAllUserEmpMail);
-adminRoute.get("/getAllUserEmpMailForProject",Admin.authMiddleware,User.getAllUserEmpMailForProject);
+adminRoute.get(
+  "/getAllUserEmpMailForProject",
+  Admin.authMiddleware,
+  User.getAllUserEmpMailForProject
+);
 adminRoute.post("/getAllEmployee", Admin.authMiddleware, User.getAllEmployee);
 adminRoute.post("/create", Admin.authMiddleware, User.createUser);
 adminRoute.put("/update", Admin.authMiddleware, User.updateUser);
 adminRoute.post("/delete", Admin.authMiddleware, User.deleteUser);
 adminRoute.post("/findById", Admin.authMiddleware, User.findById);
- 
+
 adminRoute.post("/updateTicket", Admin.authMiddleware, Ticket.updateTicket);
 adminRoute.post("/getAllTicket", Admin.authMiddleware, Ticket.getAllTicket);
 adminRoute.post("/getTicketById", Ticket.getTicketById);
@@ -33,8 +37,12 @@ adminRoute.post(
   Ticket.getTicketByCategory
 );
 
-adminRoute.post("/createProject",Admin.authMiddleware,Project.createProject);
-adminRoute.post("/getAllProjects",Admin.authMiddleware,Project.getAllProjects);
+adminRoute.post("/createProject", Admin.authMiddleware, Project.createProject);
+adminRoute.post(
+  "/getAllProjects",
+  Admin.authMiddleware,
+  Project.getAllProjects
+);
 adminRoute.put("/updateProject", Admin.authMiddleware, Project.updateProject);
 
 export default adminRoute;
