@@ -361,6 +361,40 @@ export const getAllUserEmpMail = async (req, res) => {
         .json({ status: false, message: "Error in Fetching Users Email" });
     });
 };
+export const getAllUserEmpMailForProject = async (req, res) => {
+  try {
+    if (req.user?.role !== 'admin') {
+      return res.status(403).json({
+        status: false,
+        message: "Unauthorized access. Admins only.",
+      });
+    }
+    // Fetch all user data with only required fields
+    const users = await UserModel.find({}, { mail: 1, name: 1, role: 1 });
+
+    // Separate users into team leads, managers, and others
+    const teamLeads = users.filter(user => user.role === 'team lead');
+    const managers = users.filter(user => user.role === 'manager');
+    // const others = users.filter(user => user.role !== 'team lead' && user.role !== 'manager');
+
+    res.status(200).json({
+      status: true,
+      message: "Fetched all users, team leads, and managers",
+      data: {
+        teamLeads: teamLeads.map(({ _id,name, mail }) => ({id:_id, name, mail })),
+        managers: managers.map(({ _id,name, mail }) => ({ id:_id,name, mail })),
+        // others: others.map(({ name, mail }) => ({ name, mail })),
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: false,
+      message: "Error in fetching user data",
+      error: error.message,
+    });
+  }
+};
+
 
 export const getAllEmployee = async (req, res) => {
   const { id, role } = req?.user;

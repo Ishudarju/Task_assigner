@@ -16,6 +16,7 @@ adminRoute.post("/getAllTask", Task.getAllTask);
 adminRoute.post("/getTask", Task.getTask);
 adminRoute.delete("/deleteTask/:id", Task.deleteTask);
 adminRoute.post("/getEmpMails", User.getAllUserEmpMail);
+adminRoute.get("/getAllUserEmpMailForProject",Admin.authMiddleware,User.getAllUserEmpMailForProject);
 adminRoute.post("/getAllEmployee", Admin.authMiddleware, User.getAllEmployee);
 adminRoute.post("/create", Admin.authMiddleware, User.createUser);
 adminRoute.put("/update", Admin.authMiddleware, User.updateUser);
