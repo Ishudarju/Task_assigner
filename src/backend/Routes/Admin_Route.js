@@ -19,20 +19,21 @@ adminRoute.post("/getEmpMails", User.getAllUserEmpMail);
 adminRoute.get("/getAllUserEmpMailForProject",Admin.authMiddleware,User.getAllUserEmpMailForProject);
 adminRoute.post("/getAllEmployee", Admin.authMiddleware, User.getAllEmployee);
 adminRoute.post("/create", Admin.authMiddleware, User.createUser);
-adminRoute.post("/update", Admin.authMiddleware, User.updateUser);
+adminRoute.put("/update", Admin.authMiddleware, User.updateUser);
 adminRoute.post("/delete", Admin.authMiddleware, User.deleteUser);
 adminRoute.post("/findById", Admin.authMiddleware, User.findById);
+ 
 adminRoute.post("/updateTicket", Admin.authMiddleware, Ticket.updateTicket);
 adminRoute.post("/getAllTicket", Admin.authMiddleware, Ticket.getAllTicket);
 adminRoute.post("/getTicketById", Ticket.getTicketById);
+
 adminRoute.post(
   "/getTicketByCategory",
   Admin.authMiddleware,
-  Ticket.getTicketByCategory 
+  Ticket.getTicketByCategory
 );
 
 adminRoute.post("/createProject",Admin.authMiddleware,Project.createProject)
-adminRoute.post("/updateProject",Admin.authMiddleware,Project.updateProject)
 adminRoute.post("/getAllProjects",Admin.authMiddleware,Project.getAllProjects)
 
 export default adminRoute;

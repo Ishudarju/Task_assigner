@@ -28,11 +28,13 @@ const projectSchema = new mongoose.Schema(
     },
     endDate: {
       type: Date,
+
       default: Date.now,
+
     },
     project_status: {
       type: String,
-      enum: ["Not Started", "In Progress", "Pending","Completed"],
+      enum: ["Not Started", "In Progress", "Pending", "Completed"],
       default: "Not Started",
     },
     estimated_hours: {
@@ -42,7 +44,7 @@ const projectSchema = new mongoose.Schema(
     is_deleted: {
       type: Boolean,
       default: false,
-    }, 
+    },
   },
   {
     timestamps: true, // Adds createdAt and updatedAt

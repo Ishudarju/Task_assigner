@@ -12,7 +12,7 @@ export const createProject = async (req, res) => {
     teamMembers, // New field for team members
   } = req.body;
 
-  const { role } = req.user; // Extract role from the authenticated user
+  const { role } = req.user;
 
   // Authorization check
   if (role !== "admin" && role !== "manager") {
@@ -99,20 +99,44 @@ export const createProject = async (req, res) => {
 };
 
 // Fetch all projects
+// export const getAllProjects = async (req, res) => {
+//   try {
+//     const projects = await ProjectModel.find({ is_deleted: false }).populate(
+//       "project_ownership",
+//       "name email"
+//     ); // Populating team member details
+//     const totalProjects = await ProjectModel.countDocuments({
+//       is_deleted: false,
+//     });
+
+//     return res.status(200).json({
+//       status: true,
+//       data: projects,
+//       totl: totalProjects,
+//       message: "Projects fetched successfully",
+//     });
+//   } catch (error) {
+//     console.error("Error fetching projects:", error);
+//     return res.status(500).json({
+//       status: false,
+//       message: "An error occurred while fetching projects",
+//     });
+//   }
+// };
 export const getAllProjects = async (req, res) => {
   try {
-    // Fetching projects with active status and populating ownership and team member details
+    // Fetching projects with active status and populating ownership details
     const projects = await ProjectModel.find({ is_deleted: false })
-      .populate("project_ownership", "name email")
-      .populate("teamMembers", "name email");
+      .populate("project_ownership", "name mail");
 
-    // Counting total active projects
-    const totalProjects = await ProjectModel.countDocuments({ is_deleted: false });
+    const totalProjects = await ProjectModel.countDocuments({
+      is_deleted: false,
+    });
 
     return res.status(200).json({
       status: true,
       data: projects,
-      total: totalProjects,
+      total: totalProjects, // Corrected key
       message: "Projects fetched successfully",
     });
   } catch (error) {
