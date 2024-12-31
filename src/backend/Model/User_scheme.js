@@ -23,7 +23,7 @@ const UserScheme = new mongoose.Schema({
   },
   admin_verify: {
     type: String,
-    default: false, //true
+    default: false,  
   },
   employee_id: {
     type: String,

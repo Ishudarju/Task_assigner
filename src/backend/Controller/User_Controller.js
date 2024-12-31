@@ -233,6 +233,7 @@ export const createUser = (req, res) => {
 };
 
 export const updateUser = async (req, res) => {
+  console.log(req.body);
   const {
     name,
     mail,
@@ -308,18 +309,24 @@ export const deleteUser = async (req, res) => {
     );
 
     if (!updatedUser) {
-      return res
-        .status(404)
-        .json({ status: false, message: "User not found" });
+      return res.status(404).json({ status: false, message: "User not found" });
     }
 
     return res
       .status(200)
-      .json({ status: true, message: "User deleted successfully", user: updatedUser });
+      .json({
+        status: true,
+        message: "User deleted successfully",
+        user: updatedUser,
+      });
   } catch (error) {
     return res
       .status(500)
-      .json({ status: false, message: "Error in deleting user", error: error.message });
+      .json({
+        status: false,
+        message: "Error in deleting user",
+        error: error.message,
+      });
   }
 };
 
@@ -470,5 +477,4 @@ export const importXLSX = async (req, res) => {
 export const empid_generate = async (req, res) => {
   const emp_id = Math.floor(1000 + Math.random() * 9000);
   return res.status(200).json({ status: true, emp_id });
- }
-
+};

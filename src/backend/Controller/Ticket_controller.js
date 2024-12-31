@@ -48,51 +48,54 @@ export const updateTicket = async (req, res) => {
     status,
     priority,
   } = req?.body;
-  // console.log(req.user)
+
   try {
-  if (req.user?.role !== "admin") {
-    return res.status(200).json({ status: false, message: "No Authorization" });
-  } else {
-    const ticketdata = {
-      ticket_title: title,
-      ticket_description: description,
-      main_category: main_category,
-      sub_category: sub_category,
-      status: status,
-      priority: priority,
-    };
-    console.log(ticketdata);
-    await TicketModel.findOneAndUpdate({ _id: _id }, ticketdata).then(
-      (UpdatedTicket) => {
-        console.log(UpdatedTicket);
-        if (!UpdatedTicket) {
-          return res
-            .status(200)
-            .json({ status: false, message: "Invalid Updation" });
-        } else {
-          return res
-            .status(200)
-            .json({ status: true, message: "Successfully Updated" });
+    if (req.user?.role !== "admin") {
+      return res
+        .status(200)
+        .json({ status: false, message: "No Authorization" });
+    } else {
+      const ticketdata = {
+        ticket_title: title,
+        ticket_description: description,
+        main_category: main_category,
+        sub_category: sub_category,
+        status: status,
+        priority: priority,
+      };
+      console.log(ticketdata);
+      await TicketModel.findOneAndUpdate({ _id: _id }, ticketdata).then(
+        (UpdatedTicket) => {
+          console.log(UpdatedTicket);
+          if (!UpdatedTicket) {
+            return res
+              .status(200)
+              .json({ status: false, message: "Invalid Updation" });
+          } else {
+            return res
+              .status(200)
+              .json({ status: true, message: "Successfully Updated" });
+          }
         }
-      }
-    );
-  }
+      );
+    }
   } catch {
-  return res
-    .status(200)
-    .json({ status: false, message: "Error in Updating Ticket" });
+    return res
+      .status(200)
+      .json({ status: false, message: "Error in Updating Ticket" });
   }
 };
 
 export const deleteTicket = async (req, res) => {
   const { _id } = req?.body;
   try {
-    if(req.user?.role == "admin" || "employee"){
-    await TicketModel.deleteOne({ _id: _id })
-    return res
-      .status(200)
-      .json({ status: true, message: "Ticket Deleted Successfully" });
-  } }catch (error) {
+    if (req.user?.role == "admin" || "employee") {
+      await TicketModel.deleteOne({ _id: _id });
+      return res
+        .status(200)
+        .json({ status: true, message: "Ticket Deleted Successfully" });
+    }
+  } catch (error) {
     return res
       .status(200)
       .json({ status: false, message: "Error in deleting Ticket" });
@@ -127,7 +130,7 @@ export const getTicketById = async (req, res) => {
   const { _id } = req?.body;
   try {
     await TicketModel.find({ _id: _id }).then((ticket) => {
-      if (ticket.length > 0 ) {
+      if (ticket.length > 0) {
         return res.status(200).json({
           status: true,
           message: "Successfully Fetching Ticket",
@@ -152,7 +155,7 @@ export const getTicketByCategory = async (req, res) => {
     if (req.user.role == "admin") {
       await TicketModel.find({ main_category: category })
         .then((ticketList) => {
-          if (ticketList.length > 0 ) {
+          if (ticketList.length > 0) {
             console.log(ticketList);
             return res.status(200).json({
               status: true,
@@ -181,5 +184,3 @@ export const getTicketByCategory = async (req, res) => {
       .json({ status: false, message: "Internal Server Error" });
   }
 };
-
-
