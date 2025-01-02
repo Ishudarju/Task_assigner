@@ -5,6 +5,7 @@ export const createProject = async (req, res) => {
   const {
     project_name,
     project_description,
+    project_ownership,
     startDate,
     endDate,
     project_status,
@@ -74,7 +75,7 @@ const converthours = parseInt(estimated_hours);
     const newProject = new ProjectModel({
       project_name,
       project_description,
-      project_ownership: req.user.id,
+      project_ownership,
       startDate,
       endDate,
       project_status,
@@ -147,7 +148,7 @@ const converthours = parseInt(estimated_hours);
 //     });
 //   }
 // };
-export const getAllProjects = async (req, res) => {
+export const getAllProjectsPagination = async (req, res) => {
   try {
     const { page = 1, limit = 10 } = req.query;
 
@@ -213,10 +214,12 @@ export const getProjectById = async (req, res) => {
 
 // Update a project
 export const updateProject = async (req, res) => {
-  const { id:_id } = req.body;
   console.log(req.body);
   const {
+    _id,
     project_name,
+    project_description,
+    project_ownership,
     startDate,
     endDate,
     estimated_hours,
@@ -253,7 +256,7 @@ export const updateProject = async (req, res) => {
     });
   }
 
-  if (estimated_hours && (typeof estimated_hours !== "number" || estimated_hours <= 0)) {
+  if (estimated_hours && (typeof converthours !== "number" || estimated_hours <= 0)) {
     return res.status(400).json({
       status: false,
       message: "Estimated hours must be a positive number.",
@@ -280,7 +283,7 @@ export const updateProject = async (req, res) => {
 
   try {
     // Retrieve the existing project
-    const existingProject = await ProjectModel.findById(id);
+    const existingProject = await ProjectModel.findById(_id);
 
     if (!existingProject || existingProject.is_deleted) {
       return res.status(404).json({
@@ -301,10 +304,12 @@ export const updateProject = async (req, res) => {
         $set: {
           ...otherFields,
           project_name,
+          project_description,
+          project_ownership:project_ownership._id,
           startDate,
           endDate,
           estimated_hours:converthours,
-          teamMembers: updatedTeamMembers,
+          // teamMembers: updatedTeamMembers,
         },
       },
       { new: true }

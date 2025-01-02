@@ -8,6 +8,14 @@ const taskSchema = new mongoose.Schema(
       ref: "project",
       required: true,
     },
+    task_description: {
+      type: String,
+      required: true,
+    },
+    task_title:{
+      type: String,
+      required: true,
+    },
     assigned_to: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "user",
@@ -36,9 +44,7 @@ const taskSchema = new mongoose.Schema(
     end_date: {
       type: Date,
     },
-    task_description: {
-      type: String,
-    },
+    
     skill_improvement: [
       {
         sentFromId: {
