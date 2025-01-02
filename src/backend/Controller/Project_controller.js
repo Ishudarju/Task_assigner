@@ -155,7 +155,8 @@ export const getAllProjects = async (req, res) => {
     const limitNumber = parseInt(limit, 10);
 
     const projects = await ProjectModel.find({ is_deleted: false })
-      .populate("project_ownership", "name mail ")
+
+      .populate("project_ownership", "name mail")
       .sort({ createdAt: -1 })
       .skip((pageNumber - 1) * limitNumber)
       .limit(limitNumber);

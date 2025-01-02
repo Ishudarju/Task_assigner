@@ -5,6 +5,7 @@ import { exportToExcel } from "../Controller/Export_controller.js";
 import { importToExcel } from "../Controller/Import_Controller.js";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+import { boolean } from "zod";
 
 dotenv.config();
 
@@ -361,28 +362,42 @@ export const getAllUserEmpMail = async (req, res) => {
         .json({ status: false, message: "Error in Fetching Users Email" });
     });
 };
+
 export const getAllUserEmpMailForProject = async (req, res) => {
   try {
-    if (req.user?.role !== 'admin') {
+    if (req.user?.role !== "admin") {
       return res.status(403).json({
         status: false,
         message: "Unauthorized access. Admins only.",
       });
     }
     // Fetch all user data with only required fields
+
     const users = await UserModel.find({}, { mail: 1, name: 1, role: 1,admin_verify:1});
 
+
     // Separate users into team leads, managers, and others
-    const teamLeads = users.filter(user => user.role === 'team lead');
-    const managers = users.filter(user => user.role === 'manager');
+    const teamLeads = users.filter((user) => user.role === "team lead");
+    const managers = users.filter((user) => user.role === "manager");
     // const others = users.filter(user => user.role !== 'team lead' && user.role !== 'manager');
 
     res.status(200).json({
       status: true,
       message: "Fetched all users, team leads, and managers",
-      data: {
-        teamLeads: teamLeads.map(({ _id,name, mail,admin_verify }) => ({id:_id, name, mail,admin_verify })),
-        managers: managers.map(({ _id,name, mail,admin_verify }) => ({ id:_id,name, mail ,admin_verify})),
+
+        teamLeads: teamLeads.map(({ _id, name, mail, admin_verify }) => ({
+          id: _id,
+          name,
+          mail,
+          admin_verify,
+        })),
+        managers: managers.map(({ _id, mail, name, admin_verify }) => ({
+          id: _id,
+          name,
+          mail,
+          admin_verify,
+        })),
+
         // others: others.map(({ name, mail }) => ({ name, mail })),
       },
     });
@@ -395,46 +410,7 @@ export const getAllUserEmpMailForProject = async (req, res) => {
   }
 };
 
-// old working code
-// export const getAllEmployee = async (req, res) => {
-//   const { id, role } = req?.user;
-//   let result = "";
-//   let excluding_roles = "";
-//   switch (role) {
-//     case "hr":
-//       excluding_roles = [role, "admin", "manager"];
-//       break;
-//     case "team lead":
-//       excluding_roles = [role, "admin", "manager"];
-//       break;
-//     case "manager":
-//       excluding_roles = ["hr", role, "admin,"];
-//       break;
-//     case "admin":
-//       excluding_roles = [role];
-//       break;
-//     default:
-//       res.status(200).json({ message: "No authorization" });
-//       break;
-//   }
 
-//   try {
-//     result = await UserModel.find({
-//       role: { $nin: excluding_roles },
-//       is_deleted: false,
-//     });
-//     res.status(200).json({
-//       data: result,
-//       status: "success",
-//       message: `${role} authorizated details`,
-//     });
-//   } catch (error) {
-//     res.status(200).json({
-//       status: "failure",
-//       message: " Server Error",
-//     });
-//   }
-// };
 export const getAllEmployee = async (req, res) => {
   const { id, role } = req?.user;
   const { page = 1, limit = 10 } = req.query; // Default to page 1 and limit 10
