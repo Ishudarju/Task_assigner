@@ -400,7 +400,7 @@ export const getAllUserEmpMailForProject = async (req, res) => {
 
         // others: others.map(({ name, mail }) => ({ name, mail })),
       },
-    });
+    );
   } catch (error) {
     res.status(500).json({
       status: false,
