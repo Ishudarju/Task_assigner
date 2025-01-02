@@ -26,6 +26,7 @@ adminRoute.post("/create", Admin.authMiddleware, User.createUser);
 adminRoute.put("/update", Admin.authMiddleware, User.updateUser);
 adminRoute.post("/delete", Admin.authMiddleware, User.deleteUser);
 adminRoute.post("/findById", Admin.authMiddleware, User.findById);
+adminRoute.post("/empid-generate", Admin.authMiddleware,User.empid_generate)
 
 adminRoute.post("/updateTicket", Admin.authMiddleware, Ticket.updateTicket);
 adminRoute.post("/getAllTicket", Admin.authMiddleware, Ticket.getAllTicket);
@@ -41,9 +42,15 @@ adminRoute.post("/createProject", Admin.authMiddleware, Project.createProject);
 adminRoute.post(
   "/getAllProjects",
   Admin.authMiddleware,
-  Project.getAllProjects
-);
-
+  Project.getAllProjectsPagination
+); 
 adminRoute.put("/updateProject", Admin.authMiddleware, Project.updateProject);
+adminRoute.delete(
+  "/deleteProject/:id",
+  Admin.authMiddleware,
+  Project.deleteProject
+);
+adminRoute.post("/getProjectById",User.authMiddleware, Project.getProjectById);
+// adminRoute.post("/getProjectByStatus", Project.getProjectByStatus);
 
 export default adminRoute;

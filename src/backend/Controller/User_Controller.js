@@ -383,23 +383,22 @@ export const getAllUserEmpMailForProject = async (req, res) => {
     const managers = users.filter((user) => user.role === "manager");
     // const others = users.filter(user => user.role !== 'team lead' && user.role !== 'manager');
 
-    res.status(200).json({
+   return  res.status(200).json({
       status: true,
       message: "Fetched all users, team leads, and managers",
-
-
-      teamLeads: teamLeads.map(({ _id, name, mail, admin_verify }) => ({
-        id: _id,
-        name,
-        mail,
-        admin_verify,
-      })),
-      managers: managers.map(({ _id, mail, name, admin_verify }) => ({
-        id: _id,
-        name,
-        mail,
-        admin_verify,
-      })),
+    
+        teamLeads: teamLeads.map(({ _id, name, mail, admin_verify }) => ({
+          id: _id,
+          name,
+          mail,
+          admin_verify,
+        })),
+        managers: managers.map(({ _id, mail, name, admin_verify }) => ({
+          id: _id,
+          name,
+          mail,
+          admin_verify,
+        })),
 
       // others: others.map(({ name, mail }) => ({ name, mail })),
     });
@@ -526,8 +525,49 @@ export const importXLSX = async (req, res) => {
       error: result.error, // Include the error message
     });
   }
-};
+}; // Replace with your actual model path
+
 export const empid_generate = async (req, res) => {
-  const emp_id = Math.floor(1000 + Math.random() * 9000);
-  return res.status(200).json({ status: true, emp_id });
+  try {
+    const { department } = req.body; // Expect department name from frontend
+
+    const departmentCodes = {
+      Management: "001",
+      HR: "002",
+      Development: "003",
+      Design: "004",
+      Marketing: "005",
+      Testing: "006",
+      "IT-Support": "007",
+      Others: "009",
+    };
+    // dump
+
+    // Validate department
+    if (!department || !departmentCodes[department]) {
+      return res.status(400).json({ status: false, message: "Invalid department" });
+    }
+
+    const departmentCode = departmentCodes[department];
+
+    // Fetch the last employee ID for the department
+    const lastEmployee = await UserModel.findOne(
+      { emp_id: new RegExp(`^EVS${departmentCode}`) },
+      { emp_id: 1 }
+    ).sort({ emp_id: -1 });
+
+    // Extract the employee count part and increment
+    let nextEmployeeCount = 1; // Default to 1 if no employees found
+    if (lastEmployee) {
+      const lastCount = parseInt(lastEmployee.emp_id.slice(6), 10); // Extract last count
+      nextEmployeeCount = lastCount + 1;
+    }
+
+    const emp_id = `EVS${departmentCode}${nextEmployeeCount.toString().padStart(3, "0")}`; // Format with leading zeros
+
+    return res.status(200).json({ status: true, emp_id });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ status: false, message: "Internal server error" });
+  }
 };

@@ -28,6 +28,6 @@ userRoute.post("/importXLSX", upload.single("file"), User.importXLSX);
 
 userRoute.post("/createTicket", User.authMiddleware, Ticket.createTicket);
 userRoute.post("/deleteTicket", Ticket.deleteTicket);
-userRoute.get("/getAllProjects",User.authMiddleware,Project.getAllProjects)
+userRoute.get("/getAllProjects",User.authMiddleware,Project.getAllProjectsPagination)
 
 export default userRoute;
