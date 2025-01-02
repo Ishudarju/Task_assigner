@@ -541,6 +541,7 @@ export const empid_generate = async (req, res) => {
       "IT-Support": "007",
       Others: "009",
     };
+    // dump
 
     // Validate department
     if (!department || !departmentCodes[department]) {
