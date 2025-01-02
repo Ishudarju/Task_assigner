@@ -11,7 +11,7 @@ export const admin_check = (req, res) => {
   // console.log(req.body);
   UserModel.findOne({ mail: mail?.toLowerCase() })
     // .select( -password )
-
+ 
     .then((users) => {
       // console.log(users);
       if (users.role == "admin" && users.password == password) {

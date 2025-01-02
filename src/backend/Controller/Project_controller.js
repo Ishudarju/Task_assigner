@@ -9,11 +9,11 @@ export const createProject = async (req, res) => {
     endDate,
     project_status,
     estimated_hours,
-    teamMembers, // New field for team members
+    // teamMembers, // New field for team members
   } = req.body;
 
   const { role } = req.user;
-
+const converthours = parseInt(estimated_hours); 
   // Authorization check
   if (role !== "admin" && role !== "manager") {
     return res
@@ -49,26 +49,26 @@ export const createProject = async (req, res) => {
     });
   }
 
-  if (!estimated_hours || typeof estimated_hours !== "number" || estimated_hours <= 0) {
+  if (!estimated_hours || typeof converthours !== "number" || estimated_hours <= 0) {
     return res.status(400).json({
       status: false,
       message: "Estimated hours are required and must be a positive number.",
     });
   }
 
-  if (teamMembers && !Array.isArray(teamMembers)) {
-    return res.status(400).json({
-      status: false,
-      message: "Team members must be an array.",
-    });
-  }
-  const uniqueTeamMembers = new Set(teamMembers);
-  if (uniqueTeamMembers.size !== teamMembers.length) {
-    return res.status(400).json({
-      status: false,
-      message: "Duplicate team members are not allowed.",
-    });
-  }
+  // if (teamMembers && !Array.isArray(teamMembers)) {
+  //   return res.status(400).json({
+  //     status: false,
+  //     message: "Team members must be an array.",
+  //   });
+  // }
+  // const uniqueTeamMembers = new Set(teamMembers);
+  // if (uniqueTeamMembers.size !== teamMembers.length) {
+  //   return res.status(400).json({
+  //     status: false,
+  //     message: "Duplicate team members are not allowed.",
+  //   });
+  // }
   try {
     // Create a new project
     const newProject = new ProjectModel({
@@ -79,7 +79,7 @@ export const createProject = async (req, res) => {
       endDate,
       project_status,
       estimated_hours,
-      teamMembers, // Include team members
+      // teamMembers, // Include team members
     });
 
     const project = await newProject.save();
@@ -123,6 +123,30 @@ export const createProject = async (req, res) => {
 //     });
 //   }
 // };
+// export const getAllProjects = async (req, res) => {
+//   try {
+//     // Fetching projects with active status and populating ownership details
+//     const projects = await ProjectModel.find({ is_deleted: false })
+//       .populate("project_ownership", "name mail");
+
+//     const totalProjects = await ProjectModel.countDocuments({
+//       is_deleted: false,
+//     });
+//     console.log(projects)
+//     return res.status(200).json({
+//       status: true,
+//       projects,
+//       total: totalProjects, // Corrected key
+//       message: "Projects fetched successfully",
+//     });
+//   } catch (error) {
+//     console.error("Error fetching projects:", error.message);
+//     return res.status(500).json({
+//       status: false,
+//       message: "An error occurred while fetching projects",
+//     });
+//   }
+// };
 export const getAllProjects = async (req, res) => {
   try {
     const { page = 1, limit = 10 } = req.query;
@@ -131,6 +155,7 @@ export const getAllProjects = async (req, res) => {
     const limitNumber = parseInt(limit, 10);
 
     const projects = await ProjectModel.find({ is_deleted: false })
+
       .populate("project_ownership", "name mail")
       .sort({ createdAt: -1 })
       .skip((pageNumber - 1) * limitNumber)
@@ -155,7 +180,7 @@ export const getAllProjects = async (req, res) => {
       message: "An error occurred while fetching projects",
     });
   }
-};
+}
 
 // Fetch a single project by ID
 export const getProjectById = async (req, res) => {
@@ -188,18 +213,18 @@ export const getProjectById = async (req, res) => {
 
 // Update a project
 export const updateProject = async (req, res) => {
-  const { id } = req.body;
-  console.log(req.query);
+  const { id:_id } = req.body;
+  console.log(req.body);
   const {
     project_name,
     startDate,
     endDate,
     estimated_hours,
-    teamMembers,
+    // teamMembers,
     ...otherFields
   } = req.body;
-
-  if (!id) {
+  const converthours = parseInt(estimated_hours); 
+  if (!_id) {
     return res.status(400).json({
       status: false,
       message: "Project ID is required.",
@@ -235,23 +260,23 @@ export const updateProject = async (req, res) => {
     });
   }
 
-  if (teamMembers) {
-    if (!Array.isArray(teamMembers)) {
-      return res.status(400).json({
-        status: false,
-        message: "Team members must be an array.",
-      });
-    }
+  // if (teamMembers) {
+  //   if (!Array.isArray(teamMembers)) {
+  //     return res.status(400).json({
+  //       status: false,
+  //       message: "Team members must be an array.",
+  //     });
+  //   }
 
-    // Check for duplicate team members in the input
-    const uniqueTeamMembers = new Set(teamMembers);
-    if (uniqueTeamMembers.size !== teamMembers.length) {
-      return res.status(400).json({
-        status: false,
-        message: "Duplicate team members are not allowed.",
-      });
-    }
-  }
+  //   // Check for duplicate team members in the input
+  //   const uniqueTeamMembers = new Set(teamMembers);
+  //   if (uniqueTeamMembers.size !== teamMembers.length) {
+  //     return res.status(400).json({
+  //       status: false,
+  //       message: "Duplicate team members are not allowed.",
+  //     });
+  //   }
+  // }
 
   try {
     // Retrieve the existing project
@@ -265,20 +290,20 @@ export const updateProject = async (req, res) => {
     }
 
     // Merge existing team members with new ones, avoiding duplicates
-    const updatedTeamMembers = teamMembers
-      ? [...new Set([...(existingProject.teamMembers || []), ...teamMembers])]
-      : existingProject.teamMembers;
+    // const updatedTeamMembers = teamMembers
+    //   ? [...new Set([...(existingProject.teamMembers || []), ...teamMembers])]
+    //   : existingProject.teamMembers;
 
     // Update the project with merged team members and other fields
     const updatedProject = await ProjectModel.findByIdAndUpdate(
-      id,
+      _id,
       {
         $set: {
           ...otherFields,
           project_name,
           startDate,
           endDate,
-          estimated_hours,
+          estimated_hours:converthours,
           teamMembers: updatedTeamMembers,
         },
       },
@@ -303,7 +328,7 @@ export const updateProject = async (req, res) => {
 
 // Soft delete a project
 export const deleteProject = async (req, res) => {
-  const { id } = req.params;
+  const { _id } = req.params;
 
   try {
     const project = await ProjectModel.findByIdAndUpdate(
