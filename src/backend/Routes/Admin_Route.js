@@ -43,6 +43,7 @@ adminRoute.post(
   Admin.authMiddleware,
   Project.getAllProjects
 );
+
 adminRoute.put("/updateProject", Admin.authMiddleware, Project.updateProject);
 
 export default adminRoute;

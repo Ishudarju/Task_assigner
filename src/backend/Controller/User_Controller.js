@@ -373,8 +373,10 @@ export const getAllUserEmpMailForProject = async (req, res) => {
     }
     // Fetch all user data with only required fields
 
-    const users = await UserModel.find({}, { mail: 1, name: 1, role: 1,admin_verify:1});
-
+    const users = await UserModel.find(
+      {},
+      { mail: 1, name: 1, role: 1, admin_verify: 1 }
+    );
 
     // Separate users into team leads, managers, and others
     const teamLeads = users.filter((user) => user.role === "team lead");
@@ -385,21 +387,20 @@ export const getAllUserEmpMailForProject = async (req, res) => {
       status: true,
       message: "Fetched all users, team leads, and managers",
 
-        teamLeads: teamLeads.map(({ _id, name, mail, admin_verify }) => ({
-          id: _id,
-          name,
-          mail,
-          admin_verify,
-        })),
-        managers: managers.map(({ _id, mail, name, admin_verify }) => ({
-          id: _id,
-          name,
-          mail,
-          admin_verify,
-        })),
+      teamLeads: teamLeads.map(({ _id, name, mail, admin_verify }) => ({
+        id: _id,
+        name,
+        mail,
+        admin_verify,
+      })),
+      managers: managers.map(({ _id, mail, name, admin_verify }) => ({
+        id: _id,
+        name,
+        mail,
+        admin_verify,
+      })),
 
-        // others: others.map(({ name, mail }) => ({ name, mail })),
-      },
+      // others: others.map(({ name, mail }) => ({ name, mail })),
     });
   } catch (error) {
     res.status(500).json({
@@ -409,7 +410,6 @@ export const getAllUserEmpMailForProject = async (req, res) => {
     });
   }
 };
-
 
 export const getAllEmployee = async (req, res) => {
   const { id, role } = req?.user;
@@ -455,7 +455,7 @@ export const getAllEmployee = async (req, res) => {
       currentPage: Number(page),
       totalEmployees,
       status: "success",
-      message:` ${role} authorized details`,
+      message: ` ${role} authorized details`,
     });
   } catch (error) {
     res.status(500).json({
