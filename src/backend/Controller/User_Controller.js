@@ -387,6 +387,7 @@ export const getAllUserEmpMailForProject = async (req, res) => {
       status: true,
       message: "Fetched all users, team leads, and managers",
 
+
       teamLeads: teamLeads.map(({ _id, name, mail, admin_verify }) => ({
         id: _id,
         name,
@@ -402,6 +403,7 @@ export const getAllUserEmpMailForProject = async (req, res) => {
 
       // others: others.map(({ name, mail }) => ({ name, mail })),
     });
+
   } catch (error) {
     res.status(500).json({
       status: false,
