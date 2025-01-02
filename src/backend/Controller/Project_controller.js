@@ -333,7 +333,7 @@ export const updateProject = async (req, res) => {
 
 // Soft delete a project
 export const deleteProject = async (req, res) => {
-  const { _id } = req.params;
+  const { id } = req.params;
 
   try {
     const project = await ProjectModel.findByIdAndUpdate(
