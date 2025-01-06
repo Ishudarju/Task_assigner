@@ -14,7 +14,7 @@ export const createProject = async (req, res) => {
   } = req.body;
 
   const { role } = req.user;
-const converthours = parseInt(estimated_hours); 
+  const converthours = parseInt(estimated_hours);
   // Authorization check
   if (role !== "admin" && role !== "manager") {
     return res
@@ -29,7 +29,11 @@ const converthours = parseInt(estimated_hours);
       message: "Project name is required",
     });
   }
-  if (!project_name || typeof project_name !== "string" || project_name.trim() === "") {
+  if (
+    !project_name ||
+    typeof project_name !== "string" ||
+    project_name.trim() === ""
+  ) {
     return res.status(400).json({
       status: false,
       message: "Project name is required and must be a valid string.",
@@ -50,7 +54,11 @@ const converthours = parseInt(estimated_hours);
     });
   }
 
-  if (!estimated_hours || typeof converthours !== "number" || estimated_hours <= 0) {
+  if (
+    !estimated_hours ||
+    typeof converthours !== "number" ||
+    estimated_hours <= 0
+  ) {
     return res.status(400).json({
       status: false,
       message: "Estimated hours are required and must be a positive number.",
@@ -164,7 +172,7 @@ export const getAllProjectsPagination = async (req, res) => {
 
     const totalProjects = await ProjectModel.countDocuments({
       is_deleted: false,
-    }); 
+    });
 
     return res.status(200).json({
       status: true,
@@ -175,13 +183,36 @@ export const getAllProjectsPagination = async (req, res) => {
       message: "Projects fetched successfully",
     });
   } catch (error) {
-    console.error("Error fetching projects:", error.message); // Improved logging
+    console.error("Error fetching projects:", error.message); 
     return res.status(500).json({
       status: false,
       message: "An error occurred while fetching projects",
     });
   }
-}
+};
+export const getAllProject = async (req, res) => {
+  try {
+    if (req.user.role == "admin" || req.user.role == "manager") {
+      const projects = await ProjectModel.find({ is_deleted: false })
+      .select("_id project_name project_ownership")  // Fetch only non-deleted projects
+        .populate("project_ownership", "name mail"); // Populate ownership details with specific fields
+
+      if (!projects.length) {
+        return res.status(404).json({ message: "No projects found" });
+      }
+      return res.status(200).json({ success: true, projects });
+    }
+  } catch (error) {
+    console.error("Error fetching projects:", error);
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "Internal server error",
+        error: error.message,
+      });
+  }
+};
 
 // Fetch a single project by ID
 export const getProjectById = async (req, res) => {
@@ -226,7 +257,7 @@ export const updateProject = async (req, res) => {
     // teamMembers,
     ...otherFields
   } = req.body;
-  const converthours = parseInt(estimated_hours); 
+  const converthours = parseInt(estimated_hours);
   if (!_id) {
     return res.status(400).json({
       status: false,
@@ -235,7 +266,10 @@ export const updateProject = async (req, res) => {
   }
 
   // Validation
-  if (project_name && (typeof project_name !== "string" || project_name.trim() === "")) {
+  if (
+    project_name &&
+    (typeof project_name !== "string" || project_name.trim() === "")
+  ) {
     return res.status(400).json({
       status: false,
       message: "Project name must be a valid string.",
@@ -256,7 +290,10 @@ export const updateProject = async (req, res) => {
     });
   }
 
-  if (estimated_hours && (typeof converthours !== "number" || estimated_hours <= 0)) {
+  if (
+    estimated_hours &&
+    (typeof converthours !== "number" || estimated_hours <= 0)
+  ) {
     return res.status(400).json({
       status: false,
       message: "Estimated hours must be a positive number.",
@@ -305,10 +342,10 @@ export const updateProject = async (req, res) => {
           ...otherFields,
           project_name,
           project_description,
-          project_ownership:project_ownership._id,
+          project_ownership: project_ownership._id,
           startDate,
           endDate,
-          estimated_hours:converthours,
+          estimated_hours: converthours,
           // teamMembers: updatedTeamMembers,
         },
       },
@@ -328,8 +365,6 @@ export const updateProject = async (req, res) => {
     });
   }
 };
-
-
 
 // Soft delete a project
 export const deleteProject = async (req, res) => {

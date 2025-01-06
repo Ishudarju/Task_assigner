@@ -53,5 +53,6 @@ adminRoute.delete(
 );
 adminRoute.post("/getProjectById", User.authMiddleware, Project.getProjectById);
 // adminRoute.post("/getProjectByStatus", Project.getProjectByStatus);
+adminRoute.get("/getAllProjectList", Admin.authMiddleware, Project.getAllProject);
 
 export default adminRoute;
