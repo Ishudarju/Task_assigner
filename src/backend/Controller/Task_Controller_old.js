@@ -1,14 +1,4 @@
-import React from 'react';
-  
-  const Task_Controller_old = () =>  {
-	return (
-	  <div>
-	  </div>
-	);
-  }
-  
-  export default Task_Controller_old;
-  import { TaskModel } from "../Model/Task_scheme.js";
+import { TaskModel } from "../Model/Task_scheme.js";
 
 export const createTask = async (req, res) => {
   console.log(req.body);
