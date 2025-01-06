@@ -89,7 +89,7 @@ export const updateTicket = async (req, res) => {
 export const deleteTicket = async (req, res) => {
   const { _id } = req?.body;
   try {
-    if (req.user?.role == "admin" || "employee") {
+    if (req.user?.role == "admin" || "member") {
       await TicketModel.deleteOne({ _id: _id });
       return res
         .status(200)

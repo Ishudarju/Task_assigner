@@ -12,11 +12,11 @@ export const createTask = async (req, res) => {
     start_date,
     end_date,
     task_description,
-    task_title
+    task_title,
   } = req.body;
 
   const { id, role } = req.user;
-console.log(req.body);
+  console.log(req.body);
   if (
     !project ||
     !assigned_to ||
@@ -46,7 +46,7 @@ console.log(req.body);
       start_date,
       end_date,
       task_description,
-      task_title
+      task_title,
     });
 
     const task = await newTask.save();
@@ -140,38 +140,38 @@ export const editTaskStatus = async (req, res) => {
 //   }
 // };
 
-export const getAllTask = async (req, res) => {
-    try {
-      const tasks = await TaskModel.find({ is_deleted: false })
-        .populate({
-          path: "assigned_to",
-          select: "name mail", // Populate with specific fields from User schema
-        })
-        .populate({
-          path: "assigned_by",
-          select: "name mail",
-        })
-        .populate({
-          path: "report_to",
-          select: "name mail",
-        })
-        .populate({
-          path: "project",
-          select: "project_name", // Assuming this points to a Project schema
-        });
-  
-      return res.status(200).json({
-        status: true,
-        message: "All tasks fetched successfully",
-        data: tasks,
-      });
-    } catch (error) {
-      console.error("Error fetching tasks:", error);
-      return res
-        .status(500)
-        .json({ status: false, message: "Error fetching tasks" });
-    }
-  };
+// export const getAllTask = async (req, res) => {
+//     try {
+//       const tasks = await TaskModel.find({ is_deleted: false })
+//         .populate({
+//           path: "assigned_to",
+//           select: "name mail", // Populate with specific fields from User schema
+//         })
+//         .populate({
+//           path: "assigned_by",
+//           select: "name mail",
+//         })
+//         .populate({
+//           path: "report_to",
+//           select: "name mail",
+//         })
+//         .populate({
+//           path: "project",
+//           select: "project_name", // Assuming this points to a Project schema
+//         });
+
+//       return res.status(200).json({
+//         status: true,
+//         message: "All tasks fetched successfully",
+//         data: tasks,
+//       });
+//     } catch (error) {
+//       console.error("Error fetching tasks:", error);
+//       return res
+//         .status(500)
+//         .json({ status: false, message: "Error fetching tasks" });
+//     }
+//   };
 // export const getAllTask = async (req, res) => {
 //   const { limit = 10, page } = req.params; // Default limit is 10 tasks per page
 
@@ -220,6 +220,55 @@ export const getAllTask = async (req, res) => {
 //       .json({ status: false, message: "Error fetching tasks" });
 //   }
 // };
+export const getAllTask = async (req, res) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+
+    const tasks = await TaskModel.find({ is_deleted: false })
+      .skip((pageNumber - 1) * limitNumber)
+      .limit(limitNumber)
+      .populate({
+        path: "assigned_to",
+        select: "name mail",
+      })
+      .populate({
+        path: "assigned_by",
+        select: "name mail",
+      })
+      .populate({
+        path: "report_to",
+        select: "name mail",
+      })
+      .populate({
+        path: "project",
+        select: "project_name",
+      });
+
+    const totalTasks = await TaskModel.countDocuments({ is_deleted: false });
+
+    return res.status(200).json({
+      status: true,
+      message: "Tasks fetched successfully",
+      data: {
+        tasks,
+        pagination: {
+          total: totalTasks,
+          currentPage: pageNumber,
+          totalPages: Math.ceil(totalTasks / limitNumber),
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching tasks:", error.message);
+    return res.status(500).json({
+      status: false,
+      message: "An error occurred while fetching tasks",
+    });
+  }
+};
 
 export const getTask = async (req, res) => {
   const { id } = req.body;
@@ -302,7 +351,7 @@ export const updateTask = async (req, res) => {
 export const create_skill_Improvement = async (req, res) => {
   const { id, message } = req.body;
 
-  if (req.user.role !== "employee") {
+  if (req.user.role !== "member") {
     return res.status(403).json({ status: false, message: "No Authorization" });
   }
 
@@ -379,7 +428,7 @@ export const update_skill_Improvement = async (req, res) => {
 export const create_growth_assessment = async (req, res) => {
   const { id, message } = req.body;
 
-  if (req.user.role !== "employee") {
+  if (req.user.role !== "member") {
     return res.status(403).json({ status: false, message: "No Authorization" });
   }
 

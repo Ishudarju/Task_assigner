@@ -531,14 +531,14 @@ export const empid_generate = async (req, res) => {
     const { department } = req.body; // Expect department name from frontend
 
     const departmentCodes = {
-      Management: "001",
-      HR: "002",
-      Development: "003",
-      Design: "004",
-      Marketing: "005",
-      Testing: "006",
+      management: "001",
+      "human-resource": "002",
+      development: "003",
+      design: "004",
+      marketing: "005",
+      testing: "006",
       "IT-Support": "007",
-      Others: "009",
+      others: "009",
     };
 
     // Validate department

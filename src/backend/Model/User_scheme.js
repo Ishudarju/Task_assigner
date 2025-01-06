@@ -19,7 +19,7 @@ const UserScheme = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ["employee","team lead","manager","hr","director","tester"],  
+    enum: ["member","team lead","manager","hr","director","tester"],  
     required: true,
   },
   admin_verify: {
