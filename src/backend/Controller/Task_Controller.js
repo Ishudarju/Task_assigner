@@ -12,10 +12,11 @@ export const createTask = async (req, res) => {
     start_date,
     end_date,
     task_description,
+    task_title
   } = req.body;
 
   const { id, role } = req.user;
-
+console.log(req.body);
   if (
     !project ||
     !assigned_to ||
@@ -45,6 +46,7 @@ export const createTask = async (req, res) => {
       start_date,
       end_date,
       task_description,
+      task_title
     });
 
     const task = await newTask.save();
@@ -143,15 +145,15 @@ export const getAllTask = async (req, res) => {
       const tasks = await TaskModel.find({ is_deleted: false })
         .populate({
           path: "assigned_to",
-          select: "name email", // Populate with specific fields from User schema
+          select: "name mail", // Populate with specific fields from User schema
         })
         .populate({
           path: "assigned_by",
-          select: "name email",
+          select: "name mail",
         })
         .populate({
           path: "report_to",
-          select: "name email",
+          select: "name mail",
         })
         .populate({
           path: "project",
@@ -254,6 +256,7 @@ export const updateTask = async (req, res) => {
     start_date,
     end_date,
     task_description,
+    task_title,
   } = req.body;
   const { role } = req.user;
 
@@ -271,6 +274,7 @@ export const updateTask = async (req, res) => {
     start_date,
     end_date,
     task_description,
+    task_title,
   };
 
   try {
