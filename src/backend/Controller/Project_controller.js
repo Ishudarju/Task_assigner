@@ -1,4 +1,5 @@
 import { ProjectModel } from "../Model/Project_schema.js";
+import { TaskModel } from "../Model/Task_scheme.js";
 
 // Create a new project
 export const createProject = async (req, res) => {
@@ -183,7 +184,7 @@ export const getAllProjectsPagination = async (req, res) => {
       message: "Projects fetched successfully",
     });
   } catch (error) {
-    console.error("Error fetching projects:", error.message); 
+    console.error("Error fetching projects:", error.message);
     return res.status(500).json({
       status: false,
       message: "An error occurred while fetching projects",
@@ -194,7 +195,7 @@ export const getAllProject = async (req, res) => {
   try {
     if (req.user.role == "admin" || req.user.role == "manager") {
       const projects = await ProjectModel.find({ is_deleted: false })
-      .select("_id project_name project_ownership")  // Fetch only non-deleted projects
+        .select("_id project_name project_ownership") // Fetch only non-deleted projects
         .populate("project_ownership", "name mail"); // Populate ownership details with specific fields
 
       if (!projects.length) {
@@ -204,13 +205,11 @@ export const getAllProject = async (req, res) => {
     }
   } catch (error) {
     console.error("Error fetching projects:", error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Internal server error",
-        error: error.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
   }
 };
 
@@ -254,6 +253,7 @@ export const updateProject = async (req, res) => {
     startDate,
     endDate,
     estimated_hours,
+    project_status,
     // teamMembers,
     ...otherFields
   } = req.body;
@@ -346,6 +346,7 @@ export const updateProject = async (req, res) => {
           startDate,
           endDate,
           estimated_hours: converthours,
+          project_status,
           // teamMembers: updatedTeamMembers,
         },
       },
@@ -393,6 +394,36 @@ export const deleteProject = async (req, res) => {
     return res.status(500).json({
       status: false,
       message: "An error occurred while deleting the project",
+    });
+  }
+};
+
+export const getTaskRelatedToProject = async (req, res) => {
+  const { projectId } = req.body;
+
+  try {
+    const tasks = await TaskModel.find({
+      project: projectId,
+      is_deleted: false,
+    });
+
+    if (!tasks.length) {
+      return res.status(404).json({
+        status: false,
+        message: "No tasks found for this project",
+      });
+    }
+
+    return res.status(200).json({
+      status: true,
+      tasks,
+      message: "Tasks fetched successfully",
+    });
+  } catch (error) {
+    console.error("Error fetching tasks:", error);
+    return res.status(500).json({
+      status: false,
+      message: "An error occurred while fetching tasks",
     });
   }
 };

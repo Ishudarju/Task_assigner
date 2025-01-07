@@ -16,7 +16,7 @@ adminRoute.put("/editStatus", Admin.authMiddleware, Task.editTaskStatus);
 adminRoute.post("/getAllTask", Admin.authMiddleware, Task.getAllTask);
 adminRoute.post("/getTask", Admin.authMiddleware, Task.getTask);
 adminRoute.delete("/deleteTask/:id", Task.deleteTask);
-adminRoute.post("/getEmpMails", User.getAllUserEmpMail);
+adminRoute.get("/getEmpMails", User.getAllUserEmpMail);
 adminRoute.get(
   "/getAllUserEmpMailForProject",
   Admin.authMiddleware,
@@ -54,5 +54,10 @@ adminRoute.delete(
 adminRoute.post("/getProjectById", User.authMiddleware, Project.getProjectById);
 // adminRoute.post("/getProjectByStatus", Project.getProjectByStatus);
 adminRoute.get("/getAllProjectList", Admin.authMiddleware, Project.getAllProject);
+adminRoute.post(
+  "/getTaskRelatedToProject",
+  Admin.authMiddleware,
+  Project.getTaskRelatedToProject
+);
 
 export default adminRoute;

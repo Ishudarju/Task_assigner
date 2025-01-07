@@ -16,12 +16,12 @@ const projectSchema = new mongoose.Schema(
       ref: "user", // Assuming the ownership refers to a user
       required: true,
     },
-    teamMembers: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "user", // Reference to users who are team members
-      },
-    ],
+    // teamMembers: [
+    //   {
+    //     type: mongoose.Schema.Types.ObjectId,
+    //     ref: "user", // Reference to users who are team members
+    //   },
+    // ],
     startDate: {
       type: Date,
       default: Date.now,
@@ -41,6 +41,12 @@ const projectSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    milestones: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Milestone", // Reference to the Milestone schema
+      },
+    ],
     is_deleted: {
       type: Boolean,
       default: false,

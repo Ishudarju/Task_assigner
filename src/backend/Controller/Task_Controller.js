@@ -51,7 +51,7 @@ export const createTask = async (req, res) => {
 
     const task = await newTask.save();
     return res.status(201).json({
-      status: "Success",
+      status: true,
       message: "Task created successfully",
       data: task,
     });
@@ -222,7 +222,7 @@ export const editTaskStatus = async (req, res) => {
 // };
 export const getAllTask = async (req, res) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
+    const { page , limit  } = req.query;
 
     const pageNumber = parseInt(page, 10);
     const limitNumber = parseInt(limit, 10);
@@ -253,9 +253,9 @@ export const getAllTask = async (req, res) => {
       status: true,
       message: "Tasks fetched successfully",
       data: {
+        total: totalTasks,
         tasks,
         pagination: {
-          total: totalTasks,
           currentPage: pageNumber,
           totalPages: Math.ceil(totalTasks / limitNumber),
         },
@@ -295,7 +295,7 @@ export const getTask = async (req, res) => {
 
 export const updateTask = async (req, res) => {
   const {
-    id,
+    _id,
     project,
     assigned_to,
     assigned_by,
@@ -308,16 +308,16 @@ export const updateTask = async (req, res) => {
     task_title,
   } = req.body;
   const { role } = req.user;
-
+  console.log(req.body)
   if (role !== "admin") {
     return res.status(403).json({ status: false, message: "No Authorization" });
   }
 
   const updatedTask = {
-    project,
-    assigned_to,
-    assigned_by,
-    report_to,
+    project: project._id,
+    assigned_to: assigned_to._id,
+    assigned_by: assigned_by._id,
+    report_to:  report_to._id,
     status,
     priority,
     start_date,
@@ -327,7 +327,7 @@ export const updateTask = async (req, res) => {
   };
 
   try {
-    const task = await TaskModel.findByIdAndUpdate(id, updatedTask, {
+    const task = await TaskModel.findByIdAndUpdate(_id, updatedTask, {
       new: true,
     });
 
@@ -498,3 +498,5 @@ export const update_growth_assessment = async (req, res) => {
       .json({ status: false, message: "Error updating growth assessment" });
   }
 };
+
+

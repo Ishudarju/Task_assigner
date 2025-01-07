@@ -347,20 +347,47 @@ export const findById = async (req, res) => {
     });
 };
 
+// export const getAllUserEmpMail = async (req, res) => {
+//   await UserModel.find({}, { mail: 1, name: 1, _id: 1 })
+//     .then((emails) => {
+//       if (emails) {
+//         res
+//           .status(200)
+//           .json({ status: true, message: "get all user mail", data: emails });
+//       }
+//     })
+//     .catch((error) => {
+//       res
+//         .status(200)
+//         .json({ status: false, message: "Error in Fetching Users Email" });
+//     });
+// };
 export const getAllUserEmpMail = async (req, res) => {
-  await UserModel.find({}, { mail: 1, name: 1, _id: 0 })
-    .then((emails) => {
-      if (emails) {
-        res
-          .status(200)
-          .json({ status: true, message: "get all user mail", data: emails });
-      }
-    })
-    .catch((error) => {
-      res
-        .status(200)
-        .json({ status: false, message: "Error in Fetching Users Email" });
+  try {
+    const emails = await UserModel.find(
+      { role: { $nin: ["admin", "manager", "team lead"] } }, // Filter condition
+      { mail: 1, name: 1 } // Projection to select specific fields
+    );
+
+    if (emails) {
+      return res.status(200).json({
+        status: true,
+        message: "Fetched all user emails successfully",
+        data: emails,
+      });
+    } else {
+      return res.status(404).json({
+        status: false,
+        message: "No users found",
+      });
+    }
+  } catch (error) {
+    return res.status(500).json({
+      status: false,
+      message: "Error in fetching users' emails",
+      error: error.message,
     });
+  }
 };
 
 export const getAllUserEmpMailForProject = async (req, res) => {
