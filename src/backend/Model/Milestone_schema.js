@@ -25,7 +25,7 @@ const milestoneSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-  },
+  }, 
   {
     timestamps: true, // Automatically adds createdAt and updatedAt fields
   }

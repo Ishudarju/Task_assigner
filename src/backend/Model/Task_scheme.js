@@ -12,7 +12,7 @@ const taskSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    task_title:{
+    task_title: {
       type: String,
       required: true,
     },
@@ -22,7 +22,7 @@ const taskSchema = new mongoose.Schema(
     },
     assigned_by: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "user", 
+      ref: "user",
     },
     report_to: {
       type: mongoose.Schema.Types.ObjectId,
@@ -44,7 +44,12 @@ const taskSchema = new mongoose.Schema(
     end_date: {
       type: Date,
     },
-    
+    milestone: {
+      // Add this reference
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Milestone", // Reference to the Milestone model
+    },
+
     skill_improvement: [
       {
         sentFromId: {

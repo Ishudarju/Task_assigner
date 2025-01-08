@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-
 const ticketScheme = new mongoose.Schema({
   ticket_title: {
     type: String,

@@ -2,7 +2,7 @@ import express from "express";
 import * as Admin from "../Controller/Admin_controller.js";
 import * as Task from "../Controller/Task_controller.js";
 import * as User from "../Controller/User_Controller.js";
-import * as Ticket from "../Controller/Ticket_controller.js";
+import * as Ticket from "../Controller/Ticket_controller_old.js";
 import * as Project from "../Controller/Project_controller.js";
 
 const adminRoute = express.Router();
@@ -51,7 +51,7 @@ adminRoute.delete(
   Admin.authMiddleware,
   Project.deleteProject
 );
-adminRoute.post("/getProjectById", User.authMiddleware, Project.getProjectById);
+adminRoute.post("/getProjectById", Admin.authMiddleware, Project.getProjectById);
 // adminRoute.post("/getProjectByStatus", Project.getProjectByStatus);
 adminRoute.get("/getAllProjectList", Admin.authMiddleware, Project.getAllProject);
 adminRoute.post(
