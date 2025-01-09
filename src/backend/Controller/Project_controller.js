@@ -13,11 +13,11 @@ export const createProject = async (req, res) => {
     endDate,
     project_status,
     estimated_hours,
-    milestones, // Milestones added
+    milestones,
   } = req.body;
-  console.log(req.body);
+
   const { role } = req.user;
-  const converthours = parseInt(estimated_hours);
+  const estimatedHours = parseInt(estimated_hours, 10);
 
   // Authorization check
   if (role !== "admin" && role !== "manager") {
@@ -28,13 +28,6 @@ export const createProject = async (req, res) => {
   }
 
   // Validation
-  if (!project_name) {
-    return res.status(400).json({
-      status: false,
-      message: "Project name is required",
-    });
-  }
-
   if (
     !project_name ||
     typeof project_name !== "string" ||
@@ -60,11 +53,7 @@ export const createProject = async (req, res) => {
     });
   }
 
-  if (
-    !estimated_hours ||
-    typeof converthours !== "number" ||
-    estimated_hours <= 0
-  ) {
+  if (!estimated_hours || isNaN(estimatedHours) || estimatedHours <= 0) {
     return res.status(400).json({
       status: false,
       message: "Estimated hours are required and must be a positive number.",
@@ -79,7 +68,7 @@ export const createProject = async (req, res) => {
   }
 
   try {
-    // Step 1: Create the project first (without milestones)
+    // Step 1: Create the project
     const newProject = new ProjectModel({
       project_name,
       project_description,
@@ -87,29 +76,26 @@ export const createProject = async (req, res) => {
       startDate,
       endDate,
       project_status,
-      estimated_hours,
+      estimated_hours: estimatedHours,
     });
 
     const project = await newProject.save();
 
     // Step 2: Create milestones and associate them with the project
-    const milestoneIdsArray = [];
-
-    for (const milestoneName of milestones) {
-      // Insert new milestone and associate it with the project
-      const milestone = new MilestoneModel({
+    if (milestones && milestones.length > 0) {
+      const milestoneDocuments = milestones.map((milestoneName) => ({
         name: milestoneName,
-        project: project._id, // Associate milestone with the new project
-      });
-      await milestone.save();
+        project: project._id,
+      }));
 
-      // Store the milestone ObjectId
-      milestoneIdsArray.push(milestone._id);
+      const createdMilestones = await MilestoneModel.insertMany(
+        milestoneDocuments
+      );
+
+      // Update project with milestone references
+      project.milestones = createdMilestones.map((milestone) => milestone._id);
+      await project.save();
     }
-
-    // Step 3: Update the project with the milestone references
-    project.milestones = milestoneIdsArray;
-    await project.save();
 
     return res.status(201).json({
       status: true,
@@ -278,45 +264,44 @@ export const createProject = async (req, res) => {
 //   }
 // };
 
+// export const getAllProjectsPagination = async (req, res) => {
+//   try {
+//     const { page = 1, limit = 10 } = req.query;
 
-export const getAllProjectsPagination = async (req, res) => {
-  try {
-    const { page = 1, limit = 10 } = req.query;
+//     const pageNumber = parseInt(page, 10);
+//     const limitNumber = parseInt(limit, 10);
 
-    const pageNumber = parseInt(page, 10);
-    const limitNumber = parseInt(limit, 10);
+//     const projects = await ProjectModel.find({ is_deleted: false })
 
-    const projects = await ProjectModel.find({ is_deleted: false })
+//       .populate("project_ownership", "name mail")
+//       .populate("milestones", "name status") // Populate milestones details
+//       .sort({ createdAt: -1 })
+//       .skip((pageNumber - 1) * limitNumber)
+//       .limit(limitNumber);
 
-      .populate("project_ownership", "name mail")
-      .populate("milestones", "name status") // Populate milestones details
-      .sort({ createdAt: -1 })
-      .skip((pageNumber - 1) * limitNumber)
-      .limit(limitNumber);
+//     const totalProjects = await ProjectModel.countDocuments({
+//       is_deleted: false,
+//     });
 
-    const totalProjects = await ProjectModel.countDocuments({
-      is_deleted: false,
-    });
-
-    return res.status(200).json({
-      status: true,
-      data: {
-        total: totalProjects,
-        projects,
-      },
-      message: "Projects fetched successfully",
-    });
-  } catch (error) {
-    console.error("Error fetching projects:", error.message);
-    return res.status(500).json({
-      status: false,
-      message: "An error occurred while fetching projects",
-    });
-  }
-};
+//     return res.status(200).json({
+//       status: true,
+//       data: {
+//         total: totalProjects,
+//         projects,
+//       },
+//       message: "Projects fetched successfully",
+//     });
+//   } catch (error) {
+//     console.error("Error fetching projects:", error.message);
+//     return res.status(500).json({
+//       status: false,
+//       message: "An error occurred while fetching projects",
+//     });
+//   }
+// };
 export const getAllProject = async (req, res) => {
   try {
-    if (req.user.role == "admin" || req.user.role == "manager") {
+    if (req.user.role == "admin") {
       const projects = await ProjectModel.find({ is_deleted: false })
         .select("_id project_name project_ownership") // Fetch only non-deleted projects
         .populate("project_ownership", "name mail")
@@ -326,8 +311,13 @@ export const getAllProject = async (req, res) => {
         return res.status(404).json({ message: "No projects found" });
       }
       return res.status(200).json({ success: true, projects });
-    }
-  } catch (error) {
+    }else{
+      if(req.user.role == "manager"){
+        const projects = await ProjectModel.find({ is_deleted: false, project_ownership: req.user._id })
+        .select("_id project_name project_ownership") // Fetch only non-deleted projects
+        .populate("project_ownership", "name mail")
+        .populate("milestones", "name status"); // Populate ownership details with specific fields  
+    }}} catch (error) {
     console.error("Error fetching projects:", error);
     res.status(500).json({
       success: false,
@@ -366,6 +356,50 @@ export const getAllProject = async (req, res) => {
 //     });
 //   }
 // };
+export const getAllProjectsPagination = async (req, res) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+
+    // Extract user information (role and ID) from the request object
+    const { role, id: userId } = req.user;
+
+    // Base filter for projects
+    const filter = { is_deleted: false };
+
+    // If the user is a manager or team lead, filter projects based on their ownership
+    if (role === "manager" || role === "team_lead") {
+      filter.project_ownership = userId;
+    }
+
+    const projects = await ProjectModel.find(filter)
+      .populate("project_ownership", "name mail")
+      .populate("milestones", "name status") // Populate milestones details
+      .sort({ createdAt: -1 })
+      .skip((pageNumber - 1) * limitNumber)
+      .limit(limitNumber);
+
+    const totalProjects = await ProjectModel.countDocuments(filter);
+
+    return res.status(200).json({
+      status: true,
+      data: {
+        total: totalProjects,
+        projects,
+      },
+      message: "Projects fetched successfully",
+    });
+  } catch (error) {
+    console.error("Error fetching projects:", error.message);
+    return res.status(500).json({
+      status: false,
+      message: "An error occurred while fetching projects",
+    });
+  }
+};
+
 export const getProjectById = async (req, res) => {
   const { id } = req.body;
   console.log(req.params);
@@ -410,249 +444,54 @@ export const getProjectById = async (req, res) => {
 
 // Update a project
 export const updateProject = async (req, res) => {
-  console.log(req.body);
-  const {
-    _id,
-    project_name,
-    project_description,
-    project_ownership,
-    startDate,
-    endDate,
-    estimated_hours,
-    project_status,
-    // teamMembers,
-    ...otherFields
-  } = req.body;
-  console.log(req.body);
-  const converthours = parseInt(estimated_hours);
-  if (!_id) {
-    return res.status(400).json({
-      status: false,
-      message: "Project ID is required.",
-    });
-  }
-
-  // Validation
-  if (
-    project_name &&
-    (typeof project_name !== "string" || project_name.trim() === "")
-  ) {
-    return res.status(400).json({
-      status: false,
-      message: "Project name must be a valid string.",
-    });
-  }
-
-  if (startDate && isNaN(Date.parse(startDate))) {
-    return res.status(400).json({
-      status: false,
-      message: "Invalid start date format.",
-    });
-  }
-
-  if (endDate && isNaN(Date.parse(endDate))) {
-    return res.status(400).json({
-      status: false,
-      message: "Invalid end date format.",
-    });
-  }
-
-  if (
-    estimated_hours &&
-    (typeof converthours !== "number" || estimated_hours <= 0)
-  ) {
-    return res.status(400).json({
-      status: false,
-      message: "Estimated hours must be a positive number.",
-    });
-  }
-
-  // if (teamMembers) {
-  //   if (!Array.isArray(teamMembers)) {
-  //     return res.status(400).json({
-  //       status: false,
-  //       message: "Team members must be an array.",
-  //     });
-  //   }
-
-  //   // Check for duplicate team members in the input
-  //   const uniqueTeamMembers = new Set(teamMembers);
-  //   if (uniqueTeamMembers.size !== teamMembers.length) {
-  //     return res.status(400).json({
-  //       status: false,
-  //       message: "Duplicate team members are not allowed.",
-  //     });
-  //   }
-  // }
+  const { _id, milestones, ...updateData } = req.body;
 
   try {
-    // Retrieve the existing project
-    const existingProject = await ProjectModel.findById(_id);
+    // Update project fields (excluding milestones)
+    const updatedProject = await ProjectModel.findByIdAndUpdate(_id, updateData, {
+      new: true,
+    });
 
-    if (!existingProject || existingProject.is_deleted) {
-      return res.status(404).json({
-        status: false,
-        message: "Project not found or already deleted.",
-      });
+    if (!updatedProject) {
+      return res.status(404).json({ error: "Project not found" });
     }
 
-    // Merge existing team members with new ones, avoiding duplicates
-    // const updatedTeamMembers = teamMembers
-    //   ? [...new Set([...(existingProject.teamMembers || []), ...teamMembers])]
-    //   : existingProject.teamMembers;
-
-    // Update the project with merged team members and other fields
-    const updatedProject = await ProjectModel.findByIdAndUpdate(
-      _id,
-      {
-        $set: {
-          ...otherFields,
-          project_name,
-          project_description,
-          project_ownership: project_ownership.id,
-          startDate,
-          endDate,
-          estimated_hours: converthours,
-          project_status,
-          // teamMembers: updatedTeamMembers,
-        },
-      },
-      { new: true }
-    );
-
-    return res.status(200).json({
-      status: true,
-      message: "Project updated successfully",
-      data: updatedProject,
-    });
-  } catch (error) {
-    console.error("Error updating project:", error);
-    return res.status(500).json({
-      status: false,
-      message: "An error occurred while updating the project.",
-    });
-  }
-};
-
-export const updateProjectnew = async (req, res) => {
-  const {
-    _id,
-    project_name,
-    project_description,
-    project_ownership,
-    startDate,
-    endDate,
-    estimated_hours,
-    project_status,
-    milestones, // Adding milestones to the request body
-    ...otherFields
-  } = req.body;
-
-  const converthours = parseInt(estimated_hours);
-
-  if (!_id) {
-    return res.status(400).json({
-      status: false,
-      message: "Project ID is required.",
-    });
-  }
-
-  // Validation
-  if (
-    project_name &&
-    (typeof project_name !== "string" || project_name.trim() === "")
-  ) {
-    return res.status(400).json({
-      status: false,
-      message: "Project name must be a valid string.",
-    });
-  }
-
-  if (startDate && isNaN(Date.parse(startDate))) {
-    return res.status(400).json({
-      status: false,
-      message: "Invalid start date format.",
-    });
-  }
-
-  if (endDate && isNaN(Date.parse(endDate))) {
-    return res.status(400).json({
-      status: false,
-      message: "Invalid end date format.",
-    });
-  }
-
-  if (
-    estimated_hours &&
-    (typeof converthours !== "number" || estimated_hours <= 0)
-  ) {
-    return res.status(400).json({
-      status: false,
-      message: "Estimated hours must be a positive number.",
-    });
-  }
-
-  // Handle milestones if provided
-  if (milestones && !Array.isArray(milestones)) {
-    return res.status(400).json({
-      status: false,
-      message: "Milestones must be an array.",
-    });
-  }
-
-  try {
-    // Retrieve the existing project
-    const existingProject = await ProjectModel.findById(_id);
-
-    if (!existingProject || existingProject.is_deleted) {
-      return res.status(404).json({
-        status: false,
-        message: "Project not found or already deleted.",
-      });
-    }
-
-    // Update milestones if provided (this can be a separate operation)
-    let updatedMilestones = existingProject.milestones;
+    // Handle milestones if they are provided
     if (milestones) {
-      // If new milestones are provided, update or add them
-      updatedMilestones = await MilestoneModel.updateMany(
-        { _id: { $in: milestones.map((id) => mongoose.Types.ObjectId(id)) } },
-        { $set: { project: _id } }
-      );
+      for (let milestone of milestones) {
+        if (milestone._id) {
+          // Update existing milestone
+          await MilestoneModel.findByIdAndUpdate(milestone._id, {
+            $set: { status: milestone.status, name: milestone.name },
+          });
+        } else {
+          // Create new milestone
+          const newMilestone = new MilestoneModel({
+            name: milestone.name,
+            status: milestone.status || "Not Started",
+            project: _id,
+          });
+          const savedMilestone = await newMilestone.save();
+
+          // Add new milestone to the project's milestones array
+          updatedProject.milestones.push(savedMilestone._id);
+        }
+      }
+
+      // Save the project with updated milestones array
+      await updatedProject.save();
     }
 
-    // Update the project with new fields
-    const updatedProject = await ProjectModel.findByIdAndUpdate(
-      _id,
-      {
-        $set: {
-          ...otherFields,
-          project_name,
-          project_description,
-          project_ownership: project_ownership.id,
-          startDate,
-          endDate,
-          estimated_hours: converthours,
-          project_status,
-          milestones: updatedMilestones, // Updated milestones
-        },
-      },
-      { new: true }
-    );
+    // Populate milestones for the response
+    const populatedProject = await ProjectModel.findById(_id).populate("milestones");
 
-    return res.status(200).json({
-      status: true,
-      message: "Project updated successfully",
-      data: updatedProject,
-    });
+    res.status(200).json(populatedProject);
   } catch (error) {
-    console.error("Error updating project:", error);
-    return res.status(500).json({
-      status: false,
-      message: "An error occurred while updating the project.",
-    });
+    console.error(error);
+    res.status(500).json({ error: "Error updating project and milestones" });
   }
 };
+
 
 // Soft delete a project
 export const deleteProject = async (req, res) => {

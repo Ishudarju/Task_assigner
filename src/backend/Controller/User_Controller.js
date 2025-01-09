@@ -119,10 +119,10 @@ export const user_login = async (req, res) => {
 
 export const user_dashboard = async (req, res) => {
   // console.log(req.user);
-
+  console.log("user_dashboard");
   const { id, role, mail } = req.user;
   let result = "";
-  if (role === "hr") {
+  if (role === "hr" || role === "manager" || role === "team lead") {
     // For HR, get overall tasks with specific statuses
     result = await TaskModel.find({
       status: { $in: ["Pending", "Completed", "Not started", "In progress"] },
