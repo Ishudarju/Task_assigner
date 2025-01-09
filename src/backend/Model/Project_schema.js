@@ -42,7 +42,7 @@ const projectSchema = new mongoose.Schema(
       required: true,
     },
     milestones: [
-      {
+      { 
         type: mongoose.Schema.Types.ObjectId,
         ref: "Milestone", // Reference to the Milestone schema
       },
