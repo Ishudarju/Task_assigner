@@ -1,47 +1,89 @@
 import { UserModel } from "../Model/User_scheme.js";
 import jwt from "jsonwebtoken";
-
+import bcrypt from "bcrypt";
 import dotenv from "dotenv";
 
 dotenv.config();
 const JWT_SECRET = process.env.JWT_SECRET || "Evvi_solutions_private_limited";
 
-export const admin_check = (req, res) => {
-  const { mail, password } = req.body;
-  // console.log(req.body);
-  UserModel.findOne({ mail: mail?.toLowerCase() })
-    // .select( -password )
+// export const admin_check = (req, res) => {
+//   const { mail, password } = req.body;
+//   // console.log(req.body);
+//   UserModel.findOne({ mail: mail?.toLowerCase() })
+//     // .select( -password )
  
-    .then((users) => {
-      // console.log(users);
-      if (users.role == "admin" && users.password == password) {
-        const token = jwt.sign(
-          { id: users._id, role: users.role, mail: users.mail },
-          JWT_SECRET,
-          { expiresIn: "5h" }
-        );
-        return res.status(200).json({
-          status: true,
-          message: "Success",
-          token,
-          users,
-        });
-      } else {
-        return res.status(401).json({
-          status: false,
-          message: "pss err",
-          // data: users,
-        });
-      }
-    })
-    .catch((error) => {
-      console.log(error);
-      return res
-        .status(400)
-        .json({ status: false, role: "", message: "failure" });
-    });
-};
+//     .then((users) => {
+//       // console.log(users);
+//       if (users.role == "admin" && users.password == password) {
+//         const token = jwt.sign(
+//           { id: users._id, role: users.role, mail: users.mail },
+//           JWT_SECRET,
+//           { expiresIn: "5h" }
+//         );
+//         return res.status(200).json({
+//           status: true,
+//           message: "Success",
+//           token,
+//           users,
+//         });
+//       } else {
+//         return res.status(401).json({
+//           status: false,
+//           message: "pss err",
+//           // data: users,
+//         });
+//       }
+//     })
+//     .catch((error) => {
+//       console.log(error);
+//       return res
+//         .status(400)
+//         .json({ status: false, role: "", message: "failure" });
+//     });
+// };
+export const admin_check = async (req, res) => {
+  const { mail, password } = req.body;
 
+  try {
+    const user = await UserModel.findOne({ mail: mail?.toLowerCase() });
+
+    if (!user) {
+      return res.status(404).json({
+        status: false,
+        message: "User not found",
+      });
+    }
+    console.log(user);
+    // Compare hashed password with the one stored in the database
+    const isMatch = await bcrypt.compare(password, user.password);
+    console.log(isMatch);
+
+    if (user.role === "admin" && isMatch) {
+      const token = jwt.sign(
+        { id: user._id, role: user.role, mail: user.mail },
+        JWT_SECRET,
+        { expiresIn: "5h" }
+      );
+      return res.status(200).json({
+        status: true,
+        message: "Success",
+        token,
+        user,
+      });
+    } else {
+      return res.status(401).json({
+        status: false,
+        message: "Invalid credentials",
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      status: false,
+      message: "An error occurred",
+    });
+  }
+};
 export const authMiddleware = (req, res, next) => {
   const token = req.headers["authorization"];
   // const token = authHeader?.split(" ")[1] || "";

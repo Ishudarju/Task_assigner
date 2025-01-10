@@ -1,6 +1,7 @@
-import { ProjectModel } from "../Model/Project_schema.js";
+import  ProjectModel  from "../Model/Project_schema.js";
 import { TaskModel } from "../Model/Task_scheme.js";
-import { MilestoneModel } from "../Model/Milestone_schema.js"; // Ensure you import the Milestone model
+import MilestoneModel from "../Model/Milestone_schema.js";
+ // Ensure you import the Milestone model
 import { Mongoose } from "mongoose";
 // Create a new project
 
@@ -311,13 +312,18 @@ export const getAllProject = async (req, res) => {
         return res.status(404).json({ message: "No projects found" });
       }
       return res.status(200).json({ success: true, projects });
-    }else{
-      if(req.user.role == "manager"){
-        const projects = await ProjectModel.find({ is_deleted: false, project_ownership: req.user._id })
-        .select("_id project_name project_ownership") // Fetch only non-deleted projects
-        .populate("project_ownership", "name mail")
-        .populate("milestones", "name status"); // Populate ownership details with specific fields  
-    }}} catch (error) {
+    } else {
+      if (req.user.role == "manager") {
+        const projects = await ProjectModel.find({
+          is_deleted: false,
+          project_ownership: req.user._id,
+        })
+          .select("_id project_name project_ownership") // Fetch only non-deleted projects
+          .populate("project_ownership", "name mail")
+          .populate("milestones", "name status"); // Populate ownership details with specific fields
+      }
+    }
+  } catch (error) {
     console.error("Error fetching projects:", error);
     res.status(500).json({
       success: false,
@@ -356,32 +362,185 @@ export const getAllProject = async (req, res) => {
 //     });
 //   }
 // };
+// export const getAllProjectsPagination = async (req, res) => {
+//   try {
+//     const { page = 1, limit = 10, status } = req.query;
+//     console.log(req.query);
+//     console.log(req.body);
+//     console.log(req.params);
+//     const pageNumber = parseInt(page, 10);
+//     const limitNumber = parseInt(limit, 10);
+
+//     // Extract user information (role and ID) from the request object
+//     const { role, id: userId } = req.user;
+
+//     // Base filter for projects
+//     const filter = { is_deleted: false };
+
+//     // If the user is a manager or team lead, filter projects based on their ownership
+//     if (role === "manager" || role === "team_lead") {
+//       filter.project_ownership = userId;
+//     }
+//     if (status) {
+//       const validStatuses = ["Completed", "In Progress", "Not Started","Pending"];
+//       if (validStatuses.includes(status)) {
+//         filter.status = status;
+//       } else {
+//         return res.status(400).json({
+//           status: false,
+//           message: `Invalid status provided. Valid statuses are: ${validStatuses.join(
+//             ", "
+//           )}`,
+//         });
+//       }
+//     }
+//     const projects = await ProjectModel.find(filter)
+//       .populate("project_ownership", "name mail")
+//       .populate("milestones", "name status") // Populate milestones details
+//       .sort({ createdAt: -1 })
+//       .skip((pageNumber - 1) * limitNumber)
+//       .limit(limitNumber);
+//     console.log(projects);
+//     const totalProjects = await ProjectModel.countDocuments(filter);
+
+//     return res.status(200).json({
+//       status: true,
+//       data: {
+//         total: totalProjects,
+//         projects,
+//       },
+//       message: "Projects fetched successfully",
+//     });
+//   } catch (error) {
+//     console.error("Error fetching projects:", error.message);
+//     return res.status(500).json({
+//       status: false,
+//       message: "An error occurred while fetching projects",
+//     });
+//   }
+// };
+// export const getAllProjectsPagination = async (req, res) => {
+//   try {
+//     const { page = 1, limit = 10, status,search="" } = req.query;
+//     console.log(req.query);
+//     const pageNumber = Math.max(1, parseInt(page, 10));
+//     const limitNumber = Math.min(100, Math.max(1, parseInt(limit, 10))); // Limit results to max 100 per page
+
+//     const { role, id: userId } = req.user;
+//     const filter = { is_deleted: false };
+
+//     if (role === "manager" || role === "team_lead") {
+//       filter.project_ownership = userId;
+//     }
+
+//     if (status) {
+//       const validStatuses = ["Completed", "In Progress", "Not Started", "Pending"];
+//       if (!validStatuses.includes(status)) {
+//         return res.status(400).json({
+//           status: false,
+//           message: `Invalid status provided. Valid statuses are: ${validStatuses.join(", ")}`,
+//         });
+//       }
+//       filter.project_status = status;
+//     }
+//     if (search.trim()) {
+//       const searchRegex = new RegExp(search.trim(), "i"); // Case-insensitive search
+//       filter.$or = [
+//         { name: searchRegex }, // Search by project name
+//         { description: searchRegex }, // Search by project description
+//       ];
+//     }
+//     const projects = await ProjectModel.find(filter)
+//       .populate("project_ownership", "name mail")
+//       .populate("milestones", "name status")
+//       .sort({ createdAt: -1 })
+//       .skip((pageNumber - 1) * limitNumber)
+//       .limit(limitNumber)
+//       .lean(); // Optimize query
+//     console.log(projects);
+//     const totalProjects = await ProjectModel.countDocuments(filter);
+
+//     return res.status(200).json({
+//       status: true,
+//       data: {
+//         total: totalProjects,
+//         projects,
+//       },
+//       message: "Projects fetched successfully",
+//     });
+//   } catch (error) {
+//     console.error("Error fetching projects:", error);
+//     return res.status(500).json({
+//       status: false,
+//       message: "An error occurred while fetching projects",
+//     });
+//   }
+// };
 export const getAllProjectsPagination = async (req, res) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
+    const { page, limit, status, search = "" } = req.query;
 
-    const pageNumber = parseInt(page, 10);
-    const limitNumber = parseInt(limit, 10);
-
-    // Extract user information (role and ID) from the request object
     const { role, id: userId } = req.user;
 
-    // Base filter for projects
     const filter = { is_deleted: false };
 
-    // If the user is a manager or team lead, filter projects based on their ownership
+    // Role-based filtering
     if (role === "manager" || role === "team_lead") {
       filter.project_ownership = userId;
     }
 
-    const projects = await ProjectModel.find(filter)
-      .populate("project_ownership", "name mail")
-      .populate("milestones", "name status") // Populate milestones details
-      .sort({ createdAt: -1 })
-      .skip((pageNumber - 1) * limitNumber)
-      .limit(limitNumber);
+    // Status filtering
+    if (status) {
+      const validStatuses = ["Completed", "In Progress", "Not Started", "Pending"];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({
+          status: false,
+          message: `Invalid status provided. Valid statuses are: ${validStatuses.join(", ")}`,
+        });
+      }
+      filter.project_status = status;
+    }
 
-    const totalProjects = await ProjectModel.countDocuments(filter);
+    // Search filtering
+    if (search.trim()) {
+      const searchRegex = new RegExp(search.trim(), "i"); // Case-insensitive search
+      filter.$or = [
+        { project_name: { $regex: searchRegex } }, // Search by project name
+        { project_description: { $regex: searchRegex } }, // Search by project description
+      ];
+    }
+
+    console.log("Filter used:", JSON.stringify(filter, null, 2));
+
+    let projects;
+    let totalProjects;
+
+    // Pagination logic
+    if (page && limit) {
+      const pageNumber = Math.max(1, parseInt(page, 10));
+      const limitNumber = Math.min(100, Math.max(1, parseInt(limit, 10)));
+
+      projects = await ProjectModel.find(filter)
+        .populate("project_ownership", "name mail")
+        .populate("milestones", "name status")
+        .sort({ createdAt: -1 })
+        .skip((pageNumber - 1) * limitNumber)
+        .limit(limitNumber)
+        .lean();
+
+      totalProjects = await ProjectModel.countDocuments(filter);
+    } else {
+      // Non-paginated results
+      projects = await ProjectModel.find(filter)
+        .populate("project_ownership", "name mail")
+        .populate("milestones", "name status")
+        .sort({ createdAt: -1 })
+        .lean();
+
+      totalProjects = projects.length;
+    }
+
+    console.log("Projects found:", projects);
 
     return res.status(200).json({
       status: true,
@@ -392,13 +551,15 @@ export const getAllProjectsPagination = async (req, res) => {
       message: "Projects fetched successfully",
     });
   } catch (error) {
-    console.error("Error fetching projects:", error.message);
+    console.error("Error fetching projects:", error);
     return res.status(500).json({
       status: false,
       message: "An error occurred while fetching projects",
     });
   }
 };
+
+
 
 export const getProjectById = async (req, res) => {
   const { id } = req.body;
@@ -448,9 +609,13 @@ export const updateProject = async (req, res) => {
 
   try {
     // Update project fields (excluding milestones)
-    const updatedProject = await ProjectModel.findByIdAndUpdate(_id, updateData, {
-      new: true,
-    });
+    const updatedProject = await ProjectModel.findByIdAndUpdate(
+      _id,
+      updateData,
+      {
+        new: true,
+      }
+    );
 
     if (!updatedProject) {
       return res.status(404).json({ error: "Project not found" });
@@ -483,7 +648,9 @@ export const updateProject = async (req, res) => {
     }
 
     // Populate milestones for the response
-    const populatedProject = await ProjectModel.findById(_id).populate("milestones");
+    const populatedProject = await ProjectModel.findById(_id).populate(
+      "milestones"
+    );
 
     res.status(200).json(populatedProject);
   } catch (error) {
@@ -491,7 +658,6 @@ export const updateProject = async (req, res) => {
     res.status(500).json({ error: "Error updating project and milestones" });
   }
 };
-
 
 // Soft delete a project
 export const deleteProject = async (req, res) => {

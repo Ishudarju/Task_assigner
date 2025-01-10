@@ -6,7 +6,7 @@ import { importToExcel } from "../Controller/Import_Controller.js";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import { boolean } from "zod";
-
+import bcrypt from "bcrypt";
 dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET || "Evvi_solutions_private_limited";
@@ -50,6 +50,72 @@ export const authMiddleware = (req, res, next) => {
   });
 };
 
+// export const user_login = async (req, res) => {
+//   const { mail, password } = req.body;
+
+//   try {
+//     // Check if email and password are provided
+//     if (!mail || !password) {
+//       return res
+//         .status(400)
+//         .json({ status: false, message: "Email and password are required" });
+//     }
+
+//     // Find the user by email
+//     const user = await UserModel.findOne({ mail: mail.toLowerCase() }).select(
+//       "-__v -createdAt -updatedAt"
+//     );
+
+//     // Check if user exists
+//     if (!user) {
+//       return res.status(404).json({ status: false, message: "User not found" });
+//     }
+
+//     // Check password
+//     if (user.password !== password) {
+//       return res
+//         .status(401)
+//         .json({ status: false, message: "Invalid credentials" });
+//     }
+
+//     // Generate token
+//     const token = jwt.sign(
+//       {
+//         id: user._id,
+//         role: user.role,
+//         mail: user.mail,
+//         admin_verify: user.admin_verify,
+//       },
+//       JWT_SECRET,
+//       { expiresIn: "5h" } // Token expiry
+//     );
+
+//     // Prepare user data without sensitive fields
+//     const userData = {
+//       _id: user._id,
+//       name: user.name,
+//       phone: user.phone,
+//       mail: user.mail,
+//       role: user.role,
+//       admin_verify: user.admin_verify,
+//       employee_id: user.employee_id,
+//       department: user.department,
+//     };
+
+//     // Send response
+//     return res.status(200).json({
+//       status: true,
+//       message: "Success",
+//       data: userData,
+//       token,
+//     });
+//   } catch (err) {
+//     console.error("Login error:", err);
+//     return res
+//       .status(500)
+//       .json({ status: false, message: "Internal server error" });
+//   }
+// };
 export const user_login = async (req, res) => {
   const { mail, password } = req.body;
 
@@ -71,8 +137,10 @@ export const user_login = async (req, res) => {
       return res.status(404).json({ status: false, message: "User not found" });
     }
 
-    // Check password
-    if (user.password !== password) {
+    // Compare password using bcrypt
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
       return res
         .status(401)
         .json({ status: false, message: "Invalid credentials" });
@@ -116,7 +184,6 @@ export const user_login = async (req, res) => {
       .json({ status: false, message: "Internal server error" });
   }
 };
-
 export const user_dashboard = async (req, res) => {
   // console.log(req.user);
   console.log("user_dashboard");
