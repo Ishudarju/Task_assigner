@@ -430,7 +430,7 @@ export const updateTask = async (req, res) => {
   console.log(req.body);
 
   // Check for admin role
-  const allowedRoles = ["member", "manager", "team lead"];
+  const allowedRoles = ["admin", "manager", "team lead"];
   if (!allowedRoles.includes(role)) {
     return res.status(403).json({ status: false, message: "No Authorization" });
   }
@@ -480,6 +480,62 @@ export const updateTask = async (req, res) => {
     return res
       .status(500)
       .json({ status: false, message: "Error updating task" });
+  }
+};
+export const DailyTaskUpdate = async (req, res) => {
+  const {
+    _id,
+    daily_update, // Only this field is allowed for members
+  } = req.body;
+
+  const { role } = req.user; // Assume `req.user` contains the authenticated user's details
+
+  console.log(req.body);
+
+  // Restrict updates to `daily_update` for the member role only
+  // if (role !== "member"||role !== "team lead") {
+  //   return res
+  //     .status(403)
+  //     .json({ status: false, message: "Only members can update daily updates" });
+  // }
+
+  // Check if daily_update is provided
+  if (!daily_update) {
+    return res
+      .status(400)
+      .json({ status: false, message: "Daily update description is required" });
+  }
+
+  try {
+    // Find the task by its ID
+    const task = await TaskModel.findById(_id);
+
+    // If task not found
+    if (!task) {
+      return res.status(404).json({ status: false, message: "Task not found" });
+    }
+
+    // Add the new daily update to the `daily_updates` array
+    task.daily_updates = task.daily_updates || [];
+    task.daily_updates.push({
+      date: new Date(),
+      description: daily_update,
+    });
+
+    // Save the updated task
+    const updatedTask = await task.save();
+
+    // Return success response with updated task data
+    return res.status(200).json({
+      status: true,
+      message: "Daily update added successfully",
+      data: updatedTask,
+    });
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ status: false, message: "Error updating daily update" });
   }
 };
 
