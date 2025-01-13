@@ -485,7 +485,7 @@ export const getAllProjectsPagination = async (req, res) => {
     const filter = { is_deleted: false };
 
     // Role-based filtering
-    if (role === "manager" || role === "team_lead") {
+    if (role === "manager" || role === "team lead") {
       filter.project_ownership = userId;
     }
 
@@ -738,10 +738,20 @@ export const getTaskRelatedToProject = async (req, res) => {
         message: "No tasks found for this project",
       });
     }
+    const groupedTasks = tasks.reduce(
+      (acc, task) => {
+        if (task.status === "Completed") acc.completed.push(task);
+        else if (task.status === "In Progress") acc.inProgress.push(task);
+        else if (task.status === "Not Started") acc.notStarted.push(task);
+        return acc;
+      },
+      { completed: [], inProgress: [], notStarted: [] }
+    );
 
     return res.status(200).json({
       status: true,
       tasks,
+      groupedTasks,
       message: "Tasks fetched successfully",
     });
   } catch (error) {

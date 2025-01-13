@@ -473,7 +473,7 @@ export const getAllUserEmpMailForProject = async (req, res) => {
     );
 
     // Separate users into team leads, managers, and others
-    const teamLeads = users.filter((user) => user.role === "team lead");
+    // const teamLeads = users.filter((user) => user.role === "team lead");
     const managers = users.filter((user) => user.role === "manager");
     // const others = users.filter(user => user.role !== 'team lead' && user.role !== 'manager');
 
@@ -481,12 +481,12 @@ export const getAllUserEmpMailForProject = async (req, res) => {
       status: true,
       message: "Fetched all users, team leads, and managers",
 
-      teamLeads: teamLeads.map(({ _id, name, mail, admin_verify }) => ({
-        id: _id,
-        name,
-        mail,
-        admin_verify,
-      })),
+      // teamLeads: teamLeads.map(({ _id, name, mail, admin_verify }) => ({
+      //   id: _id,
+      //   name,
+      //   mail,
+      //   admin_verify,
+      // })),
       managers: managers.map(({ _id, mail, name, admin_verify }) => ({
         id: _id,
         name,

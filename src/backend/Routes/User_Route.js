@@ -20,6 +20,7 @@ userRoute.post("/dashboard", User.authMiddleware, User.user_dashboard);
 userRoute.post("/getAllEmployee", User.authMiddleware, User.getAllEmployee);
 
 userRoute.post("/editStatus", Task.editTaskStatus);
+userRoute.post("/daliyTaskUpdate",User.authMiddleware, Task.DailyTaskUpdate);
 
 userRoute.get("/exportXLSX", User.exportXLSX);
 // userRoute.post("/profie", View_profile);

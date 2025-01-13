@@ -29,7 +29,7 @@ export const deleteMilestone = async (req, res) => {
 
 
         if (!milestones || milestones.length === 0) {
-            return res.status(404).json({ message: "No milestones found for consent projects" });
+            return res.status(404).json({ status:false,message: "No milestones found for consent projects" });
         }
 
         // Success response
