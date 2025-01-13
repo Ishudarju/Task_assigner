@@ -1,69 +1,69 @@
 import { TaskModel } from "../Model/Task_scheme.js";
 import { UserModel } from "../Model/User_scheme.js";
 
+// export const createTask = async (req, res) => {
+//   const {
+//     project,
+//     assigned_to,
+//     assigned_by,
+//     report_to,
+//     status = "Not started",
+//     priority = "Low",
+//     start_date,
+//     end_date,
+//     task_description,
+//     task_title,
+//   } = req.body;
+
+//   const { id, role } = req.user;
+//   console.log(req.body);
+//   if (
+//     !project ||
+//     !assigned_to ||
+//     !report_to ||
+//     !start_date ||
+//     !end_date ||
+//     !task_description
+//   ) {
+//     return res.status(400).json({
+//       status: false,
+//       message: "Please provide all required fields for task creation",
+//     });
+//   }
+
+//   if (role !== "admin" && role !== "team lead" && role !== "manager") {
+//     return res.status(403).json({ status: false, message: "No Authorization" });
+//   }
+
+//   try {
+//     const newTask = new TaskModel({
+//       project,
+//       assigned_to,
+//       assigned_by: id,
+//       report_to,
+//       status,
+//       priority,
+//       start_date,
+//       end_date,
+//       task_description,
+//       task_title,
+//     });
+
+//     const task = await newTask.save();
+//     return res.status(201).json({
+//       status: true,
+//       message: "Task created successfully",
+//       data: task,
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     return res.status(500).json({
+//       status: false,
+//       message: "Failure in task creation",
+//     });
+//   }
+// };
 export const createTask = async (req, res) => {
-  const {
-    project,
-    assigned_to,
-    assigned_by,
-    report_to,
-    status = "Not started",
-    priority = "Low",
-    start_date,
-    end_date,
-    task_description,
-    task_title,
-  } = req.body;
-
-  const { id, role } = req.user;
-  console.log(req.body);
-  if (
-    !project ||
-    !assigned_to ||
-    !report_to ||
-    !start_date ||
-    !end_date ||
-    !task_description
-  ) {
-    return res.status(400).json({
-      status: false,
-      message: "Please provide all required fields for task creation",
-    });
-  }
-
-  if (role !== "admin" && role !== "team lead" && role !== "manager") {
-    return res.status(403).json({ status: false, message: "No Authorization" });
-  }
-
-  try {
-    const newTask = new TaskModel({
-      project,
-      assigned_to,
-      assigned_by: id,
-      report_to,
-      status,
-      priority,
-      start_date,
-      end_date,
-      task_description,
-      task_title,
-    });
-
-    const task = await newTask.save();
-    return res.status(201).json({
-      status: true,
-      message: "Task created successfully",
-      data: task,
-    });
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      status: false,
-      message: "Failure in task creation",
-    });
-  }
-};
-export const createTasknew = async (req, res) => {
   const {
     project,
     assigned_to,
@@ -235,6 +235,7 @@ export const getAllTask = async (req, res) => {
         path: "report_to",
         select: "name mail",
       })
+      .populate({ path: "milestone", select: "name status" })
       .populate({
         path: "project",
         select: "project_name",
@@ -267,8 +268,12 @@ export const getTask = async (req, res) => {
   const { id } = req.body;
 
   try {
-    const task = await TaskModel.findOne({ _id: id, is_deleted: false });
-
+    const task = await TaskModel.findOne({ _id: id, is_deleted: false })
+      .populate("project", "project_name") // Populate project details
+      .populate("milestone", "name status") // Populate milestone details
+      .populate("assigned_to", "name mail") // Populate assigned_to details
+      .populate("assigned_by", "name mail") // Populate assigned_by details
+      .populate("report_to", "name mail");
     if (!task) {
       return res.status(404).json({ status: false, message: "Task not found" });
     }
@@ -286,6 +291,124 @@ export const getTask = async (req, res) => {
   }
 };
 
+// export const updateTask = async (req, res) => {
+//   const {
+//     _id,
+//     project,
+//     assigned_to,
+//     assigned_by,
+//     report_to,
+//     status,
+//     priority,
+//     start_date,
+//     end_date,
+//     task_description,
+//     task_title,
+//   } = req.body;
+//   const { role } = req.user;
+//   console.log(req.body);
+//   if (role !== "admin") {
+//     return res.status(403).json({ status: false, message: "No Authorization" });
+//   }
+
+//   const updatedTask = {
+//     project: project._id,
+//     assigned_to: assigned_to._id,
+//     assigned_by: assigned_by._id,
+//     report_to: report_to._id,
+//     status,
+//     priority,
+//     start_date,
+//     end_date,
+//     task_description,
+//     task_title,
+//   };
+
+//   try {
+//     const task = await TaskModel.findByIdAndUpdate(_id, updatedTask, {
+//       new: true,
+//     });
+
+//     if (!task) {
+//       return res.status(404).json({ status: false, message: "Task not found" });
+//     }
+
+//     return res.status(200).json({
+//       status: true,
+//       message: "Task updated successfully",
+//       data: task,
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     return res
+//       .status(500)
+//       .json({ status: false, message: "Error updating task" });
+//   }
+// };
+// export const updateTasknew = async (req, res) => {
+//   const {
+//     _id,
+//     project,
+//     assigned_to,
+//     assigned_by,
+//     report_to,
+//     status,
+//     priority,
+//     start_date,
+//     end_date,
+//     task_description,
+//     task_title,
+//     milestone, // Include milestone in the update
+//   } = req.body;
+
+//   const { role } = req.user;
+//   console.log(req.body);
+
+//   // Check for admin role
+//   if (role !== "admin") {
+//     return res.status(403).json({ status: false, message: "No Authorization" });
+//   }
+
+//   // Prepare the updated task object, including milestone
+//   const updatedTask = {
+//     project: project._id,
+//     assigned_to: assigned_to._id,
+//     assigned_by: assigned_by._id,
+//     report_to: report_to._id,
+//     status,
+//     priority,
+//     start_date,
+//     end_date,
+//     task_description,
+//     task_title,
+//     milestone, // Include milestone in the update object
+//   };
+
+//   try {
+//     // Find and update the task by its ID
+//     const task = await TaskModel.findByIdAndUpdate(_id, updatedTask, {
+//       new: true, // Return the updated task
+//     });
+
+//     // If task not found
+//     if (!task) {
+//       return res.status(404).json({ status: false, message: "Task not found" });
+//     }
+
+//     // Return success response with updated task data
+//     return res.status(200).json({
+//       status: true,
+//       message: "Task updated successfully",
+//       data: task,
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     return res
+//       .status(500)
+//       .json({ status: false, message: "Error updating task" });
+//   }
+// };
+
 export const updateTask = async (req, res) => {
   const {
     _id,
@@ -299,102 +422,58 @@ export const updateTask = async (req, res) => {
     end_date,
     task_description,
     task_title,
-  } = req.body;
-  const { role } = req.user;
-  console.log(req.body);
-  if (role !== "admin") {
-    return res.status(403).json({ status: false, message: "No Authorization" });
-  }
-
-  const updatedTask = {
-    project: project._id,
-    assigned_to: assigned_to._id,
-    assigned_by: assigned_by._id,
-    report_to: report_to._id,
-    status,
-    priority,
-    start_date,
-    end_date,
-    task_description,
-    task_title,
-  };
-
-  try {
-    const task = await TaskModel.findByIdAndUpdate(_id, updatedTask, {
-      new: true,
-    });
-
-    if (!task) {
-      return res.status(404).json({ status: false, message: "Task not found" });
-    }
-
-    return res.status(200).json({
-      status: true,
-      message: "Task updated successfully",
-      data: task,
-    });
-  } catch (error) {
-    console.error(error);
-    return res
-      .status(500)
-      .json({ status: false, message: "Error updating task" });
-  }
-};
-export const updateTasknew = async (req, res) => {
-  const {
-    _id,
-    project,
-    assigned_to,
-    assigned_by,
-    report_to,
-    status,
-    priority,
-    start_date,
-    end_date,
-    task_description,
-    task_title,
     milestone, // Include milestone in the update
+    daily_update, // New update for the daily updates
   } = req.body;
-  
+
   const { role } = req.user;
   console.log(req.body);
 
   // Check for admin role
-  if (role !== "admin") {
+  const allowedRoles = ["member", "manager", "team lead"];
+  if (!allowedRoles.includes(role)) {
     return res.status(403).json({ status: false, message: "No Authorization" });
   }
 
-  // Prepare the updated task object, including milestone
-  const updatedTask = {
-    project: project._id,
-    assigned_to: assigned_to._id,
-    assigned_by: assigned_by._id,
-    report_to: report_to._id,
-    status,
-    priority,
-    start_date,
-    end_date,
-    task_description,
-    task_title,
-    milestone, // Include milestone in the update object
-  };
-
   try {
-    // Find and update the task by its ID
-    const task = await TaskModel.findByIdAndUpdate(_id, updatedTask, {
-      new: true, // Return the updated task
-    });
+    // Find the task by its ID
+    const task = await TaskModel.findById(_id);
 
     // If task not found
     if (!task) {
       return res.status(404).json({ status: false, message: "Task not found" });
     }
 
+    // Update the task fields
+    task.project = project._id;
+    task.assigned_to = assigned_to._id;
+    task.assigned_by = assigned_by._id;
+    task.report_to = report_to._id;
+    task.status = status;
+    task.priority = priority;
+    task.start_date = start_date;
+    task.end_date = end_date;
+    task.task_description = task_description;
+    task.task_title = task_title;
+    task.milestone = milestone;
+
+    // Add the new daily update to the array
+    if (daily_update) {
+      task.daily_updates = task.daily_updates || [];
+      task.daily_updates.push({
+        date: new Date(),
+        description: daily_update,
+      });
+    }
+
+    // Save the updated task
+    const updatedTask = await task.save();
+
     // Return success response with updated task data
     return res.status(200).json({
       status: true,
       message: "Task updated successfully",
-      data: task,
+      data: updatedTask,
     });
   } catch (error) {
     console.error(error);
@@ -403,7 +482,6 @@ export const updateTasknew = async (req, res) => {
       .json({ status: false, message: "Error updating task" });
   }
 };
-
 
 export const create_skill_Improvement = async (req, res) => {
   const { id, message } = req.body;

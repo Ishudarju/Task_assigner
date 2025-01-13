@@ -49,6 +49,12 @@ const taskSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Milestone", // Reference to the Milestone model
     },
+    daily_updates: [
+      {
+        date: { type: Date, default: Date.now },
+        description: { type: String, required: true },
+      },
+    ],
 
     skill_improvement: [
       {
