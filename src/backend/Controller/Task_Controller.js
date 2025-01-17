@@ -221,6 +221,7 @@ export const getAllTask = async (req, res) => {
     const limitNumber = parseInt(limit, 10);
 
     const tasks = await TaskModel.find({ is_deleted: false })
+      .sort({_id:-1})
       .skip((pageNumber - 1) * limitNumber)
       .limit(limitNumber)
       .populate({
