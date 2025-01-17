@@ -1,5 +1,6 @@
 import { TaskModel } from "../Model/Task_scheme.js";
 import { UserModel } from "../Model/User_scheme.js";
+import ProjectModel  from "../Model/Project_schema.js";
 
 // export const createTask = async (req, res) => {
 //   const {
@@ -139,17 +140,18 @@ export const createTask = async (req, res) => {
 };
 export const deleteTask = async (req, res) => {
   const { id, role } = req.body;
-
+  console.log(req.body);
   if (role !== "admin") {
     return res.status(403).json({ status: false, message: "No Authorization" });
   }
 
   try {
-    const task = await TaskModel.findByIdAndUpdate(
-      id,
-      { is_deleted: true },
-      { new: true }
-    );
+    // const task = await TaskModel.findByIdAndUpdate(
+    //   id,
+    //   { is_deleted: true },
+    //   { new: true }
+    // );
+    const task = await TaskModel.findOneAndDelete({ _id: id });
 
     if (!task) {
       return res.status(404).json({ status: false, message: "Task not found" });
@@ -198,30 +200,92 @@ export const editTaskStatus = async (req, res) => {
 
 // export const getAllTask = async (req, res) => {
 //   try {
-//     const tasks = await TaskModel.find({ is_deleted: false });
+//     const { page, limit } = req.query;
+
+//     const pageNumber = parseInt(page, 10);
+//     const limitNumber = parseInt(limit, 10);
+
+//     const tasks = await TaskModel.find({ is_deleted: false })
+//       .sort({_id:-1})
+//       .skip((pageNumber - 1) * limitNumber)
+//       .limit(limitNumber)
+//       .populate({
+//         path: "assigned_to",
+//         select: "name mail",
+//       })
+//       .populate({
+//         path: "assigned_by",
+//         select: "name mail",
+//       })
+//       .populate({
+//         path: "report_to",
+//         select: "name mail",
+//       })
+//       .populate({ path: "milestone", select: "name status" })
+//       .populate({
+//         path: "project",
+//         select: "project_name",
+//       });
+
+//     const totalTasks = await TaskModel.countDocuments({ is_deleted: false });
 
 //     return res.status(200).json({
 //       status: true,
-//       message: "All tasks fetched successfully",
-//       data: tasks,
+//       message: "Tasks fetched successfully",
+//       data: {
+//         total: totalTasks,
+//         tasks,
+//         pagination: {
+//           currentPage: pageNumber,
+//           totalPages: Math.ceil(totalTasks / limitNumber),
+//         },
+//       },
 //     });
 //   } catch (error) {
-//     console.error(error);
-//     return res
-//       .status(500)
-//       .json({ status: false, message: "Error fetching tasks" });
+//     console.error("Error fetching tasks:", error.message);
+//     return res.status(500).json({
+//       status: false,
+//       message: "An error occurred while fetching tasks",
+//     });
 //   }
 // };
 
 export const getAllTask = async (req, res) => {
   try {
-    const { page, limit } = req.query;
+    const { page = 1, limit = 10 } = req.query;
 
     const pageNumber = parseInt(page, 10);
     const limitNumber = parseInt(limit, 10);
 
-    const tasks = await TaskModel.find({ is_deleted: false })
-      .sort({_id:-1})
+    const userId = req.user.id; // ID of the logged-in user
+    const userRole = req.user.role; // Role of the logged-in user (e.g., Manager, Team Lead, Member)
+
+    // Define the filter based on the role
+    let filter = { is_deleted: false };
+
+    if (userRole === "manager") {
+      // Manager: Tasks they assigned or in projects they own
+      const managerProjects = await ProjectModel.find({
+        project_ownership: userId,
+      }).select("_id");
+      filter.$or = [
+        { report_to: userId },
+        { project: { $in: managerProjects } },
+      ];
+    } else if (userRole === "team lead") {
+      // Team Lead: Tasks assigned to them or assigned by them
+      filter.$or = [{ assigned_to: userId }, { assigned_by: userId }];
+    } else if (userRole === "member") {
+      // Team Member: Tasks directly assigned to them
+      filter.assigned_to = userId;
+    } else if (userRole === "admin") {
+
+      // Default: No additional filtering (fetch all tasks, e.g., for admin or other cases)
+    }
+
+    // Fetch tasks with pagination and populate references
+    const tasks = await TaskModel.find(filter)
+      .sort({ _id: -1 })
       .skip((pageNumber - 1) * limitNumber)
       .limit(limitNumber)
       .populate({
@@ -236,13 +300,17 @@ export const getAllTask = async (req, res) => {
         path: "report_to",
         select: "name mail",
       })
-      .populate({ path: "milestone", select: "name status" })
+      .populate({
+        path: "milestone",
+        select: "name status",
+      })
       .populate({
         path: "project",
         select: "project_name",
       });
 
-    const totalTasks = await TaskModel.countDocuments({ is_deleted: false });
+    // Count total tasks for pagination
+    const totalTasks = await TaskModel.countDocuments(filter);
 
     return res.status(200).json({
       status: true,
@@ -257,7 +325,7 @@ export const getAllTask = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error fetching tasks:", error.message);
+    console.error(`[getAllTask]: Error fetching tasks - ${error.message}`);
     return res.status(500).json({
       status: false,
       message: "An error occurred while fetching tasks",
@@ -688,5 +756,49 @@ export const update_growth_assessment = async (req, res) => {
     return res
       .status(500)
       .json({ status: false, message: "Error updating growth assessment" });
+  }
+};
+
+export const getTaskRelatedToProject = async (req, res) => {
+  const { projectId } = req.body;
+
+  try {
+    const tasks = await TaskModel.find({
+      project: projectId,
+      is_deleted: false,
+    })
+      .populate("project", "project_name") // Populate project details
+      .populate("assigned_to", "name mail") // Populate assigned_to details
+      .populate("assigned_by", "name mail") // Populate assigned_by details
+      .populate("report_to", "name mail"); // Populate report_to details
+
+    if (!tasks.length) {
+      return res.status(404).json({
+        status: false,
+        message: "No tasks found for this project",
+      });
+    }
+    const groupedTasks = tasks.reduce(
+      (acc, task) => {
+        if (task.status === "Completed") acc.completed.push(task);
+        else if (task.status === "In Progress") acc.inProgress.push(task);
+        else if (task.status === "Not Started") acc.notStarted.push(task);
+        return acc;
+      },
+      { completed: [], inProgress: [], notStarted: [] }
+    );
+
+    return res.status(200).json({
+      status: true,
+      tasks,
+      groupedTasks,
+      message: "Tasks fetched successfully",
+    });
+  } catch (error) {
+    console.error("Error fetching tasks:", error);
+    return res.status(500).json({
+      status: false,
+      message: "An error occurred while fetching tasks",
+    });
   }
 };
