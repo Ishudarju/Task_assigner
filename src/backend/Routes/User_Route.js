@@ -18,18 +18,24 @@ userRoute.post("/dashboard", User.authMiddleware, User.user_dashboard);
 
 // userRoute.post("/update",createUser);
 userRoute.post("/getAllEmployee", User.authMiddleware, User.getAllEmployee);
-
+userRoute.post("/createTask", User.authMiddleware, Task.createTask);
+userRoute.get("/getAllTask", User.authMiddleware, Task.getAllTask);
 userRoute.post("/editStatus", Task.editTaskStatus);
-userRoute.post("/daliyTaskUpdate",User.authMiddleware, Task.DailyTaskUpdate);
-
+userRoute.post("/daliyTaskUpdate", User.authMiddleware, Task.DailyTaskUpdate);
+userRoute.put("/updateProject", User.authMiddleware, Project.updateProject);
 userRoute.get("/exportXLSX", User.exportXLSX);
 // userRoute.post("/profie", View_profile);
-
+userRoute.get("/getEmpMails", User.authMiddleware,User.getAllUserEmpMail);
 userRoute.post("/importXLSX", upload.single("file"), User.importXLSX);
 
 userRoute.post("/createTicket", User.authMiddleware, Ticket.createTicket);
 userRoute.post("/deleteTicket", Ticket.deleteTicket);
 userRoute.post("/createProject", User.authMiddleware, Project.createProject);
-userRoute.get("/getAllProjects",User.authMiddleware,Project.getAllProjectsPagination)
+userRoute.get(
+  "/getAllProjects",
+  User.authMiddleware,
+  Project.getAllProjectsPagination
+);
+userRoute.get("/getAllProjectList", User.authMiddleware, Project.getAllProject);
 
 export default userRoute;

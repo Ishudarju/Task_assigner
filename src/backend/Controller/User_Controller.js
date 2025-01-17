@@ -129,9 +129,11 @@ export const user_login = async (req, res) => {
 
     // Find the user by email
     const user = await UserModel.findOne({ mail: mail.toLowerCase() }).select(
-      "-__v -createdAt -updatedAt"
+      " -__v -createdAt -updatedAt"
     );
+    // console.log(user);
 
+   
     // Check if user exists
     if (!user) {
       return res.status(404).json({ status: false, message: "User not found" });
@@ -144,6 +146,11 @@ export const user_login = async (req, res) => {
       return res
         .status(401)
         .json({ status: false, message: "Invalid credentials" });
+    }
+    if (user.admin_verify === "false") {
+      return res
+        .status(403)
+        .json({ status: false, message: "Email verification pending" });
     }
 
     // Generate token
@@ -184,6 +191,7 @@ export const user_login = async (req, res) => {
       .json({ status: false, message: "Internal server error" });
   }
 };
+
 export const user_dashboard = async (req, res) => {
   // console.log(req.user);
   console.log("user_dashboard");
@@ -429,17 +437,45 @@ export const findById = async (req, res) => {
 //         .json({ status: false, message: "Error in Fetching Users Email" });
 //     });
 // };
+
+
+
 export const getAllUserEmpMail = async (req, res) => {
   try {
+    console.log(req.user); // Debugging log to verify `req.user` is populated
+
+    if (!req.user || !req.user.role) {
+      return res.status(403).json({
+        status: false,
+        message: "Access denied: User role is undefined",
+      });
+    }
+
+    const loggedInUserRole = req.user.role; // Extract the logged-in user's role
+    let filterRoles;
+
+    // Set filter roles based on the user's role
+    if (loggedInUserRole === "admin") {
+      filterRoles = ["manager", "team lead", "member"];
+    } else if (loggedInUserRole === "manager") {
+      filterRoles = ["team lead", "member"];
+    } else if (loggedInUserRole === "team lead") {
+      filterRoles = ["member"];
+    } else {  
+      filterRoles = ["member"];
+    }
+
+    // Query database for emails based on filterRoles
     const emails = await UserModel.find(
-      { role: { $nin: ["admin", "manager", "team lead"] } }, // Filter condition
-      { mail: 1, name: 1 } // Projection to select specific fields
+      { role: { $in: filterRoles } }, // Apply dynamic filtering
+      { mail: 1, name: 1 } // Select specific fields
     );
 
-    if (emails) {
+    // Respond with appropriate messages
+    if (emails.length > 0) {
       return res.status(200).json({
         status: true,
-        message: "Fetched all user emails successfully",
+        message: "Fetched user emails successfully",
         data: emails,
       });
     } else {
@@ -457,14 +493,49 @@ export const getAllUserEmpMail = async (req, res) => {
   }
 };
 
+
+
+
+
+
+
+
+// export const getAllUserEmpMail = async (req, res) => {
+//   try {
+//     const emails = await UserModel.find(
+//       { role: { $nin: ["admin", "manager", "team lead"] } }, // Filter condition
+//       { mail: 1, name: 1 } // Projection to select specific fields
+//     );
+
+//     if (emails) {
+//       return res.status(200).json({
+//         status: true,
+//         message: "Fetched all user emails successfully",
+//         data: emails,
+//       });
+//     } else {
+//       return res.status(404).json({
+//         status: false,
+//         message: "No users found",
+//       });
+//     }
+//   } catch (error) {
+//     return res.status(500).json({
+//       status: false,
+//       message: "Error in fetching users' emails",
+//       error: error.message,
+//     });
+//   }
+// };
+
 export const getAllUserEmpMailForProject = async (req, res) => {
   try {
-    if (req.user?.role !== "admin") {
-      return res.status(403).json({
-        status: false,
-        message: "Unauthorized access. Admins only.",
-      });
-    }
+    // if (req.user?.role !== "admin") {
+    //   return res.status(403).json({
+    //     status: false,
+    //     message: "Unauthorized access. Admins only.",
+    //   });
+    // }
     // Fetch all user data with only required fields
 
     const users = await UserModel.find(
@@ -661,13 +732,11 @@ export const empid_generate = async (req, res) => {
       .toString()
       .padStart(3, "0")}`; // Format with leading zeros
 
-    return res
-      .status(200)
-      .json({
-        status: true,
-        employee_id,
-        message: "Employee ID generated successfully",
-      });
+    return res.status(200).json({
+      status: true,
+      employee_id,
+      message: "Employee ID generated successfully",
+    });
   } catch (error) {
     console.error(error);
     return res
