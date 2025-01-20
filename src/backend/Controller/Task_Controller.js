@@ -683,6 +683,64 @@ export const DailyTaskUpdate = async (req, res) => {
   }
 };
 
+export const DeleteDailyTaskUpdate = async (req, res) => {
+  const { _id, updateId } = req.body; // Task ID and specific daily update ID to delete
+  const { role } = req.user; // Assume `req.user` contains the authenticated user's details
+
+  console.log(req.body);
+
+  // Restrict deletion to admin role
+  if (role !== "admin") {
+    return res.status(403).json({
+      status: false,
+      message: "You are not authorized to delete daily task updates",
+    });
+  }
+
+  try {
+    // Find the task by its ID
+    const task = await TaskModel.findById(_id);
+
+    // If task not found
+    if (!task) {
+      return res.status(404).json({ status: false, message: "Task not found" });
+    }
+
+    // Check if the update exists
+    const updateIndex = task.daily_updates.findIndex(
+      (update) => update._id.toString() === updateId
+    );
+
+    if (updateIndex === -1) {
+      return res.status(404).json({
+        status: false,
+        message: "Daily update not found",
+      });
+    }
+
+    // Remove the specific daily update
+    task.daily_updates.splice(updateIndex, 1);
+
+    // Save the updated task
+    const updatedTask = await task.save();
+
+    return res.status(200).json({
+      status: true,
+      message: "Daily update deleted successfully",
+      data: updatedTask,
+    });
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ status: false, message: "Error deleting daily task update" });
+  }
+};
+
+
+
+
+
 //fazil code
 // export const create_skill_Improvement = async (req, res) => {
 //   const { id, message } = req.body;
