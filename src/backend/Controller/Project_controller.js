@@ -339,7 +339,6 @@ export const getProgressByRole = async (req, res) => {
     if (!["admin", "manager", "user", "member","team lead"].includes(role)) {
       return res.status(403).json({ message: "Access denied" });
     }
-
  
 
     const { totalHoursSpent, percentageSpent } = await getProjectProgress(projectId);
