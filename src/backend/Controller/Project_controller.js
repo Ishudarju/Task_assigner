@@ -300,6 +300,69 @@ export const createProject = async (req, res) => {
 //     });
 //   }
 // };
+
+
+
+
+// Function to calculate project progress
+
+
+export const getProjectProgress = async (projectId) => {
+  const project = await ProjectModel.findById(projectId);
+  if (!project) {
+    throw new Error("Project not found");
+  }
+
+  // Fetch all tasks related to the project
+  const tasks = await TaskModel.find({ project: projectId });
+
+  // Calculate total hours spent on the project
+  let totalHoursSpent = 0;
+  tasks.forEach((task) => {
+    task.daily_updates.forEach((update) => {
+      totalHoursSpent += update.hours_spent;
+    });
+  });
+
+  // Calculate the percentage of project completion
+  const percentageSpent = ((totalHoursSpent / project.estimated_hours) * 100).toFixed(2);
+
+  return { totalHoursSpent, percentageSpent };
+};
+
+// Controller function for route
+export const getProgressByRole = async (req, res) => {
+  try {
+    const { id: projectId } = req.params;
+    const { role } = req.user; // Assume `req.user` contains role information
+
+    if (!["admin", "manager", "user", "member","team lead"].includes(role)) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+ 
+
+    const { totalHoursSpent, percentageSpent } = await getProjectProgress(projectId);
+
+    return res.status(200).json({
+      role,
+      projectId,
+      totalHoursSpent,
+      percentageSpent,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+
+
+
+
+
+
+
+
 export const getAllProject = async (req, res) => {
   try {
     if (req.user.role == "admin") {
