@@ -615,26 +615,101 @@ export const updateTask = async (req, res) => {
 // };
 
 
+// export const DailyTaskUpdate = async (req, res) => {
+//   const {
+//     _id, // Task ID
+//     daily_update, // Description of the daily update
+//     hours_spent, // Hours spent on the task (to be calculated and added)
+//   } = req.body;
+
+//   const { role } = req.user; // Assume `req.user` contains the authenticated user's details
+
+//   console.log(req.body);
+
+//   // Check for required fields
+//   if (!daily_update || hours_spent === undefined || hours_spent === null) {
+//     return res.status(400).json({
+//       status: false,
+//       message: "Daily update description and hours spent are required",
+//     });
+//   }
+
+//   // Restrict updates to roles that are allowed
+//   if (!["member", "team lead", "manager"].includes(role)) {
+//     return res.status(403).json({
+//       status: false,
+//       message: "You are not authorized to update daily tasks",
+//     });
+//   }
+
+//   try {
+//     // Find the task by its ID
+//     const task = await TaskModel.findById(_id);
+
+//     // If task not found
+//     if (!task) {
+//       return res.status(404).json({ status: false, message: "Task not found" });
+//     }
+
+//     // Add the new daily update to the `daily_updates` array
+//     task.daily_updates = task.daily_updates || [];
+//     task.daily_updates.push({
+//       date: new Date(),
+//       description: daily_update,
+//       hours_spent, // Add the hours spent value here
+//     });
+
+//     // Save the updated task
+//     const updatedTask = await task.save();
+
+//     // Calculate the total hours spent (for summary purposes, if needed)
+//     const totalHoursSpent = task.daily_updates.reduce(
+//       (total, update) => total + (update.hours_spent || 0),
+//       0
+//     );
+
+//     // Return success response with updated task data and total hours spent
+//     return res.status(200).json({
+//       status: true,
+//       message: "Daily update added successfully",
+//       data: updatedTask,
+//       totalHoursSpent, // Optional: Send total hours spent
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     return res
+//       .status(500)
+//       .json({ status: false, message: "Error updating daily task" });
+//   }
+// };
+
+
 export const DailyTaskUpdate = async (req, res) => {
   const {
     _id, // Task ID
     daily_update, // Description of the daily update
-    hours_spent, // Hours spent on the task (to be calculated and added)
+    hours_spent, // Hours spent on the task
   } = req.body;
 
   const { role } = req.user; // Assume `req.user` contains the authenticated user's details
 
-  console.log(req.body);
-
-  // Check for required fields
+  // Validate required fields
   if (!daily_update || hours_spent === undefined || hours_spent === null) {
     return res.status(400).json({
       status: false,
-      message: "Daily update description and hours spent are required",
+      message: "Both daily update description and hours spent are required",
     });
   }
 
-  // Restrict updates to roles that are allowed
+  // Validate that hours_spent is a positive number (additional validation)
+  if (hours_spent < 0) {
+    return res.status(400).json({
+      status: false,
+      message: "Hours spent must be a non-negative value",
+    });
+  }
+
+  // Restrict updates to authorized roles
   if (!["member", "team lead", "manager"].includes(role)) {
     return res.status(403).json({
       status: false,
@@ -652,36 +727,37 @@ export const DailyTaskUpdate = async (req, res) => {
     }
 
     // Add the new daily update to the `daily_updates` array
-    task.daily_updates = task.daily_updates || [];
     task.daily_updates.push({
       date: new Date(),
       description: daily_update,
-      hours_spent, // Add the hours spent value here
+      hours_spent, // Add hours spent here
     });
 
     // Save the updated task
     const updatedTask = await task.save();
 
-    // Calculate the total hours spent (for summary purposes, if needed)
+    // Calculate the total hours spent (if required for summary purposes)
     const totalHoursSpent = task.daily_updates.reduce(
       (total, update) => total + (update.hours_spent || 0),
       0
     );
 
-    // Return success response with updated task data and total hours spent
+    // Return success response
     return res.status(200).json({
       status: true,
       message: "Daily update added successfully",
       data: updatedTask,
-      totalHoursSpent, // Optional: Send total hours spent
+      totalHoursSpent,
     });
   } catch (error) {
     console.error(error);
-    return res
-      .status(500)
-      .json({ status: false, message: "Error updating daily task" });
+    return res.status(500).json({
+      status: false,
+      message: "Error updating daily task",
+    });
   }
 };
+
 
 export const DeleteDailyTaskUpdate = async (req, res) => {
   const { _id, updateId } = req.body; // Task ID and specific daily update ID to delete
