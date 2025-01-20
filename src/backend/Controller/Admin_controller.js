@@ -41,6 +41,7 @@ const JWT_SECRET = process.env.JWT_SECRET || "Evvi_solutions_private_limited";
 //         .json({ status: false, role: "", message: "failure" });
 //     });
 // };
+
 export const admin_check = async (req, res) => {
   const { mail, password } = req.body;
 

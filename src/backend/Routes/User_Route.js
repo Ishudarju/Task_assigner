@@ -22,6 +22,10 @@ userRoute.post("/createTask", User.authMiddleware, Task.createTask);
 userRoute.get("/getAllTask", User.authMiddleware, Task.getAllTask);
 userRoute.post("/editStatus", Task.editTaskStatus);
 userRoute.post("/daliyTaskUpdate", User.authMiddleware, Task.DailyTaskUpdate);
+
+userRoute.post("/",User.authMiddleware,Task.create_skill_Improvement);
+
+
 userRoute.put("/updateProject", User.authMiddleware, Project.updateProject);
 userRoute.get("/exportXLSX", User.exportXLSX);
 // userRoute.post("/profie", View_profile);

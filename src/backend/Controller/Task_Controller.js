@@ -64,6 +64,9 @@ import ProjectModel  from "../Model/Project_schema.js";
 //     });
 //   }
 // };
+
+
+
 export const createTask = async (req, res) => {
   const {
     project,
@@ -138,6 +141,7 @@ export const createTask = async (req, res) => {
     });
   }
 };
+
 export const deleteTask = async (req, res) => {
   const { id, role } = req.body;
   console.log(req.body);
@@ -551,28 +555,91 @@ export const updateTask = async (req, res) => {
       .json({ status: false, message: "Error updating task" });
   }
 };
+
+//fazil code
+// export const DailyTaskUpdate = async (req, res) => {
+//   const {
+//     _id,
+//     daily_update, // Only this field is allowed for members
+//   } = req.body;
+
+//   const { role } = req.user; // Assume `req.user` contains the authenticated user's details
+
+//   console.log(req.body);
+
+//   // Restrict updates to `daily_update` for the member role only
+//   // if (role !== "member"||role !== "team lead") {
+//   //   return res
+//   //     .status(403)
+//   //     .json({ status: false, message: "Only members can update daily updates" });
+//   // }
+
+//   // Check if daily_update is provided
+//   if (!daily_update) {
+//     return res
+//       .status(400)
+//       .json({ status: false, message: "Daily update description is required" });
+//   }
+
+//   try {
+//     // Find the task by its ID
+//     const task = await TaskModel.findById(_id);
+
+//     // If task not found
+//     if (!task) {
+//       return res.status(404).json({ status: false, message: "Task not found" });
+//     }
+
+//     // Add the new daily update to the `daily_updates` array
+//     task.daily_updates = task.daily_updates || [];
+//     task.daily_updates.push({
+//       date: new Date(),
+//       description: daily_update,
+//     });
+
+//     // Save the updated task
+//     const updatedTask = await task.save();
+
+//     // Return success response with updated task data
+//     return res.status(200).json({
+//       status: true,
+//       message: "Daily update added successfully",
+//       data: updatedTask,
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     return res
+//       .status(500)
+//       .json({ status: false, message: "Error updating daily update" });
+//   }
+// };
+
+
 export const DailyTaskUpdate = async (req, res) => {
   const {
-    _id,
-    daily_update, // Only this field is allowed for members
+    _id, // Task ID
+    daily_update, // Description of the daily update
+    hours_spent, // Hours spent on the task (to be calculated and added)
   } = req.body;
 
   const { role } = req.user; // Assume `req.user` contains the authenticated user's details
 
   console.log(req.body);
 
-  // Restrict updates to `daily_update` for the member role only
-  // if (role !== "member"||role !== "team lead") {
-  //   return res
-  //     .status(403)
-  //     .json({ status: false, message: "Only members can update daily updates" });
-  // }
+  // Check for required fields
+  if (!daily_update || hours_spent === undefined || hours_spent === null) {
+    return res.status(400).json({
+      status: false,
+      message: "Daily update description and hours spent are required",
+    });
+  }
 
-  // Check if daily_update is provided
-  if (!daily_update) {
-    return res
-      .status(400)
-      .json({ status: false, message: "Daily update description is required" });
+  // Restrict updates to roles that are allowed
+  if (!["member", "team lead", "manager"].includes(role)) {
+    return res.status(403).json({
+      status: false,
+      message: "You are not authorized to update daily tasks",
+    });
   }
 
   try {
@@ -589,33 +656,84 @@ export const DailyTaskUpdate = async (req, res) => {
     task.daily_updates.push({
       date: new Date(),
       description: daily_update,
+      hours_spent, // Add the hours spent value here
     });
 
     // Save the updated task
     const updatedTask = await task.save();
 
-    // Return success response with updated task data
+    // Calculate the total hours spent (for summary purposes, if needed)
+    const totalHoursSpent = task.daily_updates.reduce(
+      (total, update) => total + (update.hours_spent || 0),
+      0
+    );
+
+    // Return success response with updated task data and total hours spent
     return res.status(200).json({
       status: true,
       message: "Daily update added successfully",
       data: updatedTask,
+      totalHoursSpent, // Optional: Send total hours spent
     });
   } catch (error) {
     console.error(error);
     return res
       .status(500)
-      .json({ status: false, message: "Error updating daily update" });
+      .json({ status: false, message: "Error updating daily task" });
   }
 };
+
+//fazil code
+// export const create_skill_Improvement = async (req, res) => {
+//   const { id, message } = req.body;
+
+//   if (req.user.role !== "member") {
+//     return res.status(403).json({ status: false, message: "No Authorization" });
+//   }
+
+//   try {
+//     const task = await TaskModel.findByIdAndUpdate(
+//       id,
+//       {
+//         $push: {
+//           skill_improvement: {
+//             sentFromId: req.user.id,
+//             message,
+//             date: new Date(),
+//           },
+//         },
+//       },
+//       { new: true }
+//     );
+
+//     return res.status(200).json({
+//       status: true,
+//       message: "Skill improvement added successfully",
+//       data: task,
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     return res
+//       .status(500)
+//       .json({ status: false, message: "Error adding skill improvement" });
+//   }
+// };
 
 export const create_skill_Improvement = async (req, res) => {
   const { id, message } = req.body;
 
+  // Ensure message is provided
+  if (!message || message.trim() === "") {
+    return res.status(400).json({ status: false, message: "Message is required" });
+  }
+
+  // Only members can create skill improvements
   if (req.user.role !== "member") {
     return res.status(403).json({ status: false, message: "No Authorization" });
   }
 
   try {
+    // Find and update the task by ID
     const task = await TaskModel.findByIdAndUpdate(
       id,
       {
@@ -630,6 +748,7 @@ export const create_skill_Improvement = async (req, res) => {
       { new: true }
     );
 
+    // Return success response
     return res.status(200).json({
       status: true,
       message: "Skill improvement added successfully",
@@ -637,15 +756,63 @@ export const create_skill_Improvement = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    return res
-      .status(500)
-      .json({ status: false, message: "Error adding skill improvement" });
+    return res.status(500).json({ status: false, message: "Error adding skill improvement" });
   }
 };
+
+
+//fazil code
+// export const update_skill_Improvement = async (req, res) => {
+//   const { id, message, skills_approval_status } = req.body;
+
+//   if (req.user.role !== "team lead" && req.user.role !== "manager") {
+//     return res.status(403).json({ status: false, message: "No Authorization" });
+//   }
+
+//   try {
+//     const updateQuery = {
+//       $push: {
+//         skill_improvement: {
+//           sentFromId: req.user.id,
+//           message,
+//           date: new Date(),
+//         },
+//       },
+//     };
+
+//     if (req.user.role === "manager" || req.user.role === "admin") {
+//       updateQuery.$set = {
+//         skills_approval_status,
+//         skill_imp_reviewed_by: req.user.id,
+//       };
+//     }
+
+//     const task = await TaskModel.findByIdAndUpdate(id, updateQuery, {
+//       new: true,
+//     });
+
+//     return res.status(200).json({
+//       status: true,
+//       message: "Skill improvement updated successfully",
+//       data: task,
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     return res
+//       .status(500)
+//       .json({ status: false, message: "Error updating skill improvement" });
+//   }
+// };
 
 export const update_skill_Improvement = async (req, res) => {
   const { id, message, skills_approval_status } = req.body;
 
+  // Ensure message is provided
+  if (!message || message.trim() === "") {
+    return res.status(400).json({ status: false, message: "Message is required" });
+  }
+
+  // Only Team Leads or Managers can update skill improvement
   if (req.user.role !== "team lead" && req.user.role !== "manager") {
     return res.status(403).json({ status: false, message: "No Authorization" });
   }
@@ -661,6 +828,7 @@ export const update_skill_Improvement = async (req, res) => {
       },
     };
 
+    // If the user is Manager or Admin, update the approval status as well
     if (req.user.role === "manager" || req.user.role === "admin") {
       updateQuery.$set = {
         skills_approval_status,
@@ -668,10 +836,10 @@ export const update_skill_Improvement = async (req, res) => {
       };
     }
 
-    const task = await TaskModel.findByIdAndUpdate(id, updateQuery, {
-      new: true,
-    });
+    // Find and update the task by ID
+    const task = await TaskModel.findByIdAndUpdate(id, updateQuery, { new: true });
 
+    // Return success response
     return res.status(200).json({
       status: true,
       message: "Skill improvement updated successfully",
@@ -679,11 +847,12 @@ export const update_skill_Improvement = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    return res
-      .status(500)
-      .json({ status: false, message: "Error updating skill improvement" });
+    return res.status(500).json({ status: false, message: "Error updating skill improvement" });
   }
 };
+
+
+
 
 export const create_growth_assessment = async (req, res) => {
   const { id, message } = req.body;
