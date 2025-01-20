@@ -166,11 +166,13 @@ const taskSchema = new mongoose.Schema(
       {
         date: { type: Date, default: Date.now },
         description: { type: String, required: true },
+
         hours_spent: {
           type: Number,
           required: true,
           min: [0, "Hours spent must be a non-negative value"],
         },
+
       },
     ],
     skill_improvement: [
