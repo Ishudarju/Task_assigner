@@ -103,6 +103,8 @@
 
 
 
+
+
 import mongoose from "mongoose";
 
 const taskSchema = new mongoose.Schema(
@@ -162,31 +164,18 @@ const taskSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Milestone",
     },
+
     daily_updates: [
       {
         date: { type: Date, default: Date.now },
-        description: { type: String, required: true },
-
+        description: { type: String, required: false },  // Optional field
         hours_spent: {
           type: Number,
-          required: true,
+          required: false, // Optional hours_spent field
           min: [0, "Hours spent must be a non-negative value"],
         },
-
       },
     ],
-    // daily_updates: [
-    //   {
-    //     date: { type: Date, default: Date.now },
-    //     description: { type: String, required: true },
-    //     hours_spent: {
-    //       type: Number,
-    //       required: true,
-    //       min: [0, "Hours spent must be a non-negative value"],
-    //       max: [8, "Cannot exceed 8 hours in a single day"], // Ensures only 8 hours per day
-    //     },
-    //   },
-    // ],
     skill_improvement: [
       {
         sentFromId: {
