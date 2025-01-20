@@ -65,4 +65,9 @@ adminRoute.post(
   Admin.authMiddleware,
   Milestone.getMilestonesForConsentProjects
 );
+
+
+adminRoute.delete("/del_daliyTask", Admin.authMiddleware, Task.DeleteDailyTaskUpdate);
+
+
 export default adminRoute;
