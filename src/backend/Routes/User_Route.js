@@ -43,4 +43,8 @@ userRoute.get(
 );
 userRoute.get("/getAllProjectList", User.authMiddleware, Project.getAllProject);
 
+
+// Route to calculate project progress by projectId
+userRoute.get("/hours_spent_progress", User.authMiddleware,Project.calculateProjectProgress );
+
 export default userRoute;

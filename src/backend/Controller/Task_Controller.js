@@ -174,7 +174,7 @@ export const deleteTask = async (req, res) => {
 };
 
 export const editTaskStatus = async (req, res) => {
-  const { _id, status, task_description } = req.body;
+  const { _id, status } = req.body;
 
   if (!_id) {
     return res.status(400).json({ status: false, message: "Invalid Task ID" });
@@ -183,7 +183,7 @@ export const editTaskStatus = async (req, res) => {
   try {
     const result = await TaskModel.updateOne(
       { _id },
-      { $set: { status, task_description } }
+      { $set: { status} }
     );
 
     if (result.nModified === 0) {
