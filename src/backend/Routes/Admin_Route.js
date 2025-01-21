@@ -6,6 +6,7 @@ import * as Ticket from "../Controller/Ticket_controller_old.js";
 import * as Project from "../Controller/Project_controller.js";
 import * as Milestone from "../Controller/Milestone_controller.js";
 
+
 const adminRoute = express.Router();
 
 adminRoute.post("/login", Admin.admin_check);
@@ -68,6 +69,9 @@ adminRoute.post(
 
 
 adminRoute.delete("/del_daliyTask", Admin.authMiddleware, Task.DeleteDailyTaskUpdate);
+
+// Route to calculate project progress by projectId
+adminRoute.get("/projects/:projectId/progress", Admin.authMiddleware,Project.calculateProjectProgress );
 
 
 export default adminRoute;

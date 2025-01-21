@@ -117,8 +117,6 @@ const taskSchema = new mongoose.Schema(
     task_description: {
       type: String,
       required: true,
-      minlength: 5,
-      maxlength: 500,
     },
     task_title: {
       type: String,
