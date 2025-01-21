@@ -202,15 +202,44 @@ export const editTaskStatus = async (req, res) => {
   }
 };
 
+
+//fazil code
 // export const getAllTask = async (req, res) => {
 //   try {
-//     const { page, limit } = req.query;
+//     const { page = 1, limit = 10 } = req.query;
 
 //     const pageNumber = parseInt(page, 10);
 //     const limitNumber = parseInt(limit, 10);
 
-//     const tasks = await TaskModel.find({ is_deleted: false })
-//       .sort({_id:-1})
+//     const userId = req.user.id; // ID of the logged-in user
+//     const userRole = req.user.role; // Role of the logged-in user (e.g., Manager, Team Lead, Member)
+
+//     // Define the filter based on the role
+//     let filter = { is_deleted: false };
+
+//     if (userRole === "manager") {
+//       // Manager: Tasks they assigned or in projects they own
+//       const managerProjects = await ProjectModel.find({
+//         project_ownership: userId,
+//       }).select("_id");
+//       filter.$or = [
+//         { report_to: userId },
+//         { project: { $in: managerProjects } },
+//       ];
+//     } else if (userRole === "team lead") {
+//       // Team Lead: Tasks assigned to them or assigned by them
+//       filter.$or = [{ assigned_to: userId }, { assigned_by: userId }];
+//     } else if (userRole === "member") {
+//       // Team Member: Tasks directly assigned to them
+//       filter.assigned_to = userId;
+//     } else if (userRole === "admin") {
+
+//       // Default: No additional filtering (fetch all tasks, e.g., for admin or other cases)
+//     }
+
+//     // Fetch tasks with pagination and populate references
+//     const tasks = await TaskModel.find(filter)
+//       .sort({ _id: -1 })
 //       .skip((pageNumber - 1) * limitNumber)
 //       .limit(limitNumber)
 //       .populate({
@@ -225,13 +254,17 @@ export const editTaskStatus = async (req, res) => {
 //         path: "report_to",
 //         select: "name mail",
 //       })
-//       .populate({ path: "milestone", select: "name status" })
+//       .populate({
+//         path: "milestone",
+//         select: "name status",
+//       })
 //       .populate({
 //         path: "project",
 //         select: "project_name",
 //       });
 
-//     const totalTasks = await TaskModel.countDocuments({ is_deleted: false });
+//     // Count total tasks for pagination
+//     const totalTasks = await TaskModel.countDocuments(filter);
 
 //     return res.status(200).json({
 //       status: true,
@@ -246,13 +279,14 @@ export const editTaskStatus = async (req, res) => {
 //       },
 //     });
 //   } catch (error) {
-//     console.error("Error fetching tasks:", error.message);
+//     console.error(`[getAllTask]: Error fetching tasks - ${error.message}`);
 //     return res.status(500).json({
 //       status: false,
 //       message: "An error occurred while fetching tasks",
 //     });
 //   }
 // };
+
 
 export const getAllTask = async (req, res) => {
   try {
@@ -282,10 +316,8 @@ export const getAllTask = async (req, res) => {
     } else if (userRole === "member") {
       // Team Member: Tasks directly assigned to them
       filter.assigned_to = userId;
-    } else if (userRole === "admin") {
-
-      // Default: No additional filtering (fetch all tasks, e.g., for admin or other cases)
     }
+    // Default: No additional filtering for admin
 
     // Fetch tasks with pagination and populate references
     const tasks = await TaskModel.find(filter)
@@ -313,6 +345,23 @@ export const getAllTask = async (req, res) => {
         select: "project_name",
       });
 
+    // Count total tasks grouped by status
+    const taskStatusCounts = await TaskModel.aggregate([
+      { $match: filter },
+      {
+        $group: {
+          _id: "$status", // Group by status
+          count: { $sum: 1 }, // Count the tasks in each group
+        },
+      },
+    ]);
+
+    // Transform the status counts into a key-value object
+    const statusSummary = {};
+    taskStatusCounts.forEach((status) => {
+      statusSummary[status._id] = status.count;
+    });
+
     // Count total tasks for pagination
     const totalTasks = await TaskModel.countDocuments(filter);
 
@@ -321,6 +370,7 @@ export const getAllTask = async (req, res) => {
       message: "Tasks fetched successfully",
       data: {
         total: totalTasks,
+        statusSummary, // Include the total count of tasks grouped by status
         tasks,
         pagination: {
           currentPage: pageNumber,
@@ -336,6 +386,7 @@ export const getAllTask = async (req, res) => {
     });
   }
 };
+
 
 export const getTask = async (req, res) => {
   const { id } = req.body;
