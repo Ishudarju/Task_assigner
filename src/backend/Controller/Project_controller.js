@@ -307,50 +307,191 @@ export const createProject = async (req, res) => {
 // Function to calculate project progress
 
 
-export const getProjectProgress = async (projectId) => {
-  const project = await ProjectModel.findById(projectId);
-  if (!project) {
-    throw new Error("Project not found");
-  }
+// export const getProjectProgress = async (projectId) => {
+//   const project = await ProjectModel.findById(projectId);
+//   if (!project) {
+//     throw new Error("Project not found");
+//   }
 
-  // Fetch all tasks related to the project
-  const tasks = await TaskModel.find({ project: projectId });
+//   // Fetch all tasks related to the project
+//   const tasks = await TaskModel.find({ project: projectId });
 
-  // Calculate total hours spent on the project
-  let totalHoursSpent = 0;
-  tasks.forEach((task) => {
-    task.daily_updates.forEach((update) => {
-      totalHoursSpent += update.hours_spent;
-    });
-  });
+//   // Calculate total hours spent on the project
+//   let totalHoursSpent = 0;
+//   tasks.forEach((task) => {
+//     task.daily_updates.forEach((update) => {
+//       totalHoursSpent += update.hours_spent;
+//     });
+//   });
 
-  // Calculate the percentage of project completion
-  const percentageSpent = ((totalHoursSpent / project.estimated_hours) * 100).toFixed(2);
+//   // Calculate the percentage of project completion
+//   const percentageSpent = ((totalHoursSpent / project.estimated_hours) * 100).toFixed(2);
 
-  return { totalHoursSpent, percentageSpent };
-};
+//   return { totalHoursSpent, percentageSpent };
+// };
 
-// Controller function for route
-export const getProgressByRole = async (req, res) => {
-  try {
-    const { id: projectId } = req.params;
-    const { role } = req.user; // Assume `req.user` contains role information
+// // Controller function for route
+// export const getProgressByRole = async (req, res) => {
+//   try {
+//     const { id: projectId } = req.params;
+//     const { role } = req.user; // Assume `req.user` contains role information
 
-    if (!["admin", "manager", "user", "member","team lead"].includes(role)) {
-      return res.status(403).json({ message: "Access denied" });
-    }
+//     if (!["admin", "manager", "user", "member","team lead"].includes(role)) {
+//       return res.status(403).json({ message: "Access denied" });
+//     }
  
 
-    const { totalHoursSpent, percentageSpent } = await getProjectProgress(projectId);
+//     const { totalHoursSpent, percentageSpent } = await getProjectProgress(projectId);
 
+//     return res.status(200).json({
+//       role,
+//       projectId,
+//       totalHoursSpent,
+//       percentageSpent,
+//     });
+//   } catch (error) {
+//     return res.status(500).json({ message: error.message });
+//   }
+// };
+
+
+
+
+
+
+// export const calculateProjectProgress = async (req, res) => {
+//   const { projectId } = req.params; // Project ID passed as a route parameter
+//   const { role } = req.user; // Assume role is available in req.user (e.g., "Admin", "Manager", etc.)
+
+//   // Check access for allowed roles
+//   const allowedRoles = ["admin", "user", "manager", "tl"];
+//   if (!allowedRoles.includes(role)) {
+//     return res.status(403).json({
+//       status: false,
+//       message: "You are not authorized to access this information.",
+//     });
+//   }
+
+//   try {
+//     // Find the project by its ID
+//     const project = await ProjectModel.findById(projectId);
+
+//     if (!project) {
+//       return res.status(404).json({
+//         status: false,
+//         message: "Project not found",
+//       });
+//     }
+
+//     // Get all tasks related to this project
+//     const tasks = await TaskModel.find({ project: projectId });
+
+//     // Calculate total hours spent from all tasks
+//     const totalHoursSpent = tasks.reduce((total, task) => {
+//       return (
+//         total +
+//         task.daily_updates.reduce(
+//           (taskTotal, update) => taskTotal + (update.hours_spent || 0),
+//           0
+//         )
+//       );
+//     }, 0);
+
+//     // Calculate the progress percentage
+//     const estimatedHours = project.estimated_hours; // Make sure your project schema has this field
+//     if (!estimatedHours || estimatedHours <= 0) {
+//       return res.status(400).json({
+//         status: false,
+//         message: "Invalid estimated hours for the project",
+//       });
+//     }
+
+//     const percentageSpent = Math.min((totalHoursSpent / estimatedHours) * 100, 100).toFixed(2);
+//     const remainingPercentage = (100 - percentageSpent).toFixed(2);
+
+//     // Return the calculated progress
+//     return res.status(200).json({
+//       status: true,
+//       message: "Project progress calculated successfully",
+//       data: {
+//         projectId: project._id,
+//         totalHoursSpent,
+//         estimatedHours,
+//         percentageSpent,
+//         remainingPercentage,
+//       },
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     return res.status(500).json({
+//       status: false,
+//       message: "Error calculating project progress",
+//     });
+//   }
+// };
+
+
+export const calculateProjectProgress = async (req, res) => {
+  const { projectId } = req.body; // Get projectId from the request body
+  const { role } = req.user; // Assume user's role is extracted from JWT or session
+
+  // Access Control
+  const allowedRoles = ["member","team lead","manager","hr","director","tester"];
+  if (!allowedRoles.includes(role)) {
+    return res.status(403).json({
+      status: false,
+      message: "You are not authorized to access this information",
+    });
+  }
+
+  try {
+    // Fetch the project
+    const project = await ProjectModel.findById(projectId);
+    if (!project) {
+      return res.status(404).json({
+        status: false,
+        message: "Project not found",
+      });
+    }
+
+    // Fetch all tasks associated with the project
+    const tasks = await TaskModel.find({ project: projectId });
+
+    // Calculate the total hours spent using `daily_updates` from all tasks
+    const totalHoursSpent = tasks.reduce((total, task) => {
+      const taskHours = task.daily_updates.reduce(
+        (sum, update) => sum + (update.hours_spent || 0),
+        0
+      );
+      return total + taskHours;
+    }, 0);
+
+    // Calculate the percentage of estimated hours
+    const estimatedHours = project.estimated_hours || 1; // Prevent division by zero
+    const percentageSpent = (totalHoursSpent / estimatedHours) * 100;
+
+    // Remaining percentage
+    const remainingPercentage = 100 - percentageSpent;
+
+    // Return success response with calculated values
     return res.status(200).json({
-      role,
-      projectId,
-      totalHoursSpent,
-      percentageSpent,
+      status: true,
+      message: "Project progress calculated successfully",
+      data: {
+        projectId,
+        projectName: project.project_name,
+        estimatedHours,
+        totalHoursSpent,
+        percentageSpent: percentageSpent.toFixed(2), // Rounded to 2 decimals
+        remainingPercentage: remainingPercentage.toFixed(2), // Rounded to 2 decimals
+      },
     });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    console.error("Error calculating project progress:", error);
+    return res.status(500).json({
+      status: false,
+      message: "Error calculating project progress",
+    });
   }
 };
 
