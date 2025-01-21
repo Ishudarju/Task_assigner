@@ -71,7 +71,8 @@ adminRoute.post(
 adminRoute.delete("/del_daliyTask", Admin.authMiddleware, Task.DeleteDailyTaskUpdate);
 
 // Route to calculate project progress by projectId
-adminRoute.get("/projects/:projectId/progress", Admin.authMiddleware,Project.calculateProjectProgress );
+adminRoute.get("/hours_spent_progress", Admin.authMiddleware,Project.calculateProjectProgress );
+
 
 
 export default adminRoute;

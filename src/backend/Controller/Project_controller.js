@@ -436,7 +436,7 @@ export const calculateProjectProgress = async (req, res) => {
   const { role } = req.user; // Assume user's role is extracted from JWT or session
 
   // Access Control
-  const allowedRoles = ["member","team lead","manager","hr","director","tester"];
+  const allowedRoles = ["member","team lead","manager","hr","director","tester","admin"];
   if (!allowedRoles.includes(role)) {
     return res.status(403).json({
       status: false,
