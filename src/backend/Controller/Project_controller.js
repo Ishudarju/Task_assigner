@@ -304,78 +304,25 @@ export const createProject = async (req, res) => {
 
 
 
-// Function to calculate project progress
 
-
-// export const getProjectProgress = async (projectId) => {
-//   const project = await ProjectModel.findById(projectId);
-//   if (!project) {
-//     throw new Error("Project not found");
-//   }
-
-//   // Fetch all tasks related to the project
-//   const tasks = await TaskModel.find({ project: projectId });
-
-//   // Calculate total hours spent on the project
-//   let totalHoursSpent = 0;
-//   tasks.forEach((task) => {
-//     task.daily_updates.forEach((update) => {
-//       totalHoursSpent += update.hours_spent;
-//     });
-//   });
-
-//   // Calculate the percentage of project completion
-//   const percentageSpent = ((totalHoursSpent / project.estimated_hours) * 100).toFixed(2);
-
-//   return { totalHoursSpent, percentageSpent };
-// };
-
-// // Controller function for route
-// export const getProgressByRole = async (req, res) => {
-//   try {
-//     const { id: projectId } = req.params;
-//     const { role } = req.user; // Assume `req.user` contains role information
-
-//     if (!["admin", "manager", "user", "member","team lead"].includes(role)) {
-//       return res.status(403).json({ message: "Access denied" });
-//     }
- 
-
-//     const { totalHoursSpent, percentageSpent } = await getProjectProgress(projectId);
-
-//     return res.status(200).json({
-//       role,
-//       projectId,
-//       totalHoursSpent,
-//       percentageSpent,
-//     });
-//   } catch (error) {
-//     return res.status(500).json({ message: error.message });
-//   }
-// };
-
-
-
-
-
+//ishu correction
 
 // export const calculateProjectProgress = async (req, res) => {
-//   const { projectId } = req.params; // Project ID passed as a route parameter
-//   const { role } = req.user; // Assume role is available in req.user (e.g., "Admin", "Manager", etc.)
+//   const { projectId } = req.body; // Get projectId from the request body
+//   const { role } = req.user; // Assume user's role is extracted from JWT or session
 
-//   // Check access for allowed roles
-//   const allowedRoles = ["admin", "user", "manager", "tl"];
+//   // Access Control
+//   const allowedRoles = ["member","team lead","manager","hr","director","tester","admin"];
 //   if (!allowedRoles.includes(role)) {
 //     return res.status(403).json({
 //       status: false,
-//       message: "You are not authorized to access this information.",
+//       message: "You are not authorized to access this information",
 //     });
 //   }
 
 //   try {
-//     // Find the project by its ID
+//     // Fetch the project
 //     const project = await ProjectModel.findById(projectId);
-
 //     if (!project) {
 //       return res.status(404).json({
 //         status: false,
@@ -383,46 +330,40 @@ export const createProject = async (req, res) => {
 //       });
 //     }
 
-//     // Get all tasks related to this project
+//     // Fetch all tasks associated with the project
 //     const tasks = await TaskModel.find({ project: projectId });
 
-//     // Calculate total hours spent from all tasks
+//     // Calculate the total hours spent using `daily_updates` from all tasks
 //     const totalHoursSpent = tasks.reduce((total, task) => {
-//       return (
-//         total +
-//         task.daily_updates.reduce(
-//           (taskTotal, update) => taskTotal + (update.hours_spent || 0),
-//           0
-//         )
+//       const taskHours = task.daily_updates.reduce(
+//         (sum, update) => sum + (update.hours_spent || 0),
+//         0
 //       );
+//       return total + taskHours;
 //     }, 0);
 
-//     // Calculate the progress percentage
-//     const estimatedHours = project.estimated_hours; // Make sure your project schema has this field
-//     if (!estimatedHours || estimatedHours <= 0) {
-//       return res.status(400).json({
-//         status: false,
-//         message: "Invalid estimated hours for the project",
-//       });
-//     }
+//     // Calculate the percentage of estimated hours
+//     const estimatedHours = project.estimated_hours || 1; // Prevent division by zero
+//     const percentageSpent = (totalHoursSpent / estimatedHours) * 100;
 
-//     const percentageSpent = Math.min((totalHoursSpent / estimatedHours) * 100, 100).toFixed(2);
-//     const remainingPercentage = (100 - percentageSpent).toFixed(2);
+//     // Remaining percentage
+//     const remainingPercentage = 100 - percentageSpent;
 
-//     // Return the calculated progress
+//     // Return success response with calculated values
 //     return res.status(200).json({
 //       status: true,
 //       message: "Project progress calculated successfully",
 //       data: {
-//         projectId: project._id,
-//         totalHoursSpent,
+//         projectId,
+//         projectName: project.project_name,
 //         estimatedHours,
-//         percentageSpent,
-//         remainingPercentage,
+//         totalHoursSpent,
+//         percentageSpent: percentageSpent.toFixed(2), // Rounded to 2 decimals
+//         remainingPercentage: remainingPercentage.toFixed(2), // Rounded to 2 decimals
 //       },
 //     });
 //   } catch (error) {
-//     console.error(error);
+//     console.error("Error calculating project progress:", error);
 //     return res.status(500).json({
 //       status: false,
 //       message: "Error calculating project progress",
@@ -430,50 +371,21 @@ export const createProject = async (req, res) => {
 //   }
 // };
 
-
 export const calculateProjectProgress = async (req, res) => {
-  const { projectId } = req.body; // Get projectId from the request body
-  const { role } = req.user; // Assume user's role is extracted from JWT or session
-
-  // Access Control
-  const allowedRoles = ["member","team lead","manager","hr","director","tester","admin"];
-  if (!allowedRoles.includes(role)) {
-    return res.status(403).json({
-      status: false,
-      message: "You are not authorized to access this information",
-    });
-  }
+  const { projectId } = req.body;
 
   try {
-    // Fetch the project
-    const project = await ProjectModel.findById(projectId);
-    if (!project) {
-      return res.status(404).json({
-        status: false,
-        message: "Project not found",
-      });
+    const { project, totalHoursSpent, error } = await fetchProjectDetails(projectId);
+
+    if (error) {
+      return res.status(404).json({ status: false, message: error });
     }
 
-    // Fetch all tasks associated with the project
-    const tasks = await TaskModel.find({ project: projectId });
-
-    // Calculate the total hours spent using `daily_updates` from all tasks
-    const totalHoursSpent = tasks.reduce((total, task) => {
-      const taskHours = task.daily_updates.reduce(
-        (sum, update) => sum + (update.hours_spent || 0),
-        0
-      );
-      return total + taskHours;
-    }, 0);
-
-    // Calculate the percentage of estimated hours
+    // Calculate progress
     const estimatedHours = project.estimated_hours || 1; // Prevent division by zero
     const percentageSpent = (totalHoursSpent / estimatedHours) * 100;
-
-    // Remaining percentage
     const remainingPercentage = 100 - percentageSpent;
 
-    // Return success response with calculated values
     return res.status(200).json({
       status: true,
       message: "Project progress calculated successfully",
@@ -482,8 +394,8 @@ export const calculateProjectProgress = async (req, res) => {
         projectName: project.project_name,
         estimatedHours,
         totalHoursSpent,
-        percentageSpent: percentageSpent.toFixed(2), // Rounded to 2 decimals
-        remainingPercentage: remainingPercentage.toFixed(2), // Rounded to 2 decimals
+        percentageSpent: percentageSpent.toFixed(2),
+        remainingPercentage: remainingPercentage.toFixed(2),
       },
     });
   } catch (error) {
@@ -497,35 +409,80 @@ export const calculateProjectProgress = async (req, res) => {
 
 
 
+//fazil code
+  // export const getAllProject = async (req, res) => {
+  //   try {
+  //     if (req.user.role == "admin") {
+  //       const projects = await ProjectModel.find({ is_deleted: false })
+  //         .select("_id project_name project_ownership") // Fetch only non-deleted projects
+  //         .populate("project_ownership", "name mail")
+  //         .populate("milestones", "name status"); // Populate ownership details with specific fields
+
+  //       if (!projects.length) {
+  //         return res.status(404).json({ message: "No projects found" });
+  //       }
+  //       return res.status(200).json({ success: true, projects });
+  //     } else {
+  //       if (req.user.role == "manager") {
+  //         const projects = await ProjectModel.find({
+  //           is_deleted: false,
+  //           project_ownership: req.user._id,
+  //         })
+  //           .select("_id project_name project_ownership") // Fetch only non-deleted projects
+  //           .populate("project_ownership", "name mail")
+  //           .populate("milestones", "name status"); // Populate ownership details with specific fields
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching projects:", error);
+  //     res.status(500).json({
+  //       success: false,
+  //       message: "Internal server error",
+  //       error: error.message,
+  //     });
+  //   }
+  // };
 
 
-
-
-
+  
+import { fetchProjectDetails } from "../Helper function/projectHelper.js";
 
 export const getAllProject = async (req, res) => {
   try {
-    if (req.user.role == "admin") {
-      const projects = await ProjectModel.find({ is_deleted: false })
-        .select("_id project_name project_ownership") // Fetch only non-deleted projects
-        .populate("project_ownership", "name mail")
-        .populate("milestones", "name status"); // Populate ownership details with specific fields
+    const { role, _id: userId } = req.user;
 
-      if (!projects.length) {
-        return res.status(404).json({ message: "No projects found" });
-      }
-      return res.status(200).json({ success: true, projects });
-    } else {
-      if (req.user.role == "manager") {
-        const projects = await ProjectModel.find({
-          is_deleted: false,
-          project_ownership: req.user._id,
-        })
-          .select("_id project_name project_ownership") // Fetch only non-deleted projects
-          .populate("project_ownership", "name mail")
-          .populate("milestones", "name status"); // Populate ownership details with specific fields
-      }
+    // Fetch projects based on role
+    let query = { is_deleted: false };
+    if (role === "manager") {
+      query.project_ownership = userId;
     }
+
+    const projects = await ProjectModel.find(query)
+      .select("_id project_name project_ownership milestones")
+      .populate("project_ownership", "name mail")
+      .populate("milestones", "name status");
+
+    if (!projects.length) {
+      return res.status(404).json({ success: false, message: "No projects found" });
+    }
+
+    // Add additional details for each project
+    const projectsWithDetails = [];
+    for (const project of projects) {
+      const { project: fullProject, tasks, totalHoursSpent } = await fetchProjectDetails(
+        project._id
+      );
+      projectsWithDetails.push({
+        ...fullProject.toObject(),
+        tasks,
+        totalHoursSpent,
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      projects: projectsWithDetails,
+    });
   } catch (error) {
     console.error("Error fetching projects:", error);
     res.status(500).json({
@@ -536,95 +493,203 @@ export const getAllProject = async (req, res) => {
   }
 };
 
-export const getAllProjectsPagination = async (req, res) => {
-  try {
-    const { page, limit, status, search = "" } = req.query;
 
-    const { role, id: userId } = req.user;
+  //fazil code
+  // export const getAllProjectsPagination = async (req, res) => {
+  //   try {
+  //     const { page, limit, status, search = "" } = req.query;
 
-    const filter = { is_deleted: false };
+  //     const { role, id: userId } = req.user;
 
-    // Role-based filtering
-    if (role === "manager" || role === "team lead") {
-      filter.project_ownership = userId;
-    }
+  //     const filter = { is_deleted: false };
 
-    // Status filtering
-    if (status) {
+  //     // Role-based filtering
+  //     if (role === "manager" || role === "team lead") {
+  //       filter.project_ownership = userId;
+  //     }
+
+  //     // Status filtering
+  //     if (status) {
+  //       const validStatuses = [
+  //         "Completed",
+  //         "In Progress",
+  //         "Not Started",
+  //         "Pending",
+  //       ];
+  //       if (!validStatuses.includes(status)) {
+  //         return res.status(400).json({
+  //           status: false,
+  //           message: `Invalid status provided. Valid statuses are: ${validStatuses.join(
+  //             ", "
+  //           )}`,
+  //         });
+  //       }
+  //       filter.project_status = status;
+  //     }
+
+  //     // Search filtering
+  //     if (search.trim()) {
+  //       const searchRegex = new RegExp(search.trim(), "i"); // Case-insensitive search
+  //       filter.$or = [
+  //         { project_name: { $regex: searchRegex } }, // Search by project name
+  //         { project_description: { $regex: searchRegex } }, // Search by project description
+  //       ];
+  //     }
+
+  //     console.log("Filter used:", JSON.stringify(filter, null, 2));
+
+  //     let projects;
+  //     let totalProjects;
+
+  //     // Pagination logic
+  //     if (page && limit) {
+  //       const pageNumber = Math.max(1, parseInt(page, 10));
+  //       const limitNumber = Math.min(100, Math.max(1, parseInt(limit, 10)));
+
+  //       projects = await ProjectModel.find(filter)
+  //         .populate("project_ownership", "name mail")
+  //         .populate("milestones", "name status")
+  //         .sort({ createdAt: -1 })
+  //         .skip((pageNumber - 1) * limitNumber)
+  //         .limit(limitNumber)
+  //         .lean();
+
+  //       totalProjects = await ProjectModel.countDocuments(filter);
+  //     } else {
+  //       // Non-paginated results
+  //       projects = await ProjectModel.find(filter)
+  //         .populate("project_ownership", "name mail")
+  //         .populate("milestones", "name status")
+  //         .sort({ createdAt: -1 })
+  //         .lean();
+
+  //       totalProjects = projects.length;
+  //     }
+
+  //     console.log("Projects found:", projects);
+
+  //     return res.status(200).json({
+  //       status: true,
+  //       data: {
+  //         total: totalProjects,
+  //         projects,
+  //       },
+  //       message: "Projects fetched successfully",
+  //     });
+  //   } catch (error) {
+  //     console.error("Error fetching projects:", error);
+  //     return res.status(500).json({
+  //       status: false,
+  //       message: "An error occurred while fetching projects",
+  //     });
+  //   }
+  // };
+
+
+  export const getAllProjectsPagination = async (req, res) => {
+    try {
+      const { page = 1, limit = 10, status, search = "" } = req.query;
+      const { role, id: userId } = req.user;
+  
+      // Initialize filters
+      const filter = { is_deleted: false };
+  
+      // Role-based filtering
+      if (role === "manager" || role === "team lead") {
+        filter.project_ownership = userId;
+      }
+  
+      // Status filtering
       const validStatuses = [
         "Completed",
         "In Progress",
         "Not Started",
         "Pending",
+        "Cancelled",
       ];
-      if (!validStatuses.includes(status)) {
-        return res.status(400).json({
-          status: false,
-          message: `Invalid status provided. Valid statuses are: ${validStatuses.join(
-            ", "
-          )}`,
-        });
+      if (status) {
+        if (!validStatuses.includes(status)) {
+          return res.status(400).json({
+            status: false,
+            message: `Invalid status provided. Valid statuses are: ${validStatuses.join(
+              ", "
+            )}`,
+          });
+        }
+        filter.project_status = status;
       }
-      filter.project_status = status;
-    }
-
-    // Search filtering
-    if (search.trim()) {
-      const searchRegex = new RegExp(search.trim(), "i"); // Case-insensitive search
-      filter.$or = [
-        { project_name: { $regex: searchRegex } }, // Search by project name
-        { project_description: { $regex: searchRegex } }, // Search by project description
-      ];
-    }
-
-    console.log("Filter used:", JSON.stringify(filter, null, 2));
-
-    let projects;
-    let totalProjects;
-
-    // Pagination logic
-    if (page && limit) {
+  
+      // Search filtering
+      if (search.trim()) {
+        const searchRegex = new RegExp(search.trim(), "i");
+        filter.$or = [
+          { project_name: { $regex: searchRegex } },
+          { project_description: { $regex: searchRegex } },
+        ];
+      }
+  
+      console.log("Filter used:", JSON.stringify(filter, null, 2));
+  
+      // Parse and validate pagination parameters
       const pageNumber = Math.max(1, parseInt(page, 10));
       const limitNumber = Math.min(100, Math.max(1, parseInt(limit, 10)));
-
-      projects = await ProjectModel.find(filter)
-        .populate("project_ownership", "name mail")
-        .populate("milestones", "name status")
-        .sort({ createdAt: -1 })
-        .skip((pageNumber - 1) * limitNumber)
-        .limit(limitNumber)
-        .lean();
-
-      totalProjects = await ProjectModel.countDocuments(filter);
-    } else {
-      // Non-paginated results
-      projects = await ProjectModel.find(filter)
-        .populate("project_ownership", "name mail")
-        .populate("milestones", "name status")
-        .sort({ createdAt: -1 })
-        .lean();
-
-      totalProjects = projects.length;
+  
+      // Fetch projects and count asynchronously
+      const [projects, totalProjects, allProjects] = await Promise.all([
+        ProjectModel.find(filter)
+          .populate("project_ownership", "name mail")
+          .populate("milestones", "name status")
+          .sort({ createdAt: -1 })
+          .skip((pageNumber - 1) * limitNumber)
+          .limit(limitNumber)
+          .lean(),
+        ProjectModel.countDocuments(filter),
+        ProjectModel.find({ is_deleted: false }).lean(),
+      ]);
+  
+      // Calculate status summary
+      const statusSummary = validStatuses.reduce((summary, status) => {
+        summary[status] = 0; // Initialize with 0
+        return summary;
+      }, {});
+  
+      allProjects.forEach((project) => {
+        const projectStatus = project.project_status;
+        if (statusSummary[projectStatus] !== undefined) {
+          statusSummary[projectStatus]++;
+        }
+      });
+  
+      console.log("Projects found:", projects);
+  
+      // Return response
+      return res.status(200).json({
+        status: true,
+        data: {
+          total: totalProjects,
+          statusSummary,
+          projects,
+        },
+        message: "Projects fetched successfully",
+      });
+    } catch (error) {
+      console.error("Error fetching projects:", error);
+      return res.status(500).json({
+        status: false,
+        message: "An error occurred while fetching projects",
+      });
     }
+  };
+  
+  
+  
 
-    console.log("Projects found:", projects);
 
-    return res.status(200).json({
-      status: true,
-      data: {
-        total: totalProjects,
-        projects,
-      },
-      message: "Projects fetched successfully",
-    });
-  } catch (error) {
-    console.error("Error fetching projects:", error);
-    return res.status(500).json({
-      status: false,
-      message: "An error occurred while fetching projects",
-    });
-  }
-};
+
+
+
+
+
 
 export const getProjectById = async (req, res) => {
   const { id } = req.body;
