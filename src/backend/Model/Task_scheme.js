@@ -162,6 +162,16 @@ const taskSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Milestone",
     },
+     // New Fields
+     move_to_uav: {
+      type: Boolean,
+      default: false, // Default is false
+    },
+    tester_approval: {
+      type: String, // To store the tester's name or a short identifier
+      maxlength: 50, // Optional limit for length
+      default: null, // Default is null if no tester is assigned
+    },
 
     daily_updates: [
       {

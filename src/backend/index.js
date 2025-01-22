@@ -3,7 +3,7 @@ import cors from "cors";
 import connectDatabase from "./Model/db.js";
 import userRoute from "./Routes/User_Route.js";
 import adminRoute from "./Routes/Admin_Route.js";
-import ticketRoute from "./Routes/Ticket_Route.js";
+// import ticketRoute from "./Routes/Ticket_Route.js";
 
 import dotenv from "dotenv";
 dotenv.config();
@@ -19,7 +19,7 @@ app.use("/user", userRoute);
 
 app.use("/admin", adminRoute);
 
-app.use("/ticket", ticketRoute);
+// app.use("/ticket", ticketRoute);
 
 connectDatabase();
 

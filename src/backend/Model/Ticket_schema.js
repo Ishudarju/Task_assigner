@@ -3,7 +3,7 @@
 
 const TicketSchema = new mongoose.Schema(
   {
-    
+
     title: {
       type: String,
       required: true,
@@ -15,7 +15,7 @@ const TicketSchema = new mongoose.Schema(
       trim: true,
     },
 
-    //task
+    
     project: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Project', // Referencing Project model
@@ -45,6 +45,14 @@ const TicketSchema = new mongoose.Schema(
       type: String,
       enum: ['Minor', 'Major', 'Critical'],
       default: 'Major',
+    },
+    main_category: {
+      type: String, // Allowing any string value for main_category
+      required: true,
+    },
+    sub_category: {
+      type: String, // Allowing any string value for sub_category
+      required: true,
     },
     created_at: {
       type: Date,
