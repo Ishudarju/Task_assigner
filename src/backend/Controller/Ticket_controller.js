@@ -8,13 +8,21 @@ import  ProjectModel  from '../Model/Project_schema.js'; // Use named import
 
 
 export const createTicket = async (req, res) => {
-  const { title, description, project, assigned_to, priority, status } = req.body;
+  const { title, description, project, assigned_to, priority, status, main_category,
+    sub_category, } = req.body;
 
   console.log(req.user);
 
   // Check if the user has the correct role (Tester)
   if (req.user.role !== 'tester'|'admin') {
     return res.status(403).json({ status: false, message: 'No Authorization' });
+  }
+   // Validate required fields
+   if (!main_category || !sub_category) {
+    return res.status(400).json({
+      status: false,
+      message: 'Main category and Sub category are required',
+    });
   }
 
   // Validation: Ensure title, description, and project are provided
@@ -55,6 +63,8 @@ export const createTicket = async (req, res) => {
       assigned_to,
       priority,
       status,
+      main_category,
+      sub_category,
       raised_by: req.user.id,
       attachments, // Attach the files as an array of objects
     });
