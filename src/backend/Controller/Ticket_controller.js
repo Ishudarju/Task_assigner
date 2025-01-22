@@ -1,39 +1,4 @@
 
-  // import Ticket from '../Model/Ticket_schema.js';
-// import path from 'path';
-
-
-// export const createTicket = async (req, res) => {
-//   const { title, description, project, assigned_to, priority, status } = req.body;
-// console.log(req.user)
-//   // Role check: Ensure the user is a "tester"
-//   if (req.user.role !== 'tester') {
-//     return res.status(403).json({ status: false, message: 'No Authorization' });
-//   }
-
-//   try {
-//     // Extract file paths from the uploaded files
-//     const attachments = req.files.map(file => file.path);
-
-//     // Create a new ticket
-//     const ticket = new Ticket({
-//       title,
-//       description,
-//       project,
-//       assigned_to,
-//       priority,
-//       status,
-//       raised_by: req.user.id, // Assuming req.user.id contains the logged-in user's ID
-//       attachments, // Array of file paths
-//     });
-
-//     await ticket.save();
-//     res.status(201).json({ message: 'Ticket created successfully', ticket });
-//   } catch (error) {
-//     res.status(500).json({ message: 'Error creating ticket', error });
-//   }
-// };
-
 import {Ticket} from '../Model/Ticket_schema.js';
 import fs from 'fs';
 import path from 'path';
@@ -45,8 +10,10 @@ import  ProjectModel  from '../Model/Project_schema.js'; // Use named import
 export const createTicket = async (req, res) => {
   const { title, description, project, assigned_to, priority, status } = req.body;
 
+  console.log(req.user);
+
   // Check if the user has the correct role (Tester)
-  if (req.user.role !== 'tester') {
+  if (req.user.role !== 'tester'|'admin') {
     return res.status(403).json({ status: false, message: 'No Authorization' });
   }
 
@@ -122,13 +89,96 @@ export const createTicket = async (req, res) => {
 };
 
 
+//return ticket to tester
+
+// Assuming you already have the required imports for Ticket, User, etc.
+
+export const updateTicketStatus = async (req, res) => {
+  const { ticketId, status ,description} = req.body; // ticketId and status will be passed in the body
+
+  try {
+    // Fetch the ticket
+    const ticket = await Ticket.findById(ticketId);
+    if (!ticket) {
+      return res.status(404).json({ status: false, message: 'Ticket not found' });
+    }
+
+    // Check the user's role
+    const user = req.user;
+
+    // If the user is admin or tester, they can update the status of the ticket.
+    if (user.role === 'admin' || user.role === 'tester') {
+      // Only admins or testers can change status to 'Open', 'Closed', or 'Reopen'
+      if (status && ['Open', 'In Progress', 'Resolved', 'Closed', 'Reopen'].includes(status)) {
+        ticket.status = status;
+      } else {
+        return res.status(400).json({ status: false, message: 'Invalid status for your role' });
+      }
+
+      // If the user is a member, they can only set the status to 'In Progress' or 'Resolved'
+      if (user.role === 'member') {
+        if (status === 'In Progress' || status === 'Resolved') {
+          ticket.status = status;
+        } else {
+          return res.status(400).json({ status: false, message: 'Members can only change status to "In Progress" or "Resolved"' });
+        }
+      }
+
+      // If the member resolves the issue, return ticket to tester for confirmation
+      if (ticket.status === 'Resolved') {
+
+        if (description) {
+          ticket.description = description;  // Update the description provided by the member
+        } else {
+          return res.status(400).json({ status: false, message: 'Description is required when resolving the ticket' });
+        }
+
+        ticket.assigned_to = ticket.raised_by; // Assign it back to the tester
+      }
+
+      // Save the updated ticket
+      ticket.updated_at = new Date();
+      await ticket.save();
+
+        // Return the ticket to the tester after member resolves it
+        if (ticket.status === 'Resolved' && user.role === 'member') {
+          return res.status(200).json({
+            status: true,
+            message: 'Ticket resolved and returned to tester for confirmation',
+            ticket: {
+              ticketId: ticket._id,
+              status: ticket.status,
+              description: ticket.description,
+              assigned_to: ticket.assigned_to,  // Assigned to tester after resolution
+            },
+          });
+        }
+
+      return res.status(200).json({
+        status: true,
+        message: `Ticket status updated to ${status}`,
+        ticket, // Return the updated ticket
+      });
+    }
+
+    // If the user is neither admin nor tester, they cannot update the status
+    return res.status(403).json({ status: false, message: 'You are not authorized to update the status of this ticket' });
+
+  } catch (error) {
+    console.error('Error updating ticket status:', error);
+    res.status(500).json({ status: false, message: 'Error updating ticket status', error: error.message });
+  }
+};
+
+
+
 
 
 
 export const getTicketsWithDetails = async (req, res) => {
   try {
 
-    if (req.user.role !== 'tester') {
+    if (req.user.role !== 'tester'||'admin') {
       return res.status(403).json({ status: false, message: 'No Authorization' });
     }
 
@@ -140,6 +190,11 @@ export const getTicketsWithDetails = async (req, res) => {
 
     res.status(200).json({ message: 'Tickets fetched successfully', tickets });// Check if there are any projects    
     
+    // Check if tickets are fetched
+     if (!tickets) {
+      return res.status(404).json({ status: false, message: 'No tickets found' });
+    }
+
 
   } catch (error) {
     console.log(error);

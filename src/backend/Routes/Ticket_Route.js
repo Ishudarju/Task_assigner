@@ -27,6 +27,8 @@ router.get('/tickets/:id', User.authMiddleware, Ticket.getTicketById);
 
 router.post('/updatetick/:id', User.authMiddleware, Ticket.updateTicket);
 
+router.post('/updatetickstatus', User.authMiddleware, Ticket.updateTicketStatus);
+
 
 // Delete a ticket
 router.delete('/tickets/:id', User.authMiddleware, Ticket.deleteTicket);
