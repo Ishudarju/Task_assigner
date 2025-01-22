@@ -3,6 +3,7 @@
 
 const TicketSchema = new mongoose.Schema(
   {
+    
     title: {
       type: String,
       required: true,
@@ -13,6 +14,8 @@ const TicketSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+
+    //task
     project: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Project', // Referencing Project model
