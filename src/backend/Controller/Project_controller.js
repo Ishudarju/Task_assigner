@@ -447,7 +447,7 @@ export const getAllProject = async (req, res) => {
 
     // Fetch projects based on role
     let query = { is_deleted: false };
-    if (role === "manager") {
+    if (role === "Manager") {
       query.project_ownership = userId;
     }
 
