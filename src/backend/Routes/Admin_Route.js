@@ -57,7 +57,7 @@ adminRoute.delete(
   Admin.authMiddleware,
   Project.deleteProject
 );
-adminRoute.post("/getProjectById", Admin.authMiddleware, Project.getProjectById);
+adminRoute.post("/getProjectById/:id", Admin.authMiddleware, Project.getProjectById);
 // adminRoute.post("/getProjectByStatus", Project.getProjectByStatus);
 adminRoute.get("/getAllProjectList", Admin.authMiddleware, Project.getAllProject);
 adminRoute.post(

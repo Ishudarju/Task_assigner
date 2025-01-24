@@ -4,6 +4,7 @@ import * as Admin from "../Controller/Admin_controller.js";
 import * as Ticket from "../Controller/Ticket_controller.js";
 import * as Task from "../Controller/Task_controller.js";
 import * as Project from "../Controller/Project_controller.js";
+import * as Milestone from "../Controller/Milestone_controller.js";
 import multer from "multer";
 
 const userRoute = express.Router();
@@ -26,11 +27,10 @@ userRoute.post("/daliyTaskUpdate", User.authMiddleware, Task.DailyTaskUpdate);
 
 // userRoute.post("/",User.authMiddleware,Task.create_skill_Improvement);
 
-
 userRoute.put("/updateProject", User.authMiddleware, Project.updateProject);
 userRoute.get("/exportXLSX", User.exportXLSX);
 // userRoute.post("/profie", View_profile);
-userRoute.get("/getEmpMails", User.authMiddleware,User.getAllUserEmpMail);
+userRoute.get("/getEmpMails", User.authMiddleware, User.getAllUserEmpMail);
 userRoute.post("/importXLSX", upload.single("file"), User.importXLSX);
 
 userRoute.post("/createTicket", User.authMiddleware, Ticket.createTicket);
@@ -42,11 +42,18 @@ userRoute.get(
   Project.getAllProjectsPagination
 );
 userRoute.get("/getAllProjectList", User.authMiddleware, Project.getAllProject);
-
+userRoute.post(
+  "/getMilestonesForProject",
+  User.authMiddleware,
+  Milestone.getMilestonesForConsentProjects
+);
 
 // Route to calculate project progress by projectId
-userRoute.get("/hours_spent_progress", User.authMiddleware,Project.calculateProjectProgress );
-
+userRoute.get(
+  "/hours_spent_progress",
+  User.authMiddleware,
+  Project.calculateProjectProgress
+);
 
 
 //Ticket Routes
@@ -81,3 +88,4 @@ userRoute.get("/tasks_uat", User.authMiddleware, Task.listUATTasksForTesters);
 userRoute.post('/updateTesterApproval', User.authMiddleware, Task.updateTesterApproval);
 
 export default userRoute;
+
