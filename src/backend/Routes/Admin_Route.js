@@ -91,24 +91,35 @@ const upload = multer({
 
 
 // Define the route for creating tickets
-adminRoute.post('/insert_ticket', User.authMiddleware, upload.array('attachments'), Ticket.createTicket);
+adminRoute.post('/insert_ticket', Admin.authMiddleware, upload.array('attachments'), Ticket.createTicket);
 
 // Get all tickets with project and assigned employee details
-adminRoute.get('/getall_ticket', User.authMiddleware, Ticket.getTicketsWithDetails);
+adminRoute.get('/getall_ticket', Admin.authMiddleware, Ticket.getTicketsWithDetails);
 
 // Get a ticket by ID
-adminRoute.get('/tickets/:id', User.authMiddleware, Ticket.getTicketById);
+adminRoute.get('/tickets/:id', Admin.authMiddleware, Ticket.getTicketById);
 
 // // Update a ticket
 // router.post('/updatetick/:id', User.authMiddleware, updateTicket);
 
-adminRoute.post('/updatetick/:id', User.authMiddleware, Ticket.updateTicket);
+adminRoute.post('/updatetick/:id', Admin.authMiddleware, Ticket.updateTicket);
 
-adminRoute.post('/updatetickstatus', User.authMiddleware, Ticket.updateTicketStatus);
+adminRoute.post('/updatetickstatus', Admin.authMiddleware, Ticket.updateTicketStatus);
 
 
 // Delete a ticket
-adminRoute.delete('/tickets/:id', User.authMiddleware, Ticket.deleteTicket);
+adminRoute.delete('/tickets/:id', Admin.authMiddleware, Ticket.deleteTicket);
+
+
+//Tasks routes
+
+// Update UAT Status route (to be called when a user marks the task for UAT)
+adminRoute.patch('/updateUATStatus', Admin.authMiddleware, Task.updateUATStatus);
+// Route to get UAT tasks for testers
+adminRoute.get("/tasks_uat", User.authMiddleware, Task.listUATTasksForTesters);
+
+// Update Tester Approval route (tester can approve or reject the task)
+adminRoute.patch('/updateTesterApproval', Admin.authMiddleware, Task.updateTesterApproval);
 
 
 export default adminRoute;

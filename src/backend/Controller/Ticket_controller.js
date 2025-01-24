@@ -1,5 +1,8 @@
 
 import {Ticket} from '../Model/Ticket_schema.js';
+// import { Ticket } from './models/Ticket';  // Adjust path to your Ticket model
+
+
 import fs from 'fs';
 import path from 'path';
 import  ProjectModel  from '../Model/Project_schema.js'; // Use named import
@@ -7,55 +10,142 @@ import  ProjectModel  from '../Model/Project_schema.js'; // Use named import
 // Adjust the path based on your project structure
 
 
+// export const createTicket = async (req, res) => {
+//   const { title, description, project, assigned_to, priority, status, main_category,
+//     sub_category, } = req.body;
+
+//   console.log(req.user);
+
+//   // Check if the user has the correct role (Tester)
+//   if (req.user.role !== 'tester'|'admin') {
+//     return res.status(403).json({ status: false, message: 'No Authorization' });
+//   }
+//    // Validate required fields
+//   if (!main_category || !sub_category) {
+//     return res.status(400).json({
+//       status: false,
+//       message: 'Main category and Sub category are required',
+//     });
+//   }
+
+//   // Validation: Ensure title, description, and project are provided
+//   if (!title || !description || !project) {
+//     return res.status(400).json({
+//       status: false,
+//       message: 'Title, Description, and Project are required',
+//     });
+//   }
+
+//   try {
+//     // Check if the project exists
+//     const projectExists = await ProjectModel.findById(project);
+//     if (!projectExists) {
+//       return res.status(404).json({ status: false, message: 'Project not found' });
+//     }
+
+//     // Ensure the 'uploads' directory exists (for storing files)
+//     const uploadDir = path.resolve('./uploads');
+//     if (!fs.existsSync(uploadDir)) {
+//       fs.mkdirSync(uploadDir, { recursive: true });
+//     }
+
+//     // Map uploaded files to attachments with file paths and uploaded_at timestamp
+//     let attachments = [];
+//     if (req.files && req.files.length > 0) {
+//       attachments = req.files.map(file => ({
+//         file_url: path.join('uploads', file.filename), // Store the relative path
+//         uploaded_at: new Date(),
+//       }));
+//     }
+
+//     // Create a new ticket with the provided data
+//     const ticket = new Ticket({
+//       title,
+//       description,
+//       project,
+//       assigned_to,
+//       priority,
+//       status,
+//       main_category,
+//       sub_category,
+//       raised_by: req.user.id,
+//       attachments, // Attach the files as an array of objects
+//     });
+
+//     // Save the ticket to the database
+//     await ticket.save();
+
+//     res.status(201).json({
+//       status: true,
+//       message: 'Ticket created successfully',
+//       ticket, // Return the created ticket object
+//     });
+//   } catch (error) {
+//     console.error('Error creating ticket:', error);
+
+//     // Clean up uploaded files in case of error
+//     if (req.files && req.files.length > 0) {
+//       req.files.forEach(file => {
+//         const filePath = path.join('uploads', file.filename);
+//         if (fs.existsSync(filePath)) {
+//           fs.unlinkSync(filePath); // Remove the uploaded files
+//         }
+//       });
+//     }
+
+//     res.status(500).json({
+//       status: false,
+//       message: 'Error creating ticket',
+//       error: error.message,
+//     });
+//   }
+// };
+
 export const createTicket = async (req, res) => {
-  const { title, description, project, assigned_to, priority, status, main_category,
-    sub_category, } = req.body;
+  const { title, description, project, assigned_to, priority, status, main_category, sub_category } = req.body;
 
-  console.log(req.user);
-
-  // Check if the user has the correct role (Tester)
-  if (req.user.role !== 'tester'|'admin') {
+  // Ensure the user is authorized
+  if (req.user.role !== 'tester' && req.user.role !== 'admin') {
     return res.status(403).json({ status: false, message: 'No Authorization' });
   }
-   // Validate required fields
-   if (!main_category || !sub_category) {
-    return res.status(400).json({
-      status: false,
-      message: 'Main category and Sub category are required',
-    });
+
+  // Validation
+  if (!main_category || !sub_category) {
+    return res.status(400).json({ status: false, message: 'Main category and Sub category are required' });
   }
 
-  // Validation: Ensure title, description, and project are provided
   if (!title || !description || !project) {
-    return res.status(400).json({
-      status: false,
-      message: 'Title, Description, and Project are required',
-    });
+    return res.status(400).json({ status: false, message: 'Title, Description, and Project are required' });
   }
 
   try {
-    // Check if the project exists
+    // Check if project exists
     const projectExists = await ProjectModel.findById(project);
     if (!projectExists) {
       return res.status(404).json({ status: false, message: 'Project not found' });
     }
+// Validate status for testers
+    const testerAllowedStatuses = ['Open', 'Closed', 'Reopen'];
+if (req.user.role === 'tester') {
+  if (!status || !testerAllowedStatuses.includes(status)) {
+    return res.status(400).json({
+      status: false,
+      message: `Testers can only set the status to: ${testerAllowedStatuses.join(', ')}`,
+    });
+  }
+}
 
-    // Ensure the 'uploads' directory exists (for storing files)
-    const uploadDir = path.resolve('./uploads');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
 
-    // Map uploaded files to attachments with file paths and uploaded_at timestamp
+    // Handle attachments
     let attachments = [];
     if (req.files && req.files.length > 0) {
       attachments = req.files.map(file => ({
-        file_url: path.join('uploads', file.filename), // Store the relative path
+        file_url: path.join('uploads', file.filename), // Store file path
         uploaded_at: new Date(),
       }));
     }
 
-    // Create a new ticket with the provided data
+    // Create a new ticket
     const ticket = new Ticket({
       title,
       description,
@@ -66,37 +156,24 @@ export const createTicket = async (req, res) => {
       main_category,
       sub_category,
       raised_by: req.user.id,
-      attachments, // Attach the files as an array of objects
+      attachments,
     });
 
-    // Save the ticket to the database
+    // Save ticket
     await ticket.save();
 
     res.status(201).json({
       status: true,
       message: 'Ticket created successfully',
-      ticket, // Return the created ticket object
+      ticket, // Return the created ticket
     });
+
   } catch (error) {
     console.error('Error creating ticket:', error);
-
-    // Clean up uploaded files in case of error
-    if (req.files && req.files.length > 0) {
-      req.files.forEach(file => {
-        const filePath = path.join('uploads', file.filename);
-        if (fs.existsSync(filePath)) {
-          fs.unlinkSync(filePath); // Remove the uploaded files
-        }
-      });
-    }
-
-    res.status(500).json({
-      status: false,
-      message: 'Error creating ticket',
-      error: error.message,
-    });
+    res.status(500).json({ status: false, message: 'Error creating ticket', error: error.message });
   }
 };
+
 
 
 //return ticket to tester
@@ -104,7 +181,7 @@ export const createTicket = async (req, res) => {
 // Assuming you already have the required imports for Ticket, User, etc.
 
 export const updateTicketStatus = async (req, res) => {
-  const { ticketId, status ,description} = req.body; // ticketId and status will be passed in the body
+  const { ticketId, status, description } = req.body;
 
   try {
     // Fetch the ticket
@@ -113,98 +190,104 @@ export const updateTicketStatus = async (req, res) => {
       return res.status(404).json({ status: false, message: 'Ticket not found' });
     }
 
-    // Check the user's role
-    const user = req.user;
+    const user = req.user; // Logged-in user info
+    const testerAllowedStatuses = ['Open', 'Closed', 'Reopen'];
+    const userAllowedStatuses = ['In Progress', 'Resolved'];
 
-    // If the user is admin or tester, they can update the status of the ticket.
-    if (user.role === 'admin' || user.role === 'tester') {
-      // Only admins or testers can change status to 'Open', 'Closed', or 'Reopen'
-      if (status && ['Open', 'In Progress', 'Resolved', 'Closed', 'Reopen'].includes(status)) {
+    // **Tester Role**
+    if (user.role === 'tester') {
+      if (status && testerAllowedStatuses.includes(status)) {
         ticket.status = status;
       } else {
-        return res.status(400).json({ status: false, message: 'Invalid status for your role' });
+        return res.status(400).json({
+          status: false,
+          message: `Testers can only update the status to: ${testerAllowedStatuses.join(', ')}`,
+        });
       }
+    }
 
-      // If the user is a member, they can only set the status to 'In Progress' or 'Resolved'
-      if (user.role === 'member') {
-        if (status === 'In Progress' || status === 'Resolved') {
-          ticket.status = status;
-        } else {
-          return res.status(400).json({ status: false, message: 'Members can only change status to "In Progress" or "Resolved"' });
+    // **Other Users Role**
+    else if (['member', 'team lead', 'manager', 'hr', 'director'].includes(user.role)) {
+      if (status && userAllowedStatuses.includes(status)) {
+        if (status === 'Resolved') {
+          if (!description) {
+            return res.status(400).json({
+              status: false,
+              message: 'Description is required when resolving a ticket.',
+            });
+          }
+          ticket.description = description; // Set description when resolving
+          ticket.assigned_to = ticket.raised_by; // Reassign to tester for verification
         }
+        ticket.status = status;
+      } else {
+        return res.status(400).json({
+          status: false,
+          message: `You are only allowed to update the status to: ${userAllowedStatuses.join(', ')}`,
+        });
       }
+    }
 
-      // If the member resolves the issue, return ticket to tester for confirmation
-      if (ticket.status === 'Resolved') {
-
-        if (description) {
-          ticket.description = description;  // Update the description provided by the member
-        } else {
-          return res.status(400).json({ status: false, message: 'Description is required when resolving the ticket' });
-        }
-
-        ticket.assigned_to = ticket.raised_by; // Assign it back to the tester
-      }
-
-      // Save the updated ticket
-      ticket.updated_at = new Date();
-      await ticket.save();
-
-        // Return the ticket to the tester after member resolves it
-        if (ticket.status === 'Resolved' && user.role === 'member') {
-          return res.status(200).json({
-            status: true,
-            message: 'Ticket resolved and returned to tester for confirmation',
-            ticket: {
-              ticketId: ticket._id,
-              status: ticket.status,
-              description: ticket.description,
-              assigned_to: ticket.assigned_to,  // Assigned to tester after resolution
-            },
-          });
-        }
-
-      return res.status(200).json({
-        status: true,
-        message: `Ticket status updated to ${status}`,
-        ticket, // Return the updated ticket
+    // **Unauthorized Roles**
+    else {
+      return res.status(403).json({
+        status: false,
+        message: 'You are not authorized to update the status of this ticket.',
       });
     }
 
-    // If the user is neither admin nor tester, they cannot update the status
-    return res.status(403).json({ status: false, message: 'You are not authorized to update the status of this ticket' });
+    // Save the updated ticket
+    ticket.updated_at = new Date();
+    await ticket.save();
 
+    // Success Response
+    return res.status(200).json({
+      status: true,
+      message: `Ticket status updated to ${status}`,
+      ticket,
+    });
   } catch (error) {
     console.error('Error updating ticket status:', error);
-    res.status(500).json({ status: false, message: 'Error updating ticket status', error: error.message });
+    res.status(500).json({
+      status: false,
+      message: 'Error updating ticket status',
+      error: error.message,
+    });
   }
 };
 
 
-
-
-
-
+//ishu corrected code
+// getALLdetails
 export const getTicketsWithDetails = async (req, res) => {
   try {
+    console.log(req.user);
 
-    if (req.user.role !== 'tester'||'admin') {
-      return res.status(403).json({ status: false, message: 'No Authorization' });
+    // Check if the user has 'admin' or 'tester' role
+    if (req.user.role !== 'tester' && req.user.role !== 'admin') {
+      // If not admin or tester, we only show tickets assigned to this user
+      const tickets = await Ticket.find({ assigned_to: req.user.id })
+        .populate('project', 'name description') // Populates project details
+        .populate('assigned_to', 'name mail'); // Populates assigned employee details
+
+      // If no tickets are found for this user, send a message
+      if (!tickets || tickets.length === 0) {
+        return res.status(404).json({ status: false, message: 'No tickets found for this user' });
+      }
+
+      return res.status(200).json({ message: 'Tickets fetched successfully for this user', tickets });
     }
 
+    // If admin or tester, show all tickets
     const tickets = await Ticket.find()
       .populate('project', 'name description') // Populates project details
       .populate('assigned_to', 'name mail'); // Populates assigned employee details
 
-      console.log(tickets);
-
-    res.status(200).json({ message: 'Tickets fetched successfully', tickets });// Check if there are any projects    
-    
-    // Check if tickets are fetched
-     if (!tickets) {
+    if (!tickets || tickets.length === 0) {
       return res.status(404).json({ status: false, message: 'No tickets found' });
     }
 
+    res.status(200).json({ message: 'Tickets fetched successfully', tickets });
 
   } catch (error) {
     console.log(error);
@@ -212,7 +295,51 @@ export const getTicketsWithDetails = async (req, res) => {
   }
 };
 
-// Get a ticket by ID with details
+
+// // getTicketsWithDetails
+// export const getTicketsWithDetails = async (req, res) => {
+//   try {
+//     let tickets;
+
+//     // Check if the user has 'admin' or 'tester' role
+//     if (req.user.role !== 'tester' && req.user.role !== 'admin') {
+//       // If not admin or tester, show tickets assigned to this user
+//       tickets = await Ticket.find({ assigned_to: req.user.id })
+//         .populate('project', 'name description')  // Populates project details
+//         .populate('assigned_to', 'name mail')    // Populates assigned employee details
+//         // .populate('tasks')  // Populates all fields of tasks associated with the ticket
+//         .populate('tasks', 'task_title task_description assigned_to') // Only retrieves specific fields from the Task model
+
+
+//       if (!tickets || tickets.length === 0) {
+//         return res.status(404).json({ status: false, message: 'No tickets found for this user' });
+//       }
+//       return res.status(200).json({ message: 'Tickets fetched successfully for this user', tickets });
+//     }
+
+//     // Admin or tester role, fetch all tickets
+//     tickets = await Ticket.find()
+//       .populate('project', 'name description')  // Populates project details
+//       .populate('assigned_to', 'name mail')    // Populates assigned employee details
+//       .populate('tasks')  // Populates all fields of tasks associated with the ticket
+
+//     if (!tickets || tickets.length === 0) {
+//       return res.status(404).json({ status: false, message: 'No tickets found' });
+//     }
+
+//     res.status(200).json({ message: 'Tickets fetched successfully', tickets });
+
+//   } catch (error) {
+//     console.log(error);
+//     res.status(500).json({ message: 'Error fetching tickets', error: error.message });
+//   }
+// };
+
+
+
+
+
+
 
 export const getTicketById = async (req, res) => {
   try {
@@ -239,6 +366,7 @@ export const getTicketById = async (req, res) => {
     res.status(500).json({ message: 'Error fetching ticket', error: error.message });
   }
 };
+
 
 
 // Update a ticket
@@ -277,6 +405,8 @@ export const getTicketById = async (req, res) => {
 
 
 // Update a ticket
+
+
 export const updateTicket = async (req, res) => {
   try {
     const { id } = req.params;
