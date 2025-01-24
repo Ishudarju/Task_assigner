@@ -168,9 +168,8 @@ const taskSchema = new mongoose.Schema(
       default: false, // Default is false
     },
     tester_approval: {
-      type: String, // To store the tester's name or a short identifier
-      maxlength: 50, // Optional limit for length
-      default: null, // Default is null if no tester is assigned
+      type: Boolean, // To store the tester's name or a short identifier
+      default: false, // Default is null if no tester is assigned
     },
 
     daily_updates: [
