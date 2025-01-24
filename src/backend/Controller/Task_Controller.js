@@ -220,63 +220,7 @@ export const createTask = async (req, res) => {
 };
 
 
-// Update UAT Status Function (User changes UAT status)
-// export const updateUATStatus = async (req, res) => {
-//   const { taskId } = req.body; // Get task ID from URL params
-//   const { move_to_uav } = req.body; // Get new UAT status from request body
 
-//   try {
-//     // Find the task by ID
-//     const task = await TaskModel.findById(taskId);
-
-//     if (!task) {
-//       return res.status(404).json({ status: false, message: "Task not found" });
-//     }
-
-//     // Update the move_to_uav status (UAT status)
-//     task.move_to_uav = move_to_uav;
-//     await task.save();
-
-//     return res.status(200).json({
-//       status: true,
-//       message: "UAT status updated successfully",
-//       data: task,
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     return res.status(500).json({
-//       status: false,
-//       message: "Error in updating UAT status",
-//     });
-//   }
-// };
-
-// export const updateUATStatus = async (req, res) => {
-//   const { taskId, move_to_uav } = req.body;
-
-//   try {
-//     // Find the task by ID and update the move_to_uav field
-//     const task = await TaskModel.findByIdAndUpdate(
-//       taskId,
-//       { move_to_uav: move_to_uav }, // Update only the move_to_uav field
-//       { new: true, runValidators: true } // Return updated task and validate
-//     );
-
-//     if (!task) {
-//       return res.status(404).json({ status: false, message: "Task not found" });
-//     }
-
-//     // Return the updated task details
-//     return res.status(200).json({
-//       status: true,
-//       message: "Task UAT status updated successfully",
-//       data: task,
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     return res.status(500).json({ status: false, message: "Error updating task" });
-//   }
-// };
 
 export const updateUATStatus = async (req, res) => {
   const { taskId, move_to_uat } = req.body; // Use taskId and move_to_uav from the body
@@ -309,46 +253,6 @@ export const updateUATStatus = async (req, res) => {
 };
 
 
-// List UAT Tasks for Testers Function (List tasks for UAT testing)
-
-// export const listUATTasksForTesters = async (req, res) => {
-//   try {
-//     // Verify if the user is a tester or admin (assuming user details are in req.user)
-//     const { userId } = req; // Extract user ID from auth middleware
-
-//     const user = await UserModel.findById(userId);
-
-//     console.log(user);
-
-//     // Check if the user is a tester or admin
-//     if (!user || (user.role !== "tester" && user.role !== "admin")) {
-//       return res.status(403).json({
-//         status: false,
-//         message: "Access denied. Only testers or admins can view or edit this data.",
-//       });
-//     }
-
-//     // Fetch tasks with `move_to_uat` = true
-//     const tasks = await TaskModel.find({ move_to_uat: true })
-//       .populate("project", "project_name") // Populate project details if needed
-//       .populate("assigned_to", "name email") // Populate assigned_to details
-//       .populate("assigned_by", "name email") // Populate assigned_by details
-//       .sort({ updatedAt: -1 }); // Sort by the most recently updated tasks
-
-//     return res.status(200).json({
-//       status: true,
-//       message: "Tasks for UAT retrieved successfully",
-//       data: tasks,
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     console.log(error);
-//     return res.status(500).json({
-//       status: false,
-//       message: "Error in retrieving UAT tasks",
-//     });
-//   }
-// };
 
 
 
@@ -398,12 +302,29 @@ export const listUATTasksForTesters = async (req, res) => {
 
 
 
-// Update Tester Approval Function (Tester approves or rejects task)
+
+// // Update Tester Approval Function (Tester approves or rejects task)
 export const updateTesterApproval = async (req, res) => {
-  const { taskId } = req.params; // Get task ID from URL params
-  const { tester_approval } = req.body; // Get tester approval status ('Approved' or 'Rejected')
+  const { taskId } = req.body; // Get task ID from URL params
+  const { tester_approval } = req.body; // Get tester approval status (true or false)
+
+  const { userId } = req.user; // Extract user ID from the auth middleware (or from headers)
+  const user = await UserModel.findById(userId); // Fetch the user from the database
+
+  // Check if the user is an admin or a tester
+  if (req.user.role !== "admin" && req.user.role !== "tester") {
+    return res.status(403).json({
+      status: false,
+      message: "Access denied. Only admins and testers can view this data.",
+    });
+  }
 
   try {
+    // Validate tester_approval value (must be a boolean)
+    if (typeof tester_approval !== 'boolean') {
+      return res.status(400).json({ status: false, message: "Invalid tester approval value. It must be either true or false." });
+    }
+
     // Find the task by ID
     const task = await TaskModel.findById(taskId);
 
@@ -413,6 +334,12 @@ export const updateTesterApproval = async (req, res) => {
 
     // Update the tester approval status
     task.tester_approval = tester_approval;
+
+      // If the task is approved, update its status to "Completed"
+      if (tester_approval === true) {
+        task.status = "Completed";
+      }
+
     await task.save();
 
     return res.status(200).json({
