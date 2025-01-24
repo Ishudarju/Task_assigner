@@ -163,7 +163,7 @@ const taskSchema = new mongoose.Schema(
       ref: "Milestone",
     },
      // New Fields
-     move_to_uav: {
+     move_to_uat: {
       type: Boolean,
       default: false, // Default is false
     },

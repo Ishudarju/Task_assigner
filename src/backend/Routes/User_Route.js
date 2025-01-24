@@ -55,4 +55,37 @@ userRoute.get(
   Project.calculateProjectProgress
 );
 
+
+//Ticket Routes
+
+// Get all tickets with project and assigned employee details
+userRoute.get('/getall_ticket', User.authMiddleware, Ticket.getTicketsWithDetails);
+
+// Get a ticket by ID
+userRoute.get('/tickets/:id', User.authMiddleware, Ticket.getTicketById);
+
+// // Update a ticket
+// router.post('/updatetick/:id', User.authMiddleware, updateTicket);
+
+userRoute.post('/updatetick/:id', User.authMiddleware, Ticket.updateTicket);
+
+userRoute.post('/updatetickstatus', User.authMiddleware, Ticket.updateTicketStatus);
+
+
+// Delete a ticket
+userRoute.delete('/tickets/:id', User.authMiddleware, Ticket.deleteTicket);
+
+
+
+// Update UAT Status route (to be called when a user marks the task for UAT)
+userRoute.post('/updateUATStatus', User.authMiddleware, Task.updateUATStatus);
+
+
+// Route to get UAT tasks for testers
+userRoute.get("/tasks_uat", User.authMiddleware, Task.listUATTasksForTesters);
+
+// Update Tester Approval route (tester can approve or reject the task)
+userRoute.post('/updateTesterApproval', User.authMiddleware, Task.updateTesterApproval);
+
 export default userRoute;
+

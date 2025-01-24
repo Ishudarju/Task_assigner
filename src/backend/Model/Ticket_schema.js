@@ -21,6 +21,12 @@ const TicketSchema = new mongoose.Schema(
       ref: 'Project', // Referencing Project model
       required: true,
     },
+
+    tasks: { type: mongoose.Schema.Types.ObjectId, 
+        ref: 'Task',
+        required: true,
+       },
+
     raised_by: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'user', // Referencing User model
