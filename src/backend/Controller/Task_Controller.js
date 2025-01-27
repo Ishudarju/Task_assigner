@@ -263,7 +263,7 @@ export const listUATTasksForTesters = async (req, res) => {
     const user = await UserModel.findById(userId); // Fetch the user from the database
 
     // Check if the user is an admin or a tester
-    if (req.user.role !== "admin" && req.user.role !== "tester") {
+    if (req.user.role !== "admin" && req.user.department!== "testing") {
       return res.status(403).json({
         status: false,
         message: "Access denied. Only admins and testers can view this data.",
@@ -302,7 +302,6 @@ export const listUATTasksForTesters = async (req, res) => {
 
 
 
-
 // // Update Tester Approval Function (Tester approves or rejects task)
 export const updateTesterApproval = async (req, res) => {
   const { taskId } = req.body; // Get task ID from URL params
@@ -312,7 +311,7 @@ export const updateTesterApproval = async (req, res) => {
   const user = await UserModel.findById(userId); // Fetch the user from the database
 
   // Check if the user is an admin or a tester
-  if (req.user.role !== "admin" && req.user.role !== "tester") {
+  if (req.user.role !== "admin" && req.user.department!== "testing") {
     return res.status(403).json({
       status: false,
       message: "Access denied. Only admins and testers can view this data.",
@@ -364,11 +363,7 @@ export const deleteTask = async (req, res) => {
   }
 
   try {
-    // const task = await TaskModel.findByIdAndUpdate(
-    //   id,
-    //   { is_deleted: true },
-    //   { new: true }
-    // );
+  
     const task = await TaskModel.findOneAndDelete({ _id: id });
 
     if (!task) {

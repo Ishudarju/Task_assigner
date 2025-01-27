@@ -116,6 +116,8 @@ export const authMiddleware = (req, res, next) => {
 //       .json({ status: false, message: "Internal server error" });
 //   }
 // };
+
+
 export const user_login = async (req, res) => {
   const { mail, password } = req.body;
 
@@ -159,6 +161,7 @@ export const user_login = async (req, res) => {
         id: user._id,
         role: user.role,
         mail: user.mail,
+        department: user.department,
         admin_verify: user.admin_verify,
       },
       JWT_SECRET,
@@ -176,6 +179,8 @@ export const user_login = async (req, res) => {
       employee_id: user.employee_id,
       department: user.department,
     };
+
+    console.log("details",userData);
 
     // Send response
     return res.status(200).json({
@@ -195,8 +200,22 @@ export const user_login = async (req, res) => {
 export const user_dashboard = async (req, res) => {
   // console.log(req.user);
   console.log("user_dashboard");
-  const { id, role, mail } = req.user;
+  const { id, role, mail,department } = req.user;
+
+  //  Ensure only users from the "testing" department can access this dashboard
+   if (department !== 'testing') {
+    return res.status(403).json({
+      status: false,
+      message: 'Access denied. Only users from the testing department are authorized to view the dashboard.',
+    });
+  }
+
+
   let result = "";
+  // if(department === "testing"){
+  //   result = await TaskModel.find({ assigned_to: id });
+  // }
+
   if (role === "hr" || role === "manager" || role === "team lead") {
     // For HR, get overall tasks with specific statuses
     result = await TaskModel.find({
@@ -249,6 +268,14 @@ export const createUser = (req, res) => {
     starting_date,
     lastWorking_date,
   } = req.body;
+
+  //  // Check if the user's department is "testing"
+   if (req.user.department !== 'testing') {
+    return res.status(403).json({
+      status: false,
+      message: "Access denied. Only users from the testing department are authorized to create users.",
+    });
+  }
 
   // console.log(req.body);
   if (password !== confirmPassword) {

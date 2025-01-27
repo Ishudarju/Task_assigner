@@ -91,7 +91,7 @@ const upload = multer({
 
 
 // Define the route for creating tickets
-adminRoute.post('/insert_ticket', Admin.authMiddleware, upload.array('attachments'), Ticket.createTicket);
+adminRoute.post('/createTicket', Admin.authMiddleware, upload.array('attachments'), Ticket.createTicket);
 
 // Get all tickets with project and assigned employee details
 adminRoute.get('/getall_ticket', Admin.authMiddleware, Ticket.getTicketsWithDetails);
