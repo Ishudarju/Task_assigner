@@ -1,5 +1,5 @@
 
-  import mongoose from 'mongoose';
+import mongoose from 'mongoose';
 
 const TicketSchema = new mongoose.Schema(
   {
@@ -14,18 +14,17 @@ const TicketSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
-
-    
     project: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Project', // Referencing Project model
       required: true,
     },
 
-    tasks: { type: mongoose.Schema.Types.ObjectId, 
-        ref: 'Task',
-        required: true,
-       },
+    tasks: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Task',
+      required: true,
+    },
 
     raised_by: {
       type: mongoose.Schema.Types.ObjectId,
@@ -44,7 +43,7 @@ const TicketSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['Open', 'In Progress', 'Resolved', 'Closed','Reopen'],
+      enum: ['Open', 'In Progress', 'Resolved', 'Closed', 'Reopen'],
       default: 'Open',
     },
     severity: {
@@ -53,13 +52,14 @@ const TicketSchema = new mongoose.Schema(
       default: 'Major',
     },
     main_category: {
-      type: String, // Allowing any string value for main_category
+      type: String,
       required: true,
     },
     sub_category: {
-      type: String, // Allowing any string value for sub_category
+      type: String,
       required: true,
     },
+
     created_at: {
       type: Date,
       default: Date.now,
@@ -68,7 +68,7 @@ const TicketSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
-      attachments: [
+    attachments: [
       {
         file_url: {
           type: String,

@@ -1,0 +1,11 @@
+
+List=['Edex',1,4,5]
+List2=['Tech',3,4,5]
+List3= List.pop(3)
+print(List3)
+
+"print(List[0]"
+    
+
+
+

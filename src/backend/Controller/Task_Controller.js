@@ -2,146 +2,6 @@ import { TaskModel } from "../Model/Task_scheme.js";
 import { UserModel } from "../Model/User_scheme.js";
 import ProjectModel  from "../Model/Project_schema.js";
 
-// export const createTask = async (req, res) => {
-//   const {
-//     project,
-//     assigned_to,
-//     assigned_by,
-//     report_to,
-//     status = "Not started",
-//     priority = "Low",
-//     start_date,
-//     end_date,
-//     task_description,
-//     task_title,
-//   } = req.body;
-
-//   const { id, role } = req.user;
-//   console.log(req.body);
-//   if (
-//     !project ||
-//     !assigned_to ||
-//     !report_to ||
-//     !start_date ||
-//     !end_date ||
-//     !task_description
-//   ) {
-//     return res.status(400).json({
-//       status: false,
-//       message: "Please provide all required fields for task creation",
-//     });
-//   }
-
-//   if (role !== "admin" && role !== "team lead" && role !== "manager") {
-//     return res.status(403).json({ status: false, message: "No Authorization" });
-//   }
-
-//   try {
-//     const newTask = new TaskModel({
-//       project,
-//       assigned_to,
-//       assigned_by: id,
-//       report_to,
-//       status,
-//       priority,
-//       start_date,
-//       end_date,
-//       task_description,
-//       task_title,
-//     });
-
-//     const task = await newTask.save();
-//     return res.status(201).json({
-//       status: true,
-//       message: "Task created successfully",
-//       data: task,
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     return res.status(500).json({
-//       status: false,
-//       message: "Failure in task creation",
-//     });
-//   }
-// };
-
-
-
-// export const createTask = async (req, res) => {
-//   const {
-//     project,
-//     assigned_to,
-//     assigned_by,
-//     report_to,
-//     status = "Not started",
-//     priority = "Low",
-//     start_date,
-//     end_date,
-//     task_description,
-//     task_title,
-//     milestone, // Milestone field
-//   } = req.body;
-
-//   const { id, role } = req.user;
-//   console.log(req.body);
-
-//   // Check for required fields
-//   if (
-//     !project ||
-//     !assigned_to ||
-//     !report_to ||
-//     !start_date ||
-//     !end_date ||
-//     !task_description ||
-//     !task_title
-//   ) {
-//     return res.status(400).json({
-//       status: false,
-//       message: "Please provide all required fields for task creation",
-//     });
-//   }
-
-//   // Check for user role authorization
-//   if (role !== "admin" && role !== "team lead" && role !== "manager") {
-//     return res.status(403).json({ status: false, message: "No Authorization" });
-//   }
-
-//   try {
-//     // Create new task object with the provided details
-//     const newTask = new TaskModel({
-//       project,
-//       assigned_to,
-//       assigned_by: id,
-//       report_to,
-//       status,
-//       priority,
-//       start_date,
-//       end_date,
-//       task_description,
-//       task_title,
-//       milestone, // Including the milestone reference
-//     });
-
-//     // Save the task in the database
-//     const task = await newTask.save();
-
-//     // Return success response
-//     return res.status(201).json({
-//       status: true,
-//       message: "Task created successfully",
-//       data: task,
-//     });
-//   } catch (error) {
-//     console.error(error);
-
-//     // Handle errors during task creation
-//     return res.status(500).json({
-//       status: false,
-//       message: "Failure in task creation",
-//     });
-//   }
-// };
-
 
 export const createTask = async (req, res) => {
   const {
@@ -266,7 +126,7 @@ export const listUATTasksForTesters = async (req, res) => {
     const user = await UserModel.findById(userId); // Fetch the user from the database
 
     // Check if the user is an admin or a tester
-    if (req.user.role !== "admin" && req.user.role !== "tester") {
+    if (req.user.role !== "admin" && req.user.department!== "testing") {
       return res.status(403).json({
         status: false,
         message: "Access denied. Only admins and testers can view this data.",
@@ -305,7 +165,6 @@ export const listUATTasksForTesters = async (req, res) => {
 
 
 
-
 // // Update Tester Approval Function (Tester approves or rejects task)
 export const updateTesterApproval = async (req, res) => {
   const { taskId } = req.body; // Get task ID from URL params
@@ -315,7 +174,7 @@ export const updateTesterApproval = async (req, res) => {
   const user = await UserModel.findById(userId); // Fetch the user from the database
 
   // Check if the user is an admin or a tester
-  if (req.user.role !== "admin" && req.user.role !== "tester") {
+  if (req.user.role !== "admin" && req.user.department!== "testing") {
     return res.status(403).json({
       status: false,
       message: "Access denied. Only admins and testers can view this data.",
@@ -370,11 +229,7 @@ export const deleteTask = async (req, res) => {
   }
 
   try {
-    // const task = await TaskModel.findByIdAndUpdate(
-    //   id,
-    //   { is_deleted: true },
-    //   { new: true }
-    // );
+  
     const task = await TaskModel.findOneAndDelete({ _id: id });
 
     if (!task) {
