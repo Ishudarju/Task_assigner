@@ -1,7 +1,144 @@
 import { TaskModel } from "../Model/Task_scheme.js";
 import { UserModel } from "../Model/User_scheme.js";
-import ProjectModel  from "../Model/Project_schema.js";
+import ProjectModel from "../Model/Project_schema.js";
 
+// export const createTask = async (req, res) => {
+//   const {
+//     project,
+//     assigned_to,
+//     assigned_by,
+//     report_to,
+//     status = "Not started",
+//     priority = "Low",
+//     start_date,
+//     end_date,
+//     task_description,
+//     task_title,
+//   } = req.body;
+
+//   const { id, role } = req.user;
+//   console.log(req.body);
+//   if (
+//     !project ||
+//     !assigned_to ||
+//     !report_to ||
+//     !start_date ||
+//     !end_date ||
+//     !task_description
+//   ) {
+//     return res.status(400).json({
+//       status: false,
+//       message: "Please provide all required fields for task creation",
+//     });
+//   }
+
+//   if (role !== "admin" && role !== "team lead" && role !== "manager") {
+//     return res.status(403).json({ status: false, message: "No Authorization" });
+//   }
+
+//   try {
+//     const newTask = new TaskModel({
+//       project,
+//       assigned_to,
+//       assigned_by: id,
+//       report_to,
+//       status,
+//       priority,
+//       start_date,
+//       end_date,
+//       task_description,
+//       task_title,
+//     });
+
+//     const task = await newTask.save();
+//     return res.status(201).json({
+//       status: true,
+//       message: "Task created successfully",
+//       data: task,
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     return res.status(500).json({
+//       status: false,
+//       message: "Failure in task creation",
+//     });
+//   }
+// };
+
+// export const createTask = async (req, res) => {
+//   const {
+//     project,
+//     assigned_to,
+//     assigned_by,
+//     report_to,
+//     status = "Not started",
+//     priority = "Low",
+//     start_date,
+//     end_date,
+//     task_description,
+//     task_title,
+//     milestone, // Milestone field
+//   } = req.body;
+
+//   const { id, role } = req.user;
+//   console.log(req.body);
+
+//   // Check for required fields
+//   if (
+//     !project ||
+//     !assigned_to ||
+//     !report_to ||
+//     !start_date ||
+//     !end_date ||
+//     !task_description ||
+//     !task_title
+//   ) {
+//     return res.status(400).json({
+//       status: false,
+//       message: "Please provide all required fields for task creation",
+//     });
+//   }
+
+//   // Check for user role authorization
+//   if (role !== "admin" && role !== "team lead" && role !== "manager") {
+//     return res.status(403).json({ status: false, message: "No Authorization" });
+//   }
+
+//   try {
+//     // Create new task object with the provided details
+//     const newTask = new TaskModel({
+//       project,
+//       assigned_to,
+//       assigned_by: id,
+//       report_to,
+//       status,
+//       priority,
+//       start_date,
+//       end_date,
+//       task_description,
+//       task_title,
+//       milestone, // Including the milestone reference
+//     });
+
+//     // Save the task in the database
+//     const task = await newTask.save();
+
+//     // Return success response
+//     return res.status(201).json({
+//       status: true,
+//       message: "Task created successfully",
+//       data: task,
+//     });
+//   } catch (error) {
+//     console.error(error);
+
+//     // Handle errors during task creation
+//     return res.status(500).json({
+//       status: false,
+//       message: "Failure in task creation",
+//     });
+//   }
+// };
 
 export const createTask = async (req, res) => {
   const {
@@ -218,9 +355,6 @@ export const updateTesterApproval = async (req, res) => {
   }
 };
 
-
-
-
 export const deleteTask = async (req, res) => {
   const { id, role } = req.body;
   console.log(req.body);
@@ -256,10 +390,7 @@ export const editTaskStatus = async (req, res) => {
   }
 
   try {
-    const result = await TaskModel.updateOne(
-      { _id },
-      { $set: { status} }
-    );
+    const result = await TaskModel.updateOne({ _id }, { $set: { status } });
 
     if (result.nModified === 0) {
       return res
@@ -276,7 +407,6 @@ export const editTaskStatus = async (req, res) => {
     return res.status(500).json({ status: false, message: error.message });
   }
 };
-
 
 //fazil code
 // export const getAllTask = async (req, res) => {
@@ -362,10 +492,9 @@ export const editTaskStatus = async (req, res) => {
 //   }
 // };
 
-
 export const getAllTask = async (req, res) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
+    const { page = 1, limit = 10, status, search = "" } = req.query;
 
     const pageNumber = parseInt(page, 10);
     const limitNumber = parseInt(limit, 10);
@@ -393,7 +522,33 @@ export const getAllTask = async (req, res) => {
       filter.assigned_to = userId;
     }
     // Default: No additional filtering for admin
+    const validStatuses = [
+      "Completed",
+      "In progress",
+      "Not started",
+      "Pending",
+      "Cancelled",
+    ];
 
+    if (status) {
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({
+          status: false,
+          message: `Invalid status provided. Valid statuses are: ${validStatuses.join(
+            ", "
+          )}`,
+        });
+      }
+      filter.status = status;
+    }
+
+    if (search.trim()) {
+      const searchRegex = new RegExp(search.trim(), "i");
+      filter.$or = [
+        { task_title: { $regex: searchRegex } },
+        { task_description: { $regex: searchRegex } },
+      ];
+    }
     // Fetch tasks with pagination and populate references
     const tasks = await TaskModel.find(filter)
       .sort({ _id: -1 })
@@ -461,7 +616,6 @@ export const getAllTask = async (req, res) => {
     });
   }
 };
-
 
 export const getTask = async (req, res) => {
   const { id } = req.body;
@@ -740,8 +894,6 @@ export const updateTask = async (req, res) => {
 //   }
 // };
 
-
-
 //ishu correction
 // export const DailyTaskUpdate = async (req, res) => {
 //   const {
@@ -840,7 +992,9 @@ export const DailyTaskUpdate = async (req, res) => {
     await task.save();
 
     // Recalculate project details
-    const { project, totalHoursSpent } = await fetchProjectDetails(task.project);
+    const { project, totalHoursSpent } = await fetchProjectDetails(
+      task.project
+    );
 
     return res.status(200).json({
       status: true,
@@ -850,17 +1004,19 @@ export const DailyTaskUpdate = async (req, res) => {
         projectId: project._id,
         projectName: project.project_name,
         estimatedHours: project.estimated_hours,
-        percentageSpent: ((totalHoursSpent / project.estimated_hours) * 100).toFixed(2),
+        percentageSpent: (
+          (totalHoursSpent / project.estimated_hours) *
+          100
+        ).toFixed(2),
       },
     });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ status: false, message: "Error updating daily task" });
+    return res
+      .status(500)
+      .json({ status: false, message: "Error updating daily task" });
   }
 };
-
-
-
 
 // export const DailyTaskUpdate = async (req, res) => {
 //   const {
@@ -936,7 +1092,6 @@ export const DailyTaskUpdate = async (req, res) => {
 //   }
 // };
 
-
 export const DeleteDailyTaskUpdate = async (req, res) => {
   const { _id, updateId } = req.body; // Task ID and specific daily update ID to delete
   const { role } = req.user; // Assume `req.user` contains the authenticated user's details
@@ -991,10 +1146,6 @@ export const DeleteDailyTaskUpdate = async (req, res) => {
   }
 };
 
-
-
-
-
 //fazil code
 // export const create_skill_Improvement = async (req, res) => {
 //   const { id, message } = req.body;
@@ -1036,7 +1187,9 @@ export const create_skill_Improvement = async (req, res) => {
 
   // Ensure message is provided
   if (!message || message.trim() === "") {
-    return res.status(400).json({ status: false, message: "Message is required" });
+    return res
+      .status(400)
+      .json({ status: false, message: "Message is required" });
   }
 
   // Only members can create skill improvements
@@ -1068,10 +1221,11 @@ export const create_skill_Improvement = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ status: false, message: "Error adding skill improvement" });
+    return res
+      .status(500)
+      .json({ status: false, message: "Error adding skill improvement" });
   }
 };
-
 
 //fazil code
 // export const update_skill_Improvement = async (req, res) => {
@@ -1121,7 +1275,9 @@ export const update_skill_Improvement = async (req, res) => {
 
   // Ensure message is provided
   if (!message || message.trim() === "") {
-    return res.status(400).json({ status: false, message: "Message is required" });
+    return res
+      .status(400)
+      .json({ status: false, message: "Message is required" });
   }
 
   // Only Team Leads or Managers can update skill improvement
@@ -1149,7 +1305,9 @@ export const update_skill_Improvement = async (req, res) => {
     }
 
     // Find and update the task by ID
-    const task = await TaskModel.findByIdAndUpdate(id, updateQuery, { new: true });
+    const task = await TaskModel.findByIdAndUpdate(id, updateQuery, {
+      new: true,
+    });
 
     // Return success response
     return res.status(200).json({
@@ -1159,12 +1317,11 @@ export const update_skill_Improvement = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ status: false, message: "Error updating skill improvement" });
+    return res
+      .status(500)
+      .json({ status: false, message: "Error updating skill improvement" });
   }
 };
-
-
-
 
 export const create_growth_assessment = async (req, res) => {
   const { id, message } = req.body;
