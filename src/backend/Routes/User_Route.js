@@ -33,7 +33,13 @@ userRoute.get("/exportXLSX", User.exportXLSX);
 userRoute.get("/getEmpMails", User.authMiddleware, User.getAllUserEmpMail);
 userRoute.post("/importXLSX", upload.single("file"), User.importXLSX);
 
-userRoute.post("/createTicket", User.authMiddleware, Ticket.createTicket);
+
+//Tickets routes
+
+
+
+// userRoute.post("/createTicket", User.authMiddleware, Ticket.createTicket);
+userRoute.post('/createTicket', Admin.authMiddleware, upload.array('attachments'), Ticket.createTicket);
 userRoute.post("/deleteTicket", Ticket.deleteTicket);
 userRoute.post("/createProject", User.authMiddleware, Project.createProject);
 userRoute.get(

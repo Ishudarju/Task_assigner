@@ -61,10 +61,12 @@ export const admin_check = async (req, res) => {
 
     if (user.role === "admin" && isMatch) {
       const token = jwt.sign(
-        { id: user._id, role: user.role, mail: user.mail },
+        { id: user._id, role: user.role, mail: user.mail ,department: user.department},
         JWT_SECRET,
         { expiresIn: "5h" }
       );
+
+      // console.log("token",token);
       return res.status(200).json({
         status: true,
         message: "Success",
@@ -146,7 +148,7 @@ export const login_check = (req, res) => {
       // console.log(users);
       if (users.role && users.password == password) {
         const token = jwt.sign(
-          { id: users._id, role: users.role, mail: users.mail },
+          { id: users._id, role: users.role, mail: users.mail ,department: users.department},
           JWT_SECRET,
           { expiresIn: "5h" }
         );
