@@ -23,8 +23,12 @@ const UserScheme = new mongoose.Schema({
     required: true,
   },
   admin_verify: {
-    type: String,
+    type: Boolean,
     default: false,  
+  },
+  hr_approval: {
+    type: Boolean,
+    default: false, // Default to false until HR approves
   },
   employee_id: {
     type: String,

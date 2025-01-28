@@ -14,6 +14,12 @@ userRoute.post("/login", User.user_login);
 
 userRoute.post("/create", User.createUser);
 
+
+// userRoute.post("/verify/:userId", User.authMiddleware,verifyUserByAdmin);
+userRoute.post("/approveHr", User.authMiddleware,User.approveUserByHR);
+
+
+
 // hr,manager,team lead,employee - dashbroad
 userRoute.post("/dashboard", User.authMiddleware, User.user_dashboard);
 
