@@ -785,6 +785,20 @@ export const getAllProjectsPagination = async (req, res) => {
   }
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 export const getProjectById = async (req, res) => {
   const { id } = req.params;
   console.log(req.params);

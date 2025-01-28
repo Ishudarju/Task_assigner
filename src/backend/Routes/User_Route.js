@@ -2,7 +2,7 @@ import express from "express";
 import * as User from "../Controller/User_Controller.js";
 import * as Admin from "../Controller/Admin_controller.js";
 import * as Ticket from "../Controller/Ticket_controller.js";
-import * as Task from "../Controller/Task_controller.js";
+import * as Task from "../Controller/Task_Controller.js";
 import * as Project from "../Controller/Project_controller.js";
 import * as Milestone from "../Controller/Milestone_controller.js";
 import multer from "multer";
@@ -42,11 +42,7 @@ userRoute.post("/importXLSX", upload.single("file"), User.importXLSX);
 userRoute.post('/createTicket', Admin.authMiddleware, upload.array('attachments'), Ticket.createTicket);
 userRoute.post("/deleteTicket", Ticket.deleteTicket);
 userRoute.post("/createProject", User.authMiddleware, Project.createProject);
-userRoute.get(
-  "/getAllProjects",
-  User.authMiddleware,
-  Project.getAllProjectsPagination
-);
+userRoute.post(  "/getAllProjects",  User.authMiddleware, Project.getAllProjectsPagination);
 userRoute.get("/getAllProjectList", User.authMiddleware, Project.getAllProject);
 userRoute.post(
   "/getMilestonesForProject",
