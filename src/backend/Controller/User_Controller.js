@@ -254,7 +254,8 @@ export const user_dashboard = async (req, res) => {
   res.status(200).json({ message: "users", result: data });
 };
 
-export const createUser = (req, res) => {
+
+export const createUser = async (req, res) => {
   const {
     name,
     mail,
@@ -269,64 +270,73 @@ export const createUser = (req, res) => {
     lastWorking_date,
   } = req.body;
 
-  //  // Check if the user's department is "testing"
-   if (req.user.department !== 'testing') {
-    return res.status(403).json({
+  try {
+    // Ensure only admin users can create new users
+    if (req.user.role !== "admin") {
+      return res.status(403).json({
+        status: false,
+        message: "Access denied. Only admins are authorized to create users.",
+      });
+    }
+
+    // Validate password match
+    if (password !== confirmPassword) {
+      return res
+        .status(400)
+        .json({ status: false, message: "Passwords do not match." });
+    }
+
+    // Validate required fields
+    if (!name || !mail || !password || !phone || !role) {
+      return res
+        .status(400)
+        .json({ status: false, message: "Please enter all required fields." });
+    }
+
+    // Check if user already exists
+    const existingUser = await UserModel.findOne({ mail: mail.toLowerCase() });
+    if (existingUser) {
+      return res
+        .status(400)
+        .json({ status: false, message: "User already exists." });
+    }
+
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create new user
+    const newUser = new UserModel({
+      name,
+      mail: mail.toLowerCase(),
+      password: hashedPassword,
+      phone,
+      role,
+      admin_verify,
+      employee_id,
+      department,
+      starting_date,
+      lastWorking_date,
+    });
+
+    // Save user to the database
+    await newUser.save();
+
+    return res.status(201).json({
+      status: true,
+      message: "User created successfully.",
+    });
+  } catch (err) {
+    console.error("Error creating user:", err);
+    return res.status(500).json({
       status: false,
-      message: "Access denied. Only users from the testing department are authorized to create users.",
+      message: "Internal server error.",
     });
   }
-
-  // console.log(req.body);
-  if (password !== confirmPassword) {
-    return res
-      .status(200)
-      .json({ status: false, message: "Password does not match" });
-  }
-
-  if (!mail || !password || !phone || !role) {
-    return res
-      .status(200)
-      .json({ status: false, message: "Please Enter Requried field" });
-  }
-
-  UserModel.findOne({ mail: mail }).then((users) => {
-    if (users) {
-      console.log("user existed");
-      return res
-        .status(200)
-        .json({ status: false, message: "User Already Existed" });
-    } else {
-      // UserModel.create({ name, mail, password, phone, role, admin_verify })
-
-      const newUser = new UserModel({
-        name,
-        mail,
-        password,
-        phone,
-        role,
-        admin_verify,
-        employee_id,
-        department,
-        starting_date,
-        lastWorking_date,
-      });
-      if (role !== "admin") {
-        newUser.save().then((users) => {
-          return res.status(200).json({
-            status: true,
-            message: "User Created Successfully",
-          });
-        });
-      } else {
-        return res.status(200).json({
-          status: false,
-          message: "No Authorization",
-        });
-      }
-    }
-  });
 };
+
+
+
+
 
 export const updateUser = async (req, res) => {
   console.log(req.body);

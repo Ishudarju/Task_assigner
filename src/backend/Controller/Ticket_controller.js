@@ -156,7 +156,7 @@ export const updateTicketStatus = async (req, res) => {
     }
 
     // **Other Users Role**
-    else if (['member', 'team lead', 'manager', 'hr', 'director'].includes(user.role)) {
+    else if (['member', 'team lead', 'manager', 'hr', 'director','admin'].includes(user.role)) {
       if (status && userAllowedStatuses.includes(status)) {
         if (status === 'Resolved') {
           if (!description) {
@@ -208,36 +208,129 @@ export const updateTicketStatus = async (req, res) => {
 
 //ishu corrected code
 // getALLdetails
+// export const getTicketsWithDetails = async (req, res) => {
+//   try {
+//     console.log(req.user);
+
+//     // Check if the user has 'admin' or 'tester' role
+//     if (req.user.department!== "testing" && req.user.role !== 'admin') {
+//       // If not admin or tester, we only show tickets assigned to this user
+//       const tickets = await Ticket.find({ assigned_to: req.user.id })
+//         .populate('project', 'name description') // Populates project details
+//         .populate('assigned_to', 'name mail'); // Populates assigned employee details
+
+//       // If no tickets are found for this user, send a message
+//       if (!tickets || tickets.length === 0) {
+//         return res.status(404).json({ status: false, message: 'No tickets found for this user' });
+//       }
+
+//       return res.status(200).json({ message: 'Tickets fetched successfully for this user', tickets });
+//     }
+
+//     // If admin or tester, show all tickets
+//     const tickets = await Ticket.find()
+//       .populate('project', 'name description') // Populates project details
+//       .populate('assigned_to', 'name mail'); // Populates assigned employee details
+
+//     if (!tickets || tickets.length === 0) {
+//       return res.status(404).json({ status: false, message: 'No tickets found' });
+//     }
+
+//     res.status(200).json({ message: 'Tickets fetched successfully', tickets });
+
+//   } catch (error) {
+//     console.log(error);
+//     res.status(500).json({ message: 'Error fetching tickets', error: error.message });
+//   }
+// };
+
 export const getTicketsWithDetails = async (req, res) => {
   try {
     console.log(req.user);
 
+    // Extract pagination parameters from the query
+    const { page = 1, limit = 10 } = req.query;
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+
+    // Initialize status summary with default values (0 for all statuses)
+    const initialStatusSummary = {
+      Open: 0,
+      "In Progress": 0,
+      Resolved: 0,
+      Closed: 0,
+      Reopen: 0,
+    };
+
+    // Count tickets by status using aggregation
+    const statusCounts = await Ticket.aggregate([
+      { $group: { _id: "$status", count: { $sum: 1 } } },
+    ]);
+
+    // Merge the aggregation results into the initialStatusSummary
+    const statusSummary = statusCounts.reduce((acc, item) => {
+      acc[item._id] = item.count;
+      return acc;
+    }, initialStatusSummary);
+
+    // Calculate total tickets
+    const totalTickets = await Ticket.countDocuments();
+
     // Check if the user has 'admin' or 'tester' role
-    if (req.user.department!== "testing" && req.user.role !== 'admin') {
-      // If not admin or tester, we only show tickets assigned to this user
+    if (req.user.department !== "testing" && req.user.role !== 'admin') {
+      // If not admin or tester, show only tickets assigned to this user
       const tickets = await Ticket.find({ assigned_to: req.user.id })
-        .populate('project', 'name description') // Populates project details
-        .populate('assigned_to', 'name mail'); // Populates assigned employee details
+        .skip((pageNumber - 1) * limitNumber)
+        .limit(limitNumber)
+        .populate('project', 'name description') // Populate project details
+        .populate('assigned_to', 'name mail'); // Populate assigned employee details
+
+      // Count total tickets for this user
+      const userTotalTickets = await Ticket.countDocuments({ assigned_to: req.user.id });
 
       // If no tickets are found for this user, send a message
       if (!tickets || tickets.length === 0) {
         return res.status(404).json({ status: false, message: 'No tickets found for this user' });
       }
 
-      return res.status(200).json({ message: 'Tickets fetched successfully for this user', tickets });
+      return res.status(200).json({
+        message: 'Tickets fetched successfully for this user',
+        data: {
+          tickets,
+          total: userTotalTickets,
+          pagination: {
+            currentPage: pageNumber,
+            totalPages: Math.ceil(userTotalTickets / limitNumber),
+          },
+          statusSummary,
+          totalTickets,
+        },
+      });
     }
 
     // If admin or tester, show all tickets
     const tickets = await Ticket.find()
-      .populate('project', 'name description') // Populates project details
-      .populate('assigned_to', 'name mail'); // Populates assigned employee details
+      .skip((pageNumber - 1) * limitNumber)
+      .limit(limitNumber)
+      .populate('project', 'name description') // Populate project details
+      .populate('assigned_to', 'name mail'); // Populate assigned employee details
 
     if (!tickets || tickets.length === 0) {
       return res.status(404).json({ status: false, message: 'No tickets found' });
     }
 
-    res.status(200).json({ message: 'Tickets fetched successfully', tickets });
-
+    res.status(200).json({
+      message: 'Tickets fetched successfully',
+      data: {
+        tickets,
+        total: totalTickets,
+        pagination: {
+          currentPage: pageNumber,
+          totalPages: Math.ceil(totalTickets / limitNumber),
+        },
+        statusSummary,
+      },
+    });
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: 'Error fetching tickets', error: error.message });

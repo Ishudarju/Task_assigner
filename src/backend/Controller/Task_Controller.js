@@ -149,6 +149,7 @@ export const createTask = async (req, res) => {
     status = "Not started",
     priority = "Low",
     start_date,
+
     end_date,
     task_description,
     task_title,
@@ -408,10 +409,10 @@ export const editTaskStatus = async (req, res) => {
   }
 };
 
-//fazil code
+
 // export const getAllTask = async (req, res) => {
 //   try {
-//     const { page = 1, limit = 10 } = req.query;
+//     const { page = 1, limit = 10, status, search = "" } = req.query;
 
 //     const pageNumber = parseInt(page, 10);
 //     const limitNumber = parseInt(limit, 10);
@@ -437,11 +438,35 @@ export const editTaskStatus = async (req, res) => {
 //     } else if (userRole === "member") {
 //       // Team Member: Tasks directly assigned to them
 //       filter.assigned_to = userId;
-//     } else if (userRole === "admin") {
+//     }
+//     // Default: No additional filtering for admin
+//     const validStatuses = [
+//       "Completed",
+//       "In progress",
+//       "Not started",
+//       "Pending",
+//       "Cancelled",
+//     ];
 
-//       // Default: No additional filtering (fetch all tasks, e.g., for admin or other cases)
+//     if (status) {
+//       if (!validStatuses.includes(status)) {
+//         return res.status(400).json({
+//           status: false,
+//           message: `Invalid status provided. Valid statuses are: ${validStatuses.join(
+//             ", "
+//           )}`,
+//         });
+//       }
+//       filter.status = status;
 //     }
 
+//     if (search.trim()) {
+//       const searchRegex = new RegExp(search.trim(), "i");
+//       filter.$or = [
+//         { task_title: { $regex: searchRegex } },
+//         { task_description: { $regex: searchRegex } },
+//       ];
+//     }
 //     // Fetch tasks with pagination and populate references
 //     const tasks = await TaskModel.find(filter)
 //       .sort({ _id: -1 })
@@ -468,6 +493,23 @@ export const editTaskStatus = async (req, res) => {
 //         select: "project_name",
 //       });
 
+//     // Count total tasks grouped by status
+//     const taskStatusCounts = await TaskModel.aggregate([
+//       { $match: filter },
+//       {
+//         $group: {
+//           _id: "$status", // Group by status
+//           count: { $sum: 1 }, // Count the tasks in each group
+//         },
+//       },
+//     ]);
+
+//     // Transform the status counts into a key-value object
+//     const statusSummary = {};
+//     taskStatusCounts.forEach((status) => {
+//       statusSummary[status._id] = status.count;
+//     });
+
 //     // Count total tasks for pagination
 //     const totalTasks = await TaskModel.countDocuments(filter);
 
@@ -476,6 +518,7 @@ export const editTaskStatus = async (req, res) => {
 //       message: "Tasks fetched successfully",
 //       data: {
 //         total: totalTasks,
+//         statusSummary, // Include the total count of tasks grouped by status
 //         tasks,
 //         pagination: {
 //           currentPage: pageNumber,
@@ -492,6 +535,8 @@ export const editTaskStatus = async (req, res) => {
 //   }
 // };
 
+
+
 export const getAllTask = async (req, res) => {
   try {
     const { page = 1, limit = 10, status, search = "" } = req.query;
@@ -501,6 +546,7 @@ export const getAllTask = async (req, res) => {
 
     const userId = req.user.id; // ID of the logged-in user
     const userRole = req.user.role; // Role of the logged-in user (e.g., Manager, Team Lead, Member)
+    const userDepartment = req.user.department; // Department of the logged-in user
 
     // Define the filter based on the role
     let filter = { is_deleted: false };
@@ -521,7 +567,36 @@ export const getAllTask = async (req, res) => {
       // Team Member: Tasks directly assigned to them
       filter.assigned_to = userId;
     }
-    // Default: No additional filtering for admin
+
+    // If the user is in the "testing" department, show UAT tasks
+    if (userDepartment === "testing") {
+      // Fetch tasks marked for UAT
+      const uatTasks = await TaskModel.find({ move_to_uat: true, tester_approval: false,is_deleted: false })
+        .populate("project", "project_name")
+        .populate("assigned_to", "name email")
+        .populate("assigned_by", "name email")
+        .populate("report_to", "name email")
+        .sort({ updatedAt: -1 });
+
+      // If UAT tasks exist, add them to the response
+      const uatStatusSummary = uatTasks.length > 0
+        ? uatTasks.reduce((acc, task) => {
+            acc[task.status] = (acc[task.status] || 0) + 1;
+            return acc;
+          }, {})
+        : {};
+
+      return res.status(200).json({
+        status: true,
+        message: "Tasks retrieved successfully.",
+        data: {
+          uatTasks,
+          uatStatusSummary,
+        },
+      });
+    }
+
+    // Handle valid statuses
     const validStatuses = [
       "Completed",
       "In progress",
@@ -549,6 +624,7 @@ export const getAllTask = async (req, res) => {
         { task_description: { $regex: searchRegex } },
       ];
     }
+
     // Fetch tasks with pagination and populate references
     const tasks = await TaskModel.find(filter)
       .sort({ _id: -1 })
@@ -616,6 +692,13 @@ export const getAllTask = async (req, res) => {
     });
   }
 };
+
+
+
+
+
+
+
 
 export const getTask = async (req, res) => {
   const { id } = req.body;
@@ -1018,79 +1101,6 @@ export const DailyTaskUpdate = async (req, res) => {
   }
 };
 
-// export const DailyTaskUpdate = async (req, res) => {
-//   const {
-//     _id, // Task ID
-//     daily_update, // Description of the daily update
-//     hours_spent, // Hours spent on the task
-//   } = req.body;
-
-//   const { role } = req.user; // Assume `req.user` contains the authenticated user's details
-
-//   // Validate required fields
-//   if (!daily_update || hours_spent === undefined || hours_spent === null) {
-//     return res.status(400).json({
-//       status: false,
-//       message: "Both daily update description and hours spent are required",
-//     });
-//   }
-
-//   // // Validate that hours_spent is a positive number (additional validation)
-//   // if (hours_spent < 0) {
-//   //   return res.status(400).json({
-//   //     status: false,
-//   //     message: "Hours spent must be a non-negative value",
-//   //   });
-//   // }
-
-//   // Restrict updates to authorized roles
-//   if (!["member", "team lead", "manager"].includes(role)) {
-//     return res.status(403).json({
-//       status: false,
-//       message: "You are not authorized to update daily tasks",
-//     });
-//   }
-
-//   try {
-//     // Find the task by its ID
-//     const task = await TaskModel.findById(_id);
-
-//     // If task not found
-//     if (!task) {
-//       return res.status(404).json({ status: false, message: "Task not found" });
-//     }
-
-//     // Add the new daily update to the `daily_updates` array
-//     task.daily_updates.push({
-//       date: new Date(),
-//       description: daily_update,
-//       hours_spent, // Add hours spent here
-//     });
-
-//     // Save the updated task
-//     const updatedTask = await task.save();
-
-//     // Calculate the total hours spent (if required for summary purposes)
-//     const totalHoursSpent = task.daily_updates.reduce(
-//       (total, update) => total + (update.hours_spent || 0),
-//       0
-//     );
-
-//     // Return success response
-//     return res.status(200).json({
-//       status: true,
-//       message: "Daily update added successfully",
-//       data: updatedTask,
-//       totalHoursSpent,
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     return res.status(500).json({
-//       status: false,
-//       message: "Error updating daily task",
-//     });
-//   }
-// };
 
 export const DeleteDailyTaskUpdate = async (req, res) => {
   const { _id, updateId } = req.body; // Task ID and specific daily update ID to delete

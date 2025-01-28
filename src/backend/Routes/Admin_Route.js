@@ -2,7 +2,7 @@ import express from "express";
 import multer from "multer";
 import path from "path";
 import * as Admin from "../Controller/Admin_controller.js";
-import * as Task from "../Controller/Task_controller.js";
+import * as Task from "../Controller/Task_Controller.js";
 import * as User from "../Controller/User_Controller.js";
 // import * as Ticket from "../Controller/Ticket_controller_old.js";
 import * as Project from "../Controller/Project_controller.js";
@@ -46,11 +46,7 @@ adminRoute.post("/getTicketById", Ticket.getTicketById);
 // );
 
 adminRoute.post("/createProject", Admin.authMiddleware, Project.createProject);
-adminRoute.post(
-  "/getAllProjects",
-  Admin.authMiddleware,
-  Project.getAllProjectsPagination
-);
+adminRoute.post(  "/getAllProjects",  Admin.authMiddleware, Project.getAllProjectsPagination);
 adminRoute.put("/updateProject", Admin.authMiddleware, Project.updateProject);
 adminRoute.delete(
   "/deleteProject/:id",
