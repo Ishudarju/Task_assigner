@@ -30,7 +30,17 @@ adminRoute.get(
 );
 adminRoute.post("/getAllEmployee", Admin.authMiddleware, User.getAllEmployee);
 adminRoute.post("/create", Admin.authMiddleware, User.createUser);
+
 adminRoute.put("/update", Admin.authMiddleware, User.updateUser);
+
+
+
+adminRoute.post("/verify/:userId", Admin.authMiddleware,Admin.verifyUserByAdmin);
+adminRoute.post("/approve/:userId", User.authMiddleware,User.approveUserByHR);
+
+
+
+
 adminRoute.post("/delete", Admin.authMiddleware, User.deleteUser);
 adminRoute.post("/findById", Admin.authMiddleware, User.findById);
 adminRoute.post("/empid-generate", Admin.authMiddleware, User.empid_generate);

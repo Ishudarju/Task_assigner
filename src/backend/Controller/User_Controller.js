@@ -50,6 +50,8 @@ export const authMiddleware = (req, res, next) => {
   });
 };
 
+
+//fazil correct code
 // export const user_login = async (req, res) => {
 //   const { mail, password } = req.body;
 
@@ -118,44 +120,53 @@ export const authMiddleware = (req, res, next) => {
 // };
 
 
+
 export const user_login = async (req, res) => {
   const { mail, password } = req.body;
 
   try {
-    // Check if email and password are provided
+    // Validate input fields
     if (!mail || !password) {
       return res
         .status(400)
-        .json({ status: false, message: "Email and password are required" });
+        .json({ status: false, message: "Email and password are required." });
     }
 
-    // Find the user by email
+    // Find the user by email (case-insensitive)
     const user = await UserModel.findOne({ mail: mail.toLowerCase() }).select(
-      " -__v -createdAt -updatedAt"
+      "-__v -createdAt -updatedAt"
     );
-    // console.log(user);
 
-   
-    // Check if user exists
+    // Check if the user exists
     if (!user) {
-      return res.status(404).json({ status: false, message: "User not found" });
+      return res.status(404).json({ status: false, message: "User not found." });
     }
 
-    // Compare password using bcrypt
-    const isMatch = await bcrypt.compare(password, user.password);
-
-    if (!isMatch) {
+    // Verify password using bcrypt
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
       return res
         .status(401)
-        .json({ status: false, message: "Invalid credentials" });
-    }
-    if (user.admin_verify === "false") {
-      return res
-        .status(403)
-        .json({ status: false, message: "Email verification pending" });
+        .json({ status: false, message: "Invalid credentials." });
     }
 
-    // Generate token
+    // Check admin verification status
+    if (!user.admin_verify) {
+      return res.status(403).json({
+        status: false,
+        message: "Admin verification pending.",
+      });
+    }
+
+    // Check HR approval status
+    if (!user.hr_approval) {
+      return res.status(403).json({
+        status: false,
+        message: "HR approval pending.",
+      });
+    }
+
+    // Generate JWT token
     const token = jwt.sign(
       {
         id: user._id,
@@ -163,12 +174,13 @@ export const user_login = async (req, res) => {
         mail: user.mail,
         department: user.department,
         admin_verify: user.admin_verify,
+        hr_approval: user.hr_approval,
       },
       JWT_SECRET,
-      { expiresIn: "5h" } // Token expiry
+      { expiresIn: "5h" } // Token expires in 5 hours
     );
 
-    // Prepare user data without sensitive fields
+    // Prepare user data for response (excluding sensitive fields)
     const userData = {
       _id: user._id,
       name: user.name,
@@ -176,26 +188,31 @@ export const user_login = async (req, res) => {
       mail: user.mail,
       role: user.role,
       admin_verify: user.admin_verify,
+      hr_approval: user.hr_approval,
       employee_id: user.employee_id,
       department: user.department,
     };
 
-    console.log("details",userData);
+    // Log user data for debugging purposes
+    console.log("User details:", userData);
 
-    // Send response
+    // Send success response
     return res.status(200).json({
       status: true,
-      message: "Success",
+      message: "Login successful.",
       data: userData,
       token,
     });
-  } catch (err) {
-    console.error("Login error:", err);
+  } catch (error) {
+    console.error("Login error:", error);
+
+    // Handle internal server errors
     return res
       .status(500)
-      .json({ status: false, message: "Internal server error" });
+      .json({ status: false, message: "Internal server error." });
   }
 };
+
 
 export const user_dashboard = async (req, res) => {
   // console.log(req.user);
@@ -264,6 +281,7 @@ export const createUser = async (req, res) => {
     phone,
     role,
     admin_verify,
+    hr_approved,
     employee_id,
     department,
     starting_date,
@@ -312,6 +330,7 @@ export const createUser = async (req, res) => {
       phone,
       role,
       admin_verify,
+      hr_approved,
       employee_id,
       department,
       starting_date,
@@ -333,6 +352,101 @@ export const createUser = async (req, res) => {
     });
   }
 };
+
+
+
+
+
+// export const approveUserByHR = async (req, res) => {
+//   const { userId ,hr_approval} = req.body;
+
+//   try {
+//     if (req.user.role !== "hr") {
+//       return res.status(403).json({ status: false, message: "Access denied" });
+//     }
+
+//     const user = await UserModel.findById(userId);
+//     if (!user) {
+//       return res.status(404).json({ status: false, message: "User not found" });
+//     }
+
+//     if (!user.admin_verify) {
+//       return res.status(400).json({
+//         status: false,
+//         message: "User must be verified by admin first.",
+//       });
+//     }
+
+//     user.hr_approval = true;
+//     await user.save();
+
+//     res.status(200).json({
+//       status: true,
+//       message: "User approved by HR. User can now log in.",
+//     });
+//   } catch (error) {
+//     console.error("Error approving user:", error);
+//     res.status(500).json({ status: false, message: "Internal server error" });
+//   }
+// };
+
+
+export const approveUserByHR = async (req, res) => {
+  const { userId, hr_approval } = req.body;
+
+  try {
+    // Ensure only HR can approve users
+    if (req.user.role !== "hr") {
+      return res.status(403).json({ status: false, message: "Access denied" });
+    }
+
+    // Validate hr_approval field
+    if (typeof hr_approval !== "boolean") {
+      return res.status(400).json({
+        status: false,
+        message: "hr_approval must be a boolean value (true or false).",
+      });
+    }
+
+    // Find the user by ID
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({ status: false, message: "User not found" });
+    }
+
+    // Ensure the user is verified by admin before HR approval
+    if (!user.admin_verify) {
+      return res.status(400).json({
+        status: false,
+        message: "User must be verified by admin first.",
+      });
+    }
+
+    // Update hr_approval status
+    user.hr_approval = hr_approval;
+    await user.save();
+
+    // Send a success response
+    const message = hr_approval
+      ? "User approved by HR. User can now proceed with work."
+      : "HR approval has been revoked for the user.";
+
+    res.status(200).json({
+      status: true,
+      message,
+      data: {
+        userId: user._id,
+        name: user.name,
+        hr_approval: user.hr_approval,
+      },
+    });
+  } catch (error) {
+    console.error("Error updating HR approval status:", error);
+    res.status(500).json({ status: false, message: "Internal server error" });
+  }
+};
+
+
 
 
 
@@ -385,19 +499,7 @@ export const updateUser = async (req, res) => {
     });
 };
 
-// export const deleteUser = async (req, res) => {
-//   const { id } = req?.body;
-//   try {
-//     await UserModel.deleteOne({ _id: id });
-//     return res
-//       .status(200)
-//       .json({ status: true, message: "User Deleted Successfully" });
-//   } catch (error) {
-//     return res
-//       .status(200)
-//       .json({ status: false, message: "Error in deleting user" });
-//   }
-// };
+
 export const deleteUser = async (req, res) => {
   const { id } = req.body; // Safely access the body object
   if (!id) {
@@ -459,21 +561,7 @@ export const findById = async (req, res) => {
     });
 };
 
-// export const getAllUserEmpMail = async (req, res) => {
-//   await UserModel.find({}, { mail: 1, name: 1, _id: 1 })
-//     .then((emails) => {
-//       if (emails) {
-//         res
-//           .status(200)
-//           .json({ status: true, message: "get all user mail", data: emails });
-//       }
-//     })
-//     .catch((error) => {
-//       res
-//         .status(200)
-//         .json({ status: false, message: "Error in Fetching Users Email" });
-//     });
-// };
+
 
 
 
@@ -536,34 +624,6 @@ export const getAllUserEmpMail = async (req, res) => {
 
 
 
-
-// export const getAllUserEmpMail = async (req, res) => {
-//   try {
-//     const emails = await UserModel.find(
-//       { role: { $nin: ["admin", "manager", "team lead"] } }, // Filter condition
-//       { mail: 1, name: 1 } // Projection to select specific fields
-//     );
-
-//     if (emails) {
-//       return res.status(200).json({
-//         status: true,
-//         message: "Fetched all user emails successfully",
-//         data: emails,
-//       });
-//     } else {
-//       return res.status(404).json({
-//         status: false,
-//         message: "No users found",
-//       });
-//     }
-//   } catch (error) {
-//     return res.status(500).json({
-//       status: false,
-//       message: "Error in fetching users' emails",
-//       error: error.message,
-//     });
-//   }
-// };
 
 export const getAllUserEmpMailForProject = async (req, res) => {
   try {

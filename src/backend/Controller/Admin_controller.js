@@ -87,6 +87,37 @@ export const admin_check = async (req, res) => {
     });
   }
 };
+
+
+
+export const verifyUserByAdmin = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ status: false, message: "Access denied" });
+    }
+
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({ status: false, message: "User not found" });
+    }
+
+    user.admin_verify = true;
+    await user.save();
+
+    res.status(200).json({
+      status: true,
+      message: "User verified by admin. Awaiting HR approval.",
+    });
+  } catch (error) {
+    console.error("Error verifying user:", error);
+    res.status(500).json({ status: false, message: "Internal server error" });
+  }
+};
+
+
+
 export const authMiddleware = (req, res, next) => {
   const token = req.headers["authorization"];
   // const token = authHeader?.split(" ")[1] || "";
