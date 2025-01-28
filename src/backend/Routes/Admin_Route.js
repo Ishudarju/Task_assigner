@@ -2,7 +2,7 @@ import express from "express";
 import multer from "multer";
 import path from "path";
 import * as Admin from "../Controller/Admin_controller.js";
-import * as Task from "../Controller/Task_controller.js";
+import * as Task from "../Controller/Task_Controller.js";
 import * as User from "../Controller/User_Controller.js";
 // import * as Ticket from "../Controller/Ticket_controller_old.js";
 import * as Project from "../Controller/Project_controller.js";
@@ -30,7 +30,17 @@ adminRoute.get(
 );
 adminRoute.post("/getAllEmployee", Admin.authMiddleware, User.getAllEmployee);
 adminRoute.post("/create", Admin.authMiddleware, User.createUser);
+
 adminRoute.put("/update", Admin.authMiddleware, User.updateUser);
+
+
+
+adminRoute.post("/verify/:userId", Admin.authMiddleware,Admin.verifyUserByAdmin);
+adminRoute.post("/approve/:userId", User.authMiddleware,User.approveUserByHR);
+
+
+
+
 adminRoute.post("/delete", Admin.authMiddleware, User.deleteUser);
 adminRoute.post("/findById", Admin.authMiddleware, User.findById);
 adminRoute.post("/empid-generate", Admin.authMiddleware, User.empid_generate);
@@ -46,11 +56,7 @@ adminRoute.post("/getTicketById", Ticket.getTicketById);
 // );
 
 adminRoute.post("/createProject", Admin.authMiddleware, Project.createProject);
-adminRoute.post(
-  "/getAllProjects",
-  Admin.authMiddleware,
-  Project.getAllProjectsPagination
-);
+adminRoute.post(  "/getAllProjects",  Admin.authMiddleware, Project.getAllProjectsPagination);
 adminRoute.put("/updateProject", Admin.authMiddleware, Project.updateProject);
 adminRoute.delete(
   "/deleteProject/:id",
