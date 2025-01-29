@@ -18,7 +18,7 @@ import  ProjectModel  from '../Model/Project_schema.js'; // Use named import
 
 
 export const createTicket = async (req, res) => {
-  const { title, description, project, assigned_to, tasks , priority, status, severity, main_category, sub_category } = req.body;
+  const { title, description, project, document_name, assigned_to, tasks , priority, status, severity, main_category, sub_category } = req.body;
 
 console.log("value",req.body);
   try {
@@ -93,6 +93,7 @@ console.log("value",req.body);
       title,
       description,
       project,
+      document_name,
       assigned_to,
       priority,
       tasks,
@@ -205,102 +206,42 @@ export const updateTicketStatus = async (req, res) => {
   }
 };
 
+export const getResolvedTickets = async (req, res) => {
+  try {
+    const user = req.user;
 
-//ishu corrected code
-// getALLdetails
+    console.log(user);
 
-// export const getTicketsWithDetails = async (req, res) => {
-//   try {
-//     console.log(req.user);
+    // Check if the user is a project manager
+    if (user.role !== "manager") {
+      return res.status(403).json({
+        status: false,
+        message: "You are not authorized to view resolved tickets",
+      });
+    }
 
-//     // Extract pagination parameters from the query
-//     const { page = 1, limit = 10 } = req.query;
-//     const pageNumber = parseInt(page, 10);
-//     const limitNumber = parseInt(limit, 10);
+    // Fetch only resolved tickets related to the manager's project(s)
+    const resolvedTickets = await Ticket.find({
+      status: "Resolved",
+      project: user.projectId, // Assuming projectId is stored in req.user
+    }).populate("project tasks raised_by assigned_to"); // Populate references for better response
 
-//     // Initialize status summary with default values (0 for all statuses)
-//     const initialStatusSummary = {
-//       Open: 0,
-//       "In Progress": 0,
-//       Resolved: 0,
-//       Closed: 0,
-//       Reopen: 0,
-//     };
+    return res.status(200).json({
+      status: true,
+      message: "Resolved tickets retrieved successfully",
+      data: resolvedTickets,
+    });
+  } catch (error) {
+    console.error("Error fetching resolved tickets:", error);
+    res.status(500).json({
+      status: false,
+      message: "Error fetching resolved tickets",
+      error: error.message,
+    });
+  }
+};
 
-//     // Count tickets by status using aggregation
-//     const statusCounts = await Ticket.aggregate([
-//       { $group: { _id: "$status", count: { $sum: 1 } } },
-//     ]);
 
-//     // Merge the aggregation results into the initialStatusSummary
-//     const statusSummary = statusCounts.reduce((acc, item) => {
-//       acc[item._id] = item.count;
-//       return acc;
-//     }, initialStatusSummary);
-
-//     // Calculate total tickets
-//     const totalTickets = await Ticket.countDocuments();
-
-//     // Check if the user has 'admin' or 'tester' role
-//     if (req.user.department !== "testing" && req.user.role !== 'admin') {
-//       // If not admin or tester, show only tickets assigned to this user
-//       const tickets = await Ticket.find({ assigned_to: req.user.id })
-//         .skip((pageNumber - 1) * limitNumber)
-//         .limit(limitNumber)
-//         .populate('project', 'name description') // Populate project details
-//         .populate('assigned_to', 'name mail'); // Populate assigned employee details
-
-//       // Count total tickets for this user
-//       const userTotalTickets = await Ticket.countDocuments({ assigned_to: req.user.id });
-
-//       // If no tickets are found for this user, send a message
-//       if (!tickets || tickets.length === 0) {
-//         return res.status(404).json({ status: false, message: 'No tickets found for this user' });
-//       }
-
-//       return res.status(200).json({
-//         message: 'Tickets fetched successfully for this user',
-//         data: {
-//           tickets,
-//           total: userTotalTickets,
-//           pagination: {
-//             currentPage: pageNumber,
-//             totalPages: Math.ceil(userTotalTickets / limitNumber),
-//           },
-//           statusSummary,
-//           totalTickets,
-//         },
-//       });
-//     }
-
-//     // If admin or tester, show all tickets
-//     const tickets = await Ticket.find()
-//       .skip((pageNumber - 1) * limitNumber)
-//       .limit(limitNumber)
-//       .populate('project', 'name description') // Populate project details
-//       .populate('assigned_to', 'name mail'); // Populate assigned employee details
-
-//     if (!tickets || tickets.length === 0) {
-//       return res.status(404).json({ status: false, message: 'No tickets found' });
-//     }
-
-//     res.status(200).json({
-//       message: 'Tickets fetched successfully',
-//       data: {
-//         tickets,
-//         total: totalTickets,
-//         pagination: {
-//           currentPage: pageNumber,
-//           totalPages: Math.ceil(totalTickets / limitNumber),
-//         },
-//         statusSummary,
-//       },
-//     });
-//   } catch (error) {
-//     console.log(error);
-//     res.status(500).json({ message: 'Error fetching tickets', error: error.message });
-//   }
-// };
 
 
 export const getTicketsWithDetails = async (req, res) => {
