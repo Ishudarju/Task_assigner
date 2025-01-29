@@ -6,6 +6,9 @@ import * as Task from "../Controller/Task_Controller.js";
 import * as Project from "../Controller/Project_controller.js";
 import * as Milestone from "../Controller/Milestone_controller.js";
 import multer from "multer";
+// import { uploadFiles } from "../Controller/document_controller.js";
+import * as document from "../Controller/document_controller.js";
+
 
 const userRoute = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -94,6 +97,35 @@ userRoute.get("/tasks_uat", User.authMiddleware, Task.listUATTasksForTesters);
 
 // Update Tester Approval route (tester can approve or reject the task)
 userRoute.post('/updateTesterApproval', User.authMiddleware, Task.updateTesterApproval);
+
+
+
+// Set up storage for multer
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/"); // Folder to save uploaded files
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "_" + Math.round(Math.random() * 1e9);
+    cb(null, file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname)); // Make filenames unique
+  },
+});
+
+// const upload = multer({ storage: storage });
+
+// Route to upload a file
+userRoute.post("/upload", User.authMiddleware,upload.single("file"), document.uploadFile);
+
+// Route to get all files
+userRoute.get("/getAllfiles", User.authMiddleware,document.getAllFiles);
+
+// Route to get a single file by ID
+userRoute.get("/file/:id", User.authMiddleware,document.getFileById);
+
+userRoute.delete('/deletefiles/:id', User.authMiddleware,document.deleteFiles);
+
+
+
 
 export default userRoute;
 
