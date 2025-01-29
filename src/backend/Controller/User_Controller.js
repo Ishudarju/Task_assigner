@@ -33,7 +33,7 @@ export const authMiddleware = (req, res, next) => {
       } else {
         return res
           .status(200)
-          .json({ status: false, message: "Invssalid token" });
+          .json({ status: false, message: "Invalid token" });
       }
     }
 
