@@ -115,7 +115,7 @@ adminRoute.post('/updatetickstatus', Admin.authMiddleware, Ticket.updateTicketSt
 
 
 // Delete a ticket
-adminRoute.delete('/tickets/:id', Admin.authMiddleware, Ticket.deleteTicket);
+adminRoute.delete('/deleteTickets/:id', Admin.authMiddleware, Ticket.deleteTicket);
 
 
 //Tasks routes
