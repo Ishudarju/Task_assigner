@@ -8,6 +8,7 @@ import * as User from "../Controller/User_Controller.js";
 import * as Project from "../Controller/Project_controller.js";
 import * as Milestone from "../Controller/Milestone_controller.js";
 import * as Ticket from "../Controller/Ticket_controller.js";
+import * as document from "../Controller/document_controller.js";
 
 
 const adminRoute = express.Router();
@@ -126,6 +127,20 @@ adminRoute.get("/tasks_uat", User.authMiddleware, Task.listUATTasksForTesters);
 
 // Update Tester Approval route (tester can approve or reject the task)
 adminRoute.patch('/updateTesterApproval', Admin.authMiddleware, Task.updateTesterApproval);
+
+//document routes
+
+// Route to upload a file
+adminRoute.post("/upload", Admin.authMiddleware,upload.single("file"), document.uploadFile);
+
+// Route to get all files
+adminRoute.get("/getAllfiles", Admin.authMiddleware,document.getAllFiles);
+
+// Route to get a single file by ID
+adminRoute.get("/file/:id", Admin.authMiddleware,document.getFileById);
+
+adminRoute.delete('/deletefiles', Admin.authMiddleware,document.deleteFiles);
+
 
 
 export default adminRoute;
