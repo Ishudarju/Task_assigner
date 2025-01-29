@@ -83,6 +83,9 @@ userRoute.post('/updatetick/:id', User.authMiddleware, Ticket.updateTicket);
 userRoute.post('/updatetickstatus', User.authMiddleware, Ticket.updateTicketStatus);
 
 
+// Route for getting resolved tickets (Manager only)
+userRoute.get('/resolved-tickets', User.authMiddleware, Ticket.getResolvedTickets);
+
 // Delete a ticket
 userRoute.delete('/tickets/:id', User.authMiddleware, Ticket.deleteTicket);
 
