@@ -359,39 +359,6 @@ export const createUser = async (req, res) => {
 
 
 
-// export const approveUserByHR = async (req, res) => {
-//   const { userId ,hr_approval} = req.body;
-
-//   try {
-//     if (req.user.role !== "hr") {
-//       return res.status(403).json({ status: false, message: "Access denied" });
-//     }
-
-//     const user = await UserModel.findById(userId);
-//     if (!user) {
-//       return res.status(404).json({ status: false, message: "User not found" });
-//     }
-
-//     if (!user.admin_verify) {
-//       return res.status(400).json({
-//         status: false,
-//         message: "User must be verified by admin first.",
-//       });
-//     }
-
-//     user.hr_approval = true;
-//     await user.save();
-
-//     res.status(200).json({
-//       status: true,
-//       message: "User approved by HR. User can now log in.",
-//     });
-//   } catch (error) {
-//     console.error("Error approving user:", error);
-//     res.status(500).json({ status: false, message: "Internal server error" });
-//   }
-// };
-
 
 export const approveUserByHR = async (req, res) => {
   const { userId, hr_approval } = req.body;

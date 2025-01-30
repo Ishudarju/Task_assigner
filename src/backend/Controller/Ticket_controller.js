@@ -1,119 +1,10 @@
 
 import {Ticket} from '../Model/Ticket_schema.js';
 import mongoose from 'mongoose';  // Add this import statement at the top of your file
-
-// import { Ticket } from './models/Ticket';  // Adjust path to your Ticket model
-
-
 import fs from 'fs';
 import path from 'path';
 import  ProjectModel  from '../Model/Project_schema.js'; // Use named import
-// import { TaskModel } from '../Model/Task_scheme.js'
 
-
-
-// Adjust the path based on your project structure
-
-
-
-
-// export const createTicket = async (req, res) => {
-//   const { title, description, project, assigned_to, tasks , priority, status, severity, main_category, sub_category } = req.body;
-
-// console.log("value",req.body);
-//   try {
-//     console.log(req.user);
-
-//     // Authorization Check
-//     if (req.user.department !== 'testing' && req.user.role !== 'admin') {
-//       return res.status(403).json({
-//         status: false,
-//         message: 'Access denied. Only users from the testing department or admins are authorized.',
-//       });
-//     }
-
-//     // // Validation for required fields
-//     if (!main_category || !sub_category) {
-//       return res.status(400).json({ status: false, message: 'Main category and Sub category are required.' });
-//     }
-
-//     if (!title || !description || !project) {
-//       return res.status(400).json({ status: false, message: 'Title, Description, and Project are required.' });
-//     }
-
-//     // Check if project exists
-//     const projectExists = await ProjectModel.findById(project);
-//     if (!projectExists) {
-//       return res.status(404).json({ status: false, message: 'Project not found.' });
-//     }
-
-      
-//        let taskId = null;
-//        if (tasks) {
-//          // Ensure the tasks ID is valid as ObjectId
-//          if (!mongoose.Types.ObjectId.isValid(tasks)) {
-//            return res.status(400).json({ status: false, message: 'Invalid task ID.' });
-//          }
-//          taskId = new mongoose.Types.ObjectId(tasks); // Use `new` keyword here
-//        }
-
-
-
-    
-
-//     // Validate status for testers
-//     if (req.user.department === 'testing') {
-//       const testerAllowedStatuses = ['Open', 'Closed', 'Reopen'];
-//       if (!status || !testerAllowedStatuses.includes(status)) {
-//         return res.status(400).json({
-//           status: false,
-//           message: `Testers can only set the status to: ${testerAllowedStatuses.join(', ')}`,
-//         });
-//       }
-//     }
-
-//     // Handle file attachments
-//     let attachments = [];
-//     if (req.files && req.files.length > 0) {
-//       attachments = req.files.map(file => ({
-//         file_url: `/uploads/${file.filename}`, // Use a consistent URL path
-//         uploaded_at: new Date(),
-//       }));
-//     }
-
-//     // Create a new ticket
-//     const ticket = new Ticket({
-//       title,
-//       description,
-//       project,     
-//       assigned_to,
-//       priority,
-//       tasks,
-//       status,
-//       severity,
-//       main_category,
-//       sub_category,
-//       raised_by: req.user.id,
-//       attachments,
-//     });
-
-//     // Save ticket to database
-//     await ticket.save();
-
-//     res.status(201).json({
-//       status: true,
-//       message: 'Ticket created successfully',
-//       ticket, // Return the created ticket
-//     });
-//   } catch (error) {
-//     console.error('Error creating ticket:', error);
-//     res.status(500).json({
-//       status: false,
-//       message: 'An error occurred while creating the ticket.',
-//       error: error.message,
-//     });
-//   }
-// };
 
 
 export const createTicket = async (req, res) => {
@@ -457,42 +348,6 @@ export const getTicketById = async (req, res) => {
 
 
 
-// Update a ticket
-// export const updateTicket = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const updates = req.body;
-
-//     // Check if the ticket exists
-//     const ticket = await Ticket.findById(id);
-//     if (!ticket) {
-//       return res.status(404).json({ message: 'Ticket not found' });
-//     }
-
-//     // Authorization: Both admin and tester can update any ticket
-//     if (req.user.role === 'admin' || req.user.role === 'tester') {
-//       // Admin and Tester can update all tickets
-//       const updatedTicket = await Ticket.findByIdAndUpdate(id, updates, { new: true });
-//       return res.status(200).json({
-//         status: true,
-//         message: 'Ticket updated successfully',
-//         ticket: updatedTicket,
-//       });
-   
-//     }
-//     console.log("Ticket updated successfully", ticket);
-
-//     // If not admin or tester, deny access
-//     return res.status(403).json({ message: 'No Authorization' });
-
-//   } catch (error) {
-//     res.status(500).json({ message: 'Error updating ticket', error: error.message });
-//   }
-// };
-
-
-
-// Update a ticket
 
 
 export const updateTicket = async (req, res) => {
