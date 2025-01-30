@@ -25,11 +25,11 @@ const TicketSchema = new mongoose.Schema(
       ref: 'Task',
       required: true,
     },
-    document_name: {  // New field for document name
-      type: String,
-      trim: true,
-      required: false,  // Make it optional or required based on your use case
-    },
+    // document_name: {  // New field for document name
+    //   type: String,
+    //   trim: true,
+    //   required: false,  // Make it optional or required based on your use case
+    // },
 
     raised_by: {
       type: mongoose.Schema.Types.ObjectId,
@@ -75,6 +75,10 @@ const TicketSchema = new mongoose.Schema(
     },
     attachments: [
       {
+        file_name: {
+          type: String,
+          trim: true,
+        },
         file_url: {
           type: String,
           trim: true,
