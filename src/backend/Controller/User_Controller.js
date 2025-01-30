@@ -52,7 +52,6 @@ export const authMiddleware = (req, res, next) => {
   });
 };
 
-
 //fazil correct code
 // export const user_login = async (req, res) => {
 //   const { mail, password } = req.body;
@@ -121,8 +120,6 @@ export const authMiddleware = (req, res, next) => {
 //   }
 // };
 
-
-
 export const user_login = async (req, res) => {
   const { mail, password } = req.body;
 
@@ -141,7 +138,9 @@ export const user_login = async (req, res) => {
 
     // Check if the user exists
     if (!user) {
-      return res.status(404).json({ status: false, message: "User not found." });
+      return res
+        .status(404)
+        .json({ status: false, message: "User not found." });
     }
 
     // Verify password using bcrypt
@@ -215,20 +214,19 @@ export const user_login = async (req, res) => {
   }
 };
 
-
 export const user_dashboard = async (req, res) => {
   // console.log(req.user);
   console.log("user_dashboard");
-  const { id, role, mail,department } = req.user;
+  const { id, role, mail, department } = req.user;
 
   //  Ensure only users from the "testing" department can access this dashboard
-   if (department !== 'testing') {
+  if (department !== "testing") {
     return res.status(403).json({
       status: false,
-      message: 'Access denied. Only users from the testing department are authorized to view the dashboard.',
+      message:
+        "Access denied. Only users from the testing department are authorized to view the dashboard.",
     });
   }
-
 
   let result = "";
   // if(department === "testing"){
@@ -272,7 +270,6 @@ export const user_dashboard = async (req, res) => {
   console.log(`user dashbroad ${role}`);
   res.status(200).json({ message: "users", result: data });
 };
-
 
 export const createUser = async (req, res) => {
   const {
@@ -357,9 +354,6 @@ export const createUser = async (req, res) => {
 
 
 
-
-
-
 export const approveUserByHR = async (req, res) => {
   const { userId, hr_approval } = req.body;
 
@@ -415,12 +409,6 @@ export const approveUserByHR = async (req, res) => {
   }
 };
 
-
-
-
-
-
-
 export const updateUser = async (req, res) => {
   console.log(req.body);
   const {
@@ -467,7 +455,6 @@ export const updateUser = async (req, res) => {
         .json({ status: false, message: "Error in Updating User" });
     });
 };
-
 
 export const deleteUser = async (req, res) => {
   const { id } = req.body; // Safely access the body object
@@ -530,10 +517,6 @@ export const findById = async (req, res) => {
     });
 };
 
-
-
-
-
 export const getAllUserEmpMail = async (req, res) => {
   try {
     console.log(req.user); // Debugging log to verify `req.user` is populated
@@ -555,7 +538,7 @@ export const getAllUserEmpMail = async (req, res) => {
       filterRoles = ["team lead", "member"];
     } else if (loggedInUserRole === "team lead") {
       filterRoles = ["member"];
-    } else {  
+    } else {
       filterRoles = ["member"];
     }
 
@@ -587,13 +570,6 @@ export const getAllUserEmpMail = async (req, res) => {
   }
 };
 
-
-
-
-
-
-
-
 export const getAllUserEmpMailForProject = async (req, res) => {
   try {
     // if (req.user?.role !== "admin") {
@@ -606,7 +582,7 @@ export const getAllUserEmpMailForProject = async (req, res) => {
 
     const users = await UserModel.find(
       {},
-      { mail: 1, name: 1, role: 1, admin_verify: 1 }
+      { mail: 1, name: 1, role: 1, admin_verify: 1, hr_approval: 1 }
     );
 
     // Separate users into team leads, managers, and others
@@ -624,12 +600,15 @@ export const getAllUserEmpMailForProject = async (req, res) => {
       //   mail,
       //   admin_verify,
       // })),
-      managers: managers.map(({ _id, mail, name, admin_verify }) => ({
-        id: _id,
-        name,
-        mail,
-        admin_verify,
-      })),
+      managers: managers.map(
+        ({ _id, mail, name, admin_verify, hr_approval }) => ({
+          id: _id,
+          name,
+          mail,
+          admin_verify,
+          hr_approval,
+        })
+      ),
 
       // others: others.map(({ name, mail }) => ({ name, mail })),
     });
