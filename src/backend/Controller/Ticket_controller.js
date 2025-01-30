@@ -399,7 +399,10 @@ export const getTicketsWithDetails = async (req, res) => {
         .skip((pageNumber - 1) * limitNumber)
         .limit(limitNumber)
         .populate('project', 'name description') // Populate project details
-        .populate('assigned_to', 'name mail'); // Populate assigned employee details
+        .populate('assigned_to', 'name mail') // Populate assigned employee details
+        .populate("raised_by", "name email") // Assuming 'name' and 'email' are in your User model
+        .populate("tasks", "task_title")
+
 
       // Count total tickets for this user
       const userTotalTickets = await Ticket.countDocuments({
@@ -434,7 +437,11 @@ export const getTicketsWithDetails = async (req, res) => {
       .skip((pageNumber - 1) * limitNumber)
       .limit(limitNumber)
       .populate('project', 'name description') // Populate project details
-      .populate('assigned_to', 'name mail'); // Populate assigned employee details
+      .populate('assigned_to', 'name mail') // Populate assigned employee details
+      .populate("raised_by", "name email") // Assuming 'name' and 'email' are in your User model
+      .populate("tasks", "task_title")// Populate assigned employee details
+
+
 
     if (!tickets || tickets.length === 0) {
       return res
@@ -474,7 +481,11 @@ export const getTicketById = async (req, res) => {
     // Fetch the ticket, populate project and assigned_to
     const ticket = await Ticket.findById(id)
       .populate("project", "project_name project_description") // Assuming 'project_name' and 'project_description' are the fields in your Project model
-      .populate("assigned_to", "name email"); // Assuming 'name' and 'email' are in your User model
+      .populate("assigned_to", "name email") // Assuming 'name' and 'email' are in your User model
+      .populate("raised_by", "name email") // Assuming 'name' and 'email' are in your User model
+      .populate("tasks", "task_title") // Assuming 'name' and 'email' are in your User model
+
+
 
     // If no ticket is found
     if (!ticket) {
