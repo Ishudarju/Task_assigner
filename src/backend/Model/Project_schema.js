@@ -11,6 +11,11 @@ const projectSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    project_document: {
+      type: String, // This will store the file path or URL
+      required: false,
+    },
+    
     project_ownership: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "user", // Assuming the ownership refers to a user
