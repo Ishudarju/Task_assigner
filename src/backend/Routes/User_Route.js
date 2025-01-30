@@ -5,9 +5,10 @@ import * as Ticket from "../Controller/Ticket_controller.js";
 import * as Task from "../Controller/Task_Controller.js";
 import * as Project from "../Controller/Project_controller.js";
 import * as Milestone from "../Controller/Milestone_controller.js";
-import upload_project from "../middleware/upload.js";
+import path from "path";
+
 import multer from "multer";
-// import { uploadFiles } from "../Controller/document_controller.js";
+
 import * as document from "../Controller/document_controller.js";
 
 
@@ -45,15 +46,53 @@ userRoute.post("/importXLSX", upload.single("file"), User.importXLSX);
 
 
 //Tickets routes
+//Tickets routes
 
+// Set up multer storage to control the destination and filename
+const Ticketstorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads'); // Ensure the uploads folder exists
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname)); // Timestamped file name
+  }
+});
+
+// Initialize multer with the storage configuration
+const uploads = multer({
+  storage: Ticketstorage, // Use the custom storage config
+  limits: { fileSize: 10 * 1024 * 1024 }, // File size limit (10 MB)
+});
 
 
 // userRoute.post("/createTicket", User.authMiddleware, Ticket.createTicket);
-userRoute.post('/createTicket', Admin.authMiddleware, upload.array('attachments'), Ticket.createTicket);
+userRoute.post('/createTicket', Admin.authMiddleware, uploads.array('attachments'), Ticket.createTicket);
+
 userRoute.post("/deleteTicket", Ticket.deleteTicket);
 
-// userRoute.post("/createProject", User.authMiddleware, Project.createProject);
-userRoute.post("/createProject", User.authMiddleware,upload_project.single("project_document"), Project.createProject);
+
+
+// Set up multer storage configuration
+const storageprojects = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/'); // Directory where files will be uploaded
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + '-' + file.originalname); // Naming the file with timestamp to avoid name conflicts
+  },
+});
+
+// File size limit of 10MB
+const project_upload = multer({
+  storage: storageprojects,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB file size limit
+}).single('attachment'); // 'attachment' is the name of the field in the form
+
+
+userRoute.post('/createproject', User.authMiddleware,project_upload, Project.createProject);
+
+
+
 
 userRoute.post(  "/getAllProjects",  User.authMiddleware, Project.getAllProjectsPagination);
 userRoute.get("/getAllProjectList", User.authMiddleware, Project.getAllProject);
@@ -107,6 +146,7 @@ userRoute.post('/updateTesterApproval', User.authMiddleware, Task.updateTesterAp
 
 
 
+
 // Set up storage for multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -121,7 +161,13 @@ const storage = multer.diskStorage({
 // const upload = multer({ storage: storage });
 
 // Route to upload a file
-userRoute.post("/upload", User.authMiddleware,upload.single("file"), document.uploadFile);
+userRoute.post("/uploaddocument", User.authMiddleware,upload.single("file"), document.uploadFile);
+
+
+
+
+
+
 
 // Route to get all files
 userRoute.get("/getAllfiles", User.authMiddleware,document.getAllFiles);

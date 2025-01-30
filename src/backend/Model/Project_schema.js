@@ -11,10 +11,10 @@ const projectSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
-    project_document: {
-      type: String, // This will store the file path or URL
-      required: false,
-    },
+    // project_document: {
+    //   type: String, // This will store the file path or URL
+    //   required: false,
+    // },
     
     project_ownership: {
       type: mongoose.Schema.Types.ObjectId,
@@ -46,6 +46,22 @@ const projectSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    attachments: [
+      {
+        file_name: {
+          type: String,
+          trim: true,
+        },
+        file_url: {
+          type: String,
+          trim: true,
+        },
+        uploaded_at: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
     milestones: [
       { 
         type: mongoose.Schema.Types.ObjectId,

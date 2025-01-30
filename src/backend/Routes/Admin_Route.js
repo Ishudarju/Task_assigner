@@ -9,6 +9,7 @@ import * as Project from "../Controller/Project_controller.js";
 import * as Milestone from "../Controller/Milestone_controller.js";
 import * as Ticket from "../Controller/Ticket_controller.js";
 import * as document from "../Controller/document_controller.js";
+// import upload_project from "../middleware/upload.js";
 
 
 const adminRoute = express.Router();
@@ -56,7 +57,29 @@ adminRoute.post("/getTicketById", Ticket.getTicketById);
 //   Ticket.getTicketByCategory
 // );
 
-adminRoute.post("/createProject", Admin.authMiddleware, Project.createProject);
+// Set up multer storage configuration
+const projectstorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/'); // Directory where files will be uploaded
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + '-' + file.originalname); // Naming the file with timestamp to avoid name conflicts
+  },
+});
+
+// File size limit of 10MB
+const project_upload = multer({
+  storage: projectstorage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB file size limit
+}).single('attachment'); // 'attachment' is the name of the field in the form
+
+
+// Route for creating a project
+adminRoute.post('/createproject', Admin.authMiddleware,project_upload, Project.createProject);
+
+
+
+
 adminRoute.post(  "/getAllProjects",  Admin.authMiddleware, Project.getAllProjectsPagination);
 adminRoute.put("/updateProject", Admin.authMiddleware, Project.updateProject);
 adminRoute.delete(
@@ -90,12 +113,21 @@ adminRoute.get("/hours_spent_progress", Admin.authMiddleware, Project.calculateP
 
 //Tickets routes
 
-// Set up multer for handling file uploads
-const upload = multer({
-  dest: path.resolve('./uploads/'),  // Directory for storing uploaded files
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB file size limit
+// Set up multer storage to control the destination and filename
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads'); // Ensure the uploads folder exists
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname)); // Timestamped file name
+  }
 });
 
+// Initialize multer with the storage configuration
+const upload = multer({
+  storage: storage, // Use the custom storage config
+  limits: { fileSize: 10 * 1024 * 1024 }, // File size limit (10 MB)
+});
 
 // Define the route for creating tickets
 adminRoute.post('/createTicket', Admin.authMiddleware, upload.array('attachments'), Ticket.createTicket);
