@@ -109,7 +109,7 @@ adminRoute.get('/tickets/:id', Admin.authMiddleware, Ticket.getTicketById);
 // // Update a ticket
 // router.post('/updatetick/:id', User.authMiddleware, updateTicket);
 
-adminRoute.post('/updatetick/:id', Admin.authMiddleware, Ticket.updateTicket);
+adminRoute.post('/updatetick', Admin.authMiddleware, Ticket.updateTicket);
 
 adminRoute.post('/updatetickstatus', Admin.authMiddleware, Ticket.updateTicketStatus);
 
