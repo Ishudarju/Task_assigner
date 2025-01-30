@@ -10,11 +10,113 @@ import ProjectModel from "../Model/Project_schema.js"; // Use named import
 
 // Adjust the path based on your project structure
 
+
+
+
+// export const createTicket = async (req, res) => {
+//   const { title, description, project, assigned_to, tasks , priority, status, severity, main_category, sub_category } = req.body;
+
+// console.log("value",req.body);
+//   try {
+//     console.log(req.user);
+
+//     // Authorization Check
+//     if (req.user.department !== 'testing' && req.user.role !== 'admin') {
+//       return res.status(403).json({
+//         status: false,
+//         message: 'Access denied. Only users from the testing department or admins are authorized.',
+//       });
+//     }
+
+//     // // Validation for required fields
+//     if (!main_category || !sub_category) {
+//       return res.status(400).json({ status: false, message: 'Main category and Sub category are required.' });
+//     }
+
+//     if (!title || !description || !project) {
+//       return res.status(400).json({ status: false, message: 'Title, Description, and Project are required.' });
+//     }
+
+//     // Check if project exists
+//     const projectExists = await ProjectModel.findById(project);
+//     if (!projectExists) {
+//       return res.status(404).json({ status: false, message: 'Project not found.' });
+//     }
+
+      
+//        let taskId = null;
+//        if (tasks) {
+//          // Ensure the tasks ID is valid as ObjectId
+//          if (!mongoose.Types.ObjectId.isValid(tasks)) {
+//            return res.status(400).json({ status: false, message: 'Invalid task ID.' });
+//          }
+//          taskId = new mongoose.Types.ObjectId(tasks); // Use `new` keyword here
+//        }
+
+
+
+    
+
+//     // Validate status for testers
+//     if (req.user.department === 'testing') {
+//       const testerAllowedStatuses = ['Open', 'Closed', 'Reopen'];
+//       if (!status || !testerAllowedStatuses.includes(status)) {
+//         return res.status(400).json({
+//           status: false,
+//           message: `Testers can only set the status to: ${testerAllowedStatuses.join(', ')}`,
+//         });
+//       }
+//     }
+
+//     // Handle file attachments
+//     let attachments = [];
+//     if (req.files && req.files.length > 0) {
+//       attachments = req.files.map(file => ({
+//         file_url: `/uploads/${file.filename}`, // Use a consistent URL path
+//         uploaded_at: new Date(),
+//       }));
+//     }
+
+//     // Create a new ticket
+//     const ticket = new Ticket({
+//       title,
+//       description,
+//       project,     
+//       assigned_to,
+//       priority,
+//       tasks,
+//       status,
+//       severity,
+//       main_category,
+//       sub_category,
+//       raised_by: req.user.id,
+//       attachments,
+//     });
+
+//     // Save ticket to database
+//     await ticket.save();
+
+//     res.status(201).json({
+//       status: true,
+//       message: 'Ticket created successfully',
+//       ticket, // Return the created ticket
+//     });
+//   } catch (error) {
+//     console.error('Error creating ticket:', error);
+//     res.status(500).json({
+//       status: false,
+//       message: 'An error occurred while creating the ticket.',
+//       error: error.message,
+//     });
+//   }
+// };
+
+
 export const createTicket = async (req, res) => {
+  const { title, description, project, assigned_to, tasks, priority, status, severity, main_category, sub_category } = req.body;
 
-  const { title, description, project, document_name, assigned_to, tasks , priority, status, severity, main_category, sub_category } = req.body;
+  console.log("value", req.body);
 
-console.log("value",req.body);
 
   try {
     console.log(req.user);
@@ -28,7 +130,7 @@ console.log("value",req.body);
       });
     }
 
-    // // Validation for required fields
+    // Validation for required fields
     if (!main_category || !sub_category) {
       return res
         .status(400)
@@ -55,23 +157,14 @@ console.log("value",req.body);
         .json({ status: false, message: "Project not found." });
     }
 
-    // // Validate task existence (if provided)
-    // if (tasks) {
-    //   const taskExists = await TaskModel.findById(tasks);
-    //   if (!taskExists) {
-    //     return res.status(404).json({ status: false, message: 'Task not found.' });
-    //   }
-    // }// Check if tasks is provided and convert to ObjectId if necessary
-    // Check if tasks is provided and convert to ObjectId if necessary
+
     let taskId = null;
     if (tasks) {
-      // Ensure the tasks ID is valid as ObjectId
       if (!mongoose.Types.ObjectId.isValid(tasks)) {
-        return res
-          .status(400)
-          .json({ status: false, message: "Invalid task ID." });
+        return res.status(400).json({ status: false, message: 'Invalid task ID.' });
       }
-      taskId = new mongoose.Types.ObjectId(tasks); // Use `new` keyword here
+      taskId = new mongoose.Types.ObjectId(tasks);
+
     }
 
     // Validate status for testers
@@ -90,8 +183,9 @@ console.log("value",req.body);
     // Handle file attachments
     let attachments = [];
     if (req.files && req.files.length > 0) {
-      attachments = req.files.map((file) => ({
-        file_url: `/uploads/${file.filename}`, // Use a consistent URL path
+      attachments = req.files.map(file => ({
+        file_name: file.originalname, // Fetch the original file name
+        file_url: `/uploads/${file.filename}`, // Store the file path
         uploaded_at: new Date(),
       }));
     }
@@ -101,7 +195,6 @@ console.log("value",req.body);
       title,
       description,
       project,
-      document_name,
       assigned_to,
       priority,
       tasks,
@@ -118,8 +211,10 @@ console.log("value",req.body);
 
     res.status(201).json({
       status: true,
-      message: "Ticket created successfully",
-      ticket, // Return the created ticket
+
+      message: 'Ticket created successfully',
+      ticket,
+
     });
   } catch (error) {
     console.error("Error creating ticket:", error);
@@ -130,6 +225,7 @@ console.log("value",req.body);
     });
   }
 };
+
 
 //return ticket to tester
 

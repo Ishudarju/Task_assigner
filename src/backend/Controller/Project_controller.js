@@ -1,116 +1,10 @@
 import ProjectModel from "../Model/Project_schema.js";
 import { TaskModel } from "../Model/Task_scheme.js";
 import MilestoneModel from "../Model/Milestone_schema.js";
+import upload_project from "../middleware/upload.js";
 // Ensure you import the Milestone model
 import { Mongoose } from "mongoose";
 // Create a new project
-
-export const createProject = async (req, res) => {
-  const {
-    project_name,
-    project_description,
-    project_ownership,
-    startDate,
-    endDate,
-    project_status,
-    estimated_hours,
-    milestones,
-  } = req.body;
-
-  const { role } = req.user;
-  const estimatedHours = parseInt(estimated_hours, 10);
-
-  // Authorization check
-  if (role !== "admin" && role !== "manager") {
-    return res.status(403).json({
-      status: false,
-      message: "No authorization to create a project",
-    });
-  }
-
-  // Validation
-  if (
-    !project_name ||
-    typeof project_name !== "string" ||
-    project_name.trim() === ""
-  ) {
-    return res.status(400).json({
-      status: false,
-      message: "Project name is required and must be a valid string.",
-    });
-  }
-
-  if (startDate && isNaN(Date.parse(startDate))) {
-    return res.status(400).json({
-      status: false,
-      message: "Invalid start date format.",
-    });
-  }
-
-  if (endDate && isNaN(Date.parse(endDate))) {
-    return res.status(400).json({
-      status: false,
-      message: "Invalid end date format.",
-    });
-  }
-
-  if (!estimated_hours || isNaN(estimatedHours) || estimatedHours <= 0) {
-    return res.status(400).json({
-      status: false,
-      message: "Estimated hours are required and must be a positive number.",
-    });
-  }
-
-  if (milestones && !Array.isArray(milestones)) {
-    return res.status(400).json({
-      status: false,
-      message: "Milestones must be an array.",
-    });
-  }
-
-  try {
-    // Step 1: Create the project
-    const newProject = new ProjectModel({
-      project_name,
-      project_description,
-      project_ownership,
-      startDate,
-      endDate,
-      project_status,
-      estimated_hours: estimatedHours,
-    });
-
-    const project = await newProject.save();
-
-    // Step 2: Create milestones and associate them with the project
-    if (milestones && milestones.length > 0) {
-      const milestoneDocuments = milestones.map((milestoneName) => ({
-        name: milestoneName,
-        project: project._id,
-      }));
-
-      const createdMilestones = await MilestoneModel.insertMany(
-        milestoneDocuments
-      );
-
-      // Update project with milestone references
-      project.milestones = createdMilestones.map((milestone) => milestone._id);
-      await project.save();
-    }
-
-    return res.status(201).json({
-      status: true,
-      message: "Project and milestones created successfully",
-      data: project,
-    });
-  } catch (error) {
-    console.error("Error creating project and milestones:", error);
-    return res.status(500).json({
-      status: false,
-      message: "An error occurred while creating the project and milestones",
-    });
-  }
-};
 
 // export const createProject = async (req, res) => {
 //   const {
@@ -121,11 +15,11 @@ export const createProject = async (req, res) => {
 //     endDate,
 //     project_status,
 //     estimated_hours,
-//     milestones, // Milestones added
+//     milestones,
 //   } = req.body;
-//   console.log(req.body);
+
 //   const { role } = req.user;
-//   const converthours = parseInt(estimated_hours);
+//   const estimatedHours = parseInt(estimated_hours, 10);
 
 //   // Authorization check
 //   if (role !== "admin" && role !== "manager") {
@@ -136,13 +30,6 @@ export const createProject = async (req, res) => {
 //   }
 
 //   // Validation
-//   if (!project_name) {
-//     return res.status(400).json({
-//       status: false,
-//       message: "Project name is required",
-//     });
-//   }
-
 //   if (
 //     !project_name ||
 //     typeof project_name !== "string" ||
@@ -168,11 +55,7 @@ export const createProject = async (req, res) => {
 //     });
 //   }
 
-//   if (
-//     !estimated_hours ||
-//     typeof converthours !== "number" ||
-//     estimated_hours <= 0
-//   ) {
+//   if (!estimated_hours || isNaN(estimatedHours) || estimatedHours <= 0) {
 //     return res.status(400).json({
 //       status: false,
 //       message: "Estimated hours are required and must be a positive number.",
@@ -187,7 +70,7 @@ export const createProject = async (req, res) => {
 //   }
 
 //   try {
-//     // Create a new project
+//     // Step 1: Create the project
 //     const newProject = new ProjectModel({
 //       project_name,
 //       project_description,
@@ -195,177 +78,111 @@ export const createProject = async (req, res) => {
 //       startDate,
 //       endDate,
 //       project_status,
-//       estimated_hours,
-//       milestones, // Include milestones
+//       estimated_hours: estimatedHours,
 //     });
 
 //     const project = await newProject.save();
 
+//     // Step 2: Create milestones and associate them with the project
+//     if (milestones && milestones.length > 0) {
+//       const milestoneDocuments = milestones.map((milestoneName) => ({
+//         name: milestoneName,
+//         project: project._id,
+//       }));
+
+//       const createdMilestones = await MilestoneModel.insertMany(
+//         milestoneDocuments
+//       );
+
+//       // Update project with milestone references
+//       project.milestones = createdMilestones.map((milestone) => milestone._id);
+//       await project.save();
+//     }
+
 //     return res.status(201).json({
 //       status: true,
-//       message: "Project created successfully",
+//       message: "Project and milestones created successfully",
 //       data: project,
 //     });
 //   } catch (error) {
-//     console.error("Error creating project:", error);
+//     console.error("Error creating project and milestones:", error);
 //     return res.status(500).json({
 //       status: false,
-//       message: "An error occurred while creating the project",
+//       message: "An error occurred while creating the project and milestones",
 //     });
 //   }
 // };
 
-// Fetch all projects
-// export const getAllProjects = async (req, res) => {
-//   try {
-//     const projects = await ProjectModel.find({ is_deleted: false }).populate(
-//       "project_ownership",
-//       "name email"
-//     ); // Populating team member details
-//     const totalProjects = await ProjectModel.countDocuments({
-//       is_deleted: false,
-//     });
 
-//     return res.status(200).json({
-//       status: true,
-//       data: projects,
-//       totl: totalProjects,
-//       message: "Projects fetched successfully",
-//     });
-//   } catch (error) {
-//     console.error("Error fetching projects:", error);
-//     return res.status(500).json({
-//       status: false,
-//       message: "An error occurred while fetching projects",
-//     });
-//   }
-// };
-// export const getAllProjects = async (req, res) => {
-//   try {
-//     // Fetching projects with active status and populating ownership details
-//     const projects = await ProjectModel.find({ is_deleted: false })
-//       .populate("project_ownership", "name mail");
 
-//     const totalProjects = await ProjectModel.countDocuments({
-//       is_deleted: false,
-//     });
-//     console.log(projects)
-//     return res.status(200).json({
-//       status: true,
-//       projects,
-//       total: totalProjects, // Corrected key
-//       message: "Projects fetched successfully",
-//     });
-//   } catch (error) {
-//     console.error("Error fetching projects:", error.message);
-//     return res.status(500).json({
-//       status: false,
-//       message: "An error occurred while fetching projects",
-//     });
-//   }
-// };
 
-// export const getAllProjectsPagination = async (req, res) => {
-//   try {
-//     const { page = 1, limit = 10 } = req.query;
+export const createProject = async (req, res) => {
+  try {
+    upload_project.single("project_document")(req, res, async (err) => {
+      if (err) {
+        return res.status(400).json({ status: false, message: err.message });
+      }
 
-//     const pageNumber = parseInt(page, 10);
-//     const limitNumber = parseInt(limit, 10);
+      const {
+        project_name,
+        project_description,
+        project_ownership,
+        startDate,
+        endDate,
+        project_status,
+        estimated_hours,
+        milestones,
+      } = req.body;
 
-//     const projects = await ProjectModel.find({ is_deleted: false })
+      const estimatedHours = parseInt(estimated_hours, 10);
+      const { role } = req.user;
 
-//       .populate("project_ownership", "name mail")
-//       .populate("milestones", "name status") // Populate milestones details
-//       .sort({ createdAt: -1 })
-//       .skip((pageNumber - 1) * limitNumber)
-//       .limit(limitNumber);
+      // Authorization check
+      if (role !== "admin" && role !== "manager") {
+        return res.status(403).json({
+          status: false,
+          message: "No authorization to create a project",
+        });
+      }
 
-//     const totalProjects = await ProjectModel.countDocuments({
-//       is_deleted: false,
-//     });
+      if (!project_name || typeof project_name !== "string") {
+        return res.status(400).json({
+          status: false,
+          message: "Project name is required and must be a valid string.",
+        });
+      }
 
-//     return res.status(200).json({
-//       status: true,
-//       data: {
-//         total: totalProjects,
-//         projects,
-//       },
-//       message: "Projects fetched successfully",
-//     });
-//   } catch (error) {
-//     console.error("Error fetching projects:", error.message);
-//     return res.status(500).json({
-//       status: false,
-//       message: "An error occurred while fetching projects",
-//     });
-//   }
-// };
+      // Get document path if file is uploaded
+      const projectDocumentPath = req.file ? req.file.path : null;
 
-//ishu correction
+      const newProject = new ProjectModel({
+        project_name,
+        project_description,
+        project_ownership,
+        startDate,
+        endDate,
+        project_status,
+        estimated_hours: estimatedHours,
+        project_document: projectDocumentPath, // Save document path
+      });
 
-// export const calculateProjectProgress = async (req, res) => {
-//   const { projectId } = req.body; // Get projectId from the request body
-//   const { role } = req.user; // Assume user's role is extracted from JWT or session
+      const project = await newProject.save();
 
-//   // Access Control
-//   const allowedRoles = ["member","team lead","manager","hr","director","tester","admin"];
-//   if (!allowedRoles.includes(role)) {
-//     return res.status(403).json({
-//       status: false,
-//       message: "You are not authorized to access this information",
-//     });
-//   }
+      return res.status(201).json({
+        status: true,
+        message: "Project created successfully",
+        data: project,
+      });
+    });
+  } catch (error) {
+    console.error("Error creating project:", error);
+    return res.status(500).json({
+      status: false,
+      message: "An error occurred while creating the project",
+    });
+  }
+};
 
-//   try {
-//     // Fetch the project
-//     const project = await ProjectModel.findById(projectId);
-//     if (!project) {
-//       return res.status(404).json({
-//         status: false,
-//         message: "Project not found",
-//       });
-//     }
-
-//     // Fetch all tasks associated with the project
-//     const tasks = await TaskModel.find({ project: projectId });
-
-//     // Calculate the total hours spent using `daily_updates` from all tasks
-//     const totalHoursSpent = tasks.reduce((total, task) => {
-//       const taskHours = task.daily_updates.reduce(
-//         (sum, update) => sum + (update.hours_spent || 0),
-//         0
-//       );
-//       return total + taskHours;
-//     }, 0);
-
-//     // Calculate the percentage of estimated hours
-//     const estimatedHours = project.estimated_hours || 1; // Prevent division by zero
-//     const percentageSpent = (totalHoursSpent / estimatedHours) * 100;
-
-//     // Remaining percentage
-//     const remainingPercentage = 100 - percentageSpent;
-
-//     // Return success response with calculated values
-//     return res.status(200).json({
-//       status: true,
-//       message: "Project progress calculated successfully",
-//       data: {
-//         projectId,
-//         projectName: project.project_name,
-//         estimatedHours,
-//         totalHoursSpent,
-//         percentageSpent: percentageSpent.toFixed(2), // Rounded to 2 decimals
-//         remainingPercentage: remainingPercentage.toFixed(2), // Rounded to 2 decimals
-//       },
-//     });
-//   } catch (error) {
-//     console.error("Error calculating project progress:", error);
-//     return res.status(500).json({
-//       status: false,
-//       message: "Error calculating project progress",
-//     });
-//   }
-// };
 
 export const calculateProjectProgress = async (req, res) => {
   const { projectId } = req.body;
@@ -407,58 +224,6 @@ export const calculateProjectProgress = async (req, res) => {
 
 
 import { fetchProjectDetails } from "../Helper function/projectHelper.js";
-
-// export const getAllProject = async (req, res) => {
-//   try {
-//     const { role, _id: userId } = req.user;
-
-//     // Fetch projects based on role
-//     let query = { is_deleted: false };
-//     if (role == "manager") {
-//       query.project_ownership = userId;
-//     }    
-
-//     const projects = await ProjectModel.find(query)
-//       .select("_id project_name project_ownership milestones")
-//       .populate("project_ownership", "name mail")
-//       .populate("milestones", "name status");
-
-//     if (!projects.length) {
-//       return res
-//         .status(404)
-//         .json({ success: false, message: "No projects found" });
-//     }
-
-//     // Add additional details for each project
-//     const projectsWithDetails = [];
-//     for (const project of projects) {
-//       const {
-//         project: fullProject,
-//         tasks,
-//         totalHoursSpent,
-//       } = await fetchProjectDetails(project._id);
-//       projectsWithDetails.push({
-//         ...fullProject.toObject(),
-//         tasks,
-//         totalHoursSpent,
-//       });
-//     }
-
-//     return res.status(200).json({
-//       success: true,
-//       projects: projectsWithDetails,
-//     });
-//   } catch (error) {
-//     console.error("Error fetching projects:", error);
-//     res.status(500).json({
-//       success: false,
-//       message: "Internal server error",
-//       error: error.message,
-//     });
-//   }
-// };
-
-
 
 
 
