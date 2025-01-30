@@ -1,16 +1,12 @@
-
-import {Ticket} from '../Model/Ticket_schema.js';
-import mongoose from 'mongoose';  // Add this import statement at the top of your file
+import { Ticket } from "../Model/Ticket_schema.js";
+import mongoose from "mongoose"; // Add this import statement at the top of your file
 
 // import { Ticket } from './models/Ticket';  // Adjust path to your Ticket model
 
-
-import fs from 'fs';
-import path from 'path';
-import  ProjectModel  from '../Model/Project_schema.js'; // Use named import
+import fs from "fs";
+import path from "path";
+import ProjectModel from "../Model/Project_schema.js"; // Use named import
 // import { TaskModel } from '../Model/Task_scheme.js'
-
-
 
 // Adjust the path based on your project structure
 
@@ -121,31 +117,46 @@ export const createTicket = async (req, res) => {
 
   console.log("value", req.body);
 
+
   try {
     console.log(req.user);
 
     // Authorization Check
-    if (req.user.department !== 'testing' && req.user.role !== 'admin') {
+    if (req.user.department !== "testing" && req.user.role !== "admin") {
       return res.status(403).json({
         status: false,
-        message: 'Access denied. Only users from the testing department or admins are authorized.',
+        message:
+          "Access denied. Only users from the testing department or admins are authorized.",
       });
     }
 
     // Validation for required fields
     if (!main_category || !sub_category) {
-      return res.status(400).json({ status: false, message: 'Main category and Sub category are required.' });
+      return res
+        .status(400)
+        .json({
+          status: false,
+          message: "Main category and Sub category are required.",
+        });
     }
 
     if (!title || !description || !project) {
-      return res.status(400).json({ status: false, message: 'Title, Description, and Project are required.' });
+      return res
+        .status(400)
+        .json({
+          status: false,
+          message: "Title, Description, and Project are required.",
+        });
     }
 
     // Check if project exists
     const projectExists = await ProjectModel.findById(project);
     if (!projectExists) {
-      return res.status(404).json({ status: false, message: 'Project not found.' });
+      return res
+        .status(404)
+        .json({ status: false, message: "Project not found." });
     }
+
 
     let taskId = null;
     if (tasks) {
@@ -153,15 +164,18 @@ export const createTicket = async (req, res) => {
         return res.status(400).json({ status: false, message: 'Invalid task ID.' });
       }
       taskId = new mongoose.Types.ObjectId(tasks);
+
     }
 
     // Validate status for testers
-    if (req.user.department === 'testing') {
-      const testerAllowedStatuses = ['Open', 'Closed', 'Reopen'];
+    if (req.user.department === "testing") {
+      const testerAllowedStatuses = ["Open", "Closed", "Reopen"];
       if (!status || !testerAllowedStatuses.includes(status)) {
         return res.status(400).json({
           status: false,
-          message: `Testers can only set the status to: ${testerAllowedStatuses.join(', ')}`,
+          message: `Testers can only set the status to: ${testerAllowedStatuses.join(
+            ", "
+          )}`,
         });
       }
     }
@@ -197,14 +211,16 @@ export const createTicket = async (req, res) => {
 
     res.status(201).json({
       status: true,
+
       message: 'Ticket created successfully',
       ticket,
+
     });
   } catch (error) {
-    console.error('Error creating ticket:', error);
+    console.error("Error creating ticket:", error);
     res.status(500).json({
       status: false,
-      message: 'An error occurred while creating the ticket.',
+      message: "An error occurred while creating the ticket.",
       error: error.message,
     });
   }
@@ -222,12 +238,14 @@ export const updateTicketStatus = async (req, res) => {
     // Fetch the ticket
     const ticket = await Ticket.findById(ticketId);
     if (!ticket) {
-      return res.status(404).json({ status: false, message: 'Ticket not found' });
+      return res
+        .status(404)
+        .json({ status: false, message: "Ticket not found" });
     }
 
     const user = req.user; // Logged-in user info
-    const testerAllowedStatuses = ['Open', 'Closed', 'Reopen'];
-    const userAllowedStatuses = ['In Progress', 'Resolved'];
+    const testerAllowedStatuses = ["Open", "Closed", "Reopen"];
+    const userAllowedStatuses = ["In Progress", "Resolved"];
 
     // **Tester Role**
     if (req.user.department == "testing") {
@@ -236,19 +254,25 @@ export const updateTicketStatus = async (req, res) => {
       } else {
         return res.status(400).json({
           status: false,
-          message: `Testers can only update the status to: ${testerAllowedStatuses.join(', ')}`,
+          message: `Testers can only update the status to: ${testerAllowedStatuses.join(
+            ", "
+          )}`,
         });
       }
     }
 
     // **Other Users Role**
-    else if (['member', 'team lead', 'manager', 'hr', 'director','admin'].includes(user.role)) {
+    else if (
+      ["member", "team lead", "manager", "hr", "director", "admin"].includes(
+        user.role
+      )
+    ) {
       if (status && userAllowedStatuses.includes(status)) {
-        if (status === 'Resolved') {
+        if (status === "Resolved") {
           if (!description) {
             return res.status(400).json({
               status: false,
-              message: 'Description is required when resolving a ticket.',
+              message: "Description is required when resolving a ticket.",
             });
           }
           ticket.description = description; // Set description when resolving
@@ -258,7 +282,9 @@ export const updateTicketStatus = async (req, res) => {
       } else {
         return res.status(400).json({
           status: false,
-          message: `You are only allowed to update the status to: ${userAllowedStatuses.join(', ')}`,
+          message: `You are only allowed to update the status to: ${userAllowedStatuses.join(
+            ", "
+          )}`,
         });
       }
     }
@@ -267,7 +293,7 @@ export const updateTicketStatus = async (req, res) => {
     else {
       return res.status(403).json({
         status: false,
-        message: 'You are not authorized to update the status of this ticket.',
+        message: "You are not authorized to update the status of this ticket.",
       });
     }
 
@@ -282,20 +308,22 @@ export const updateTicketStatus = async (req, res) => {
       ticket,
     });
   } catch (error) {
-    console.error('Error updating ticket status:', error);
+    console.error("Error updating ticket status:", error);
     res.status(500).json({
       status: false,
-      message: 'Error updating ticket status',
+      message: "Error updating ticket status",
       error: error.message,
     });
   }
 };
+
 
 export const getResolvedTickets = async (req, res) => {
   try {
     const user = req.user;
 
     console.log(user);
+
 
     // Check if the user is a project manager
     if (user.role !== "manager") {
@@ -331,12 +359,14 @@ export const getResolvedTickets = async (req, res) => {
 
 export const getTicketsWithDetails = async (req, res) => {
   try {
-    console.log(req.user);
+    // console.log(req.query);
 
     // Extract pagination parameters from the query
     const { page = 1, limit = 10 } = req.query;
     const pageNumber = parseInt(page, 10);
     const limitNumber = parseInt(limit, 10);
+
+    const sortBy = { createdAt: -1 };
 
     // Initialize status summary with default values (0 for all statuses)
     const initialStatusSummary = {
@@ -362,26 +392,29 @@ export const getTicketsWithDetails = async (req, res) => {
     const totalTickets = await Ticket.countDocuments();
 
     // Check if the user has 'admin' or 'tester' role
-    if (req.user.department !== "testing" && req.user.role !== 'admin') {
+    if (req.user.department !== "testing" && req.user.role !== "admin") {
       // If not admin or tester, show only tickets assigned to this user
       const tickets = await Ticket.find({ assigned_to: req.user.id })
+        .sort(sortBy)
         .skip((pageNumber - 1) * limitNumber)
         .limit(limitNumber)
         .populate('project', 'name description') // Populate project details
-        .populate('tasks', 'task_name') // Populate task details
-        .populate('raised_by', 'name') // Populate raised_by user details
         .populate('assigned_to', 'name mail'); // Populate assigned employee details
 
       // Count total tickets for this user
-      const userTotalTickets = await Ticket.countDocuments({ assigned_to: req.user.id });
+      const userTotalTickets = await Ticket.countDocuments({
+        assigned_to: req.user.id,
+      });
 
       // If no tickets are found for this user, send a message
       if (!tickets || tickets.length === 0) {
-        return res.status(404).json({ status: false, message: 'No tickets found for this user' });
+        return res
+          .status(404)
+          .json({ status: false, message: "No tickets found for this user" });
       }
 
       return res.status(200).json({
-        message: 'Tickets fetched successfully for this user',
+        message: "Tickets fetched successfully for this user",
         data: {
           tickets,
           total: userTotalTickets,
@@ -397,19 +430,20 @@ export const getTicketsWithDetails = async (req, res) => {
 
     // If admin or tester, show all tickets
     const tickets = await Ticket.find()
+      .sort(sortBy)
       .skip((pageNumber - 1) * limitNumber)
       .limit(limitNumber)
       .populate('project', 'name description') // Populate project details
-      .populate('tasks', 'task_name') // Populate task details
-      .populate('raised_by', 'name') // Populate raised_by user details
       .populate('assigned_to', 'name mail'); // Populate assigned employee details
 
     if (!tickets || tickets.length === 0) {
-      return res.status(404).json({ status: false, message: 'No tickets found' });
+      return res
+        .status(404)
+        .json({ status: false, message: "No tickets found" });
     }
 
     res.status(200).json({
-      message: 'Tickets fetched successfully',
+      message: "Tickets fetched successfully",
       data: {
         tickets,
         total: totalTickets,
@@ -422,9 +456,13 @@ export const getTicketsWithDetails = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: 'Error fetching tickets', error: error.message });
+    res
+      .status(500)
+      .json({ message: "Error fetching tickets", error: error.message });
   }
 };
+
+
 
 
 
@@ -435,27 +473,27 @@ export const getTicketById = async (req, res) => {
 
     // Fetch the ticket, populate project and assigned_to
     const ticket = await Ticket.findById(id)
-      .populate('project', 'project_name project_description')  // Assuming 'project_name' and 'project_description' are the fields in your Project model
-      .populate('assigned_to', 'name email');  // Assuming 'name' and 'email' are in your User model
+      .populate("project", "project_name project_description") // Assuming 'project_name' and 'project_description' are the fields in your Project model
+      .populate("assigned_to", "name email"); // Assuming 'name' and 'email' are in your User model
 
     // If no ticket is found
     if (!ticket) {
-      return res.status(404).json({ message: 'Ticket not found' });
+      return res.status(404).json({ message: "Ticket not found" });
     }
 
     // Return the ticket details
     res.status(200).json({
       status: true,
-      message: 'Ticket found successfully',
+      message: "Ticket found successfully",
       data: ticket,
     });
   } catch (error) {
     // Handle errors
-    res.status(500).json({ message: 'Error fetching ticket', error: error.message });
+    res
+      .status(500)
+      .json({ message: "Error fetching ticket", error: error.message });
   }
 };
-
-
 
 // Update a ticket
 // export const updateTicket = async (req, res) => {
@@ -478,7 +516,7 @@ export const getTicketById = async (req, res) => {
 //         message: 'Ticket updated successfully',
 //         ticket: updatedTicket,
 //       });
-   
+
 //     }
 //     console.log("Ticket updated successfully", ticket);
 
@@ -490,27 +528,23 @@ export const getTicketById = async (req, res) => {
 //   }
 // };
 
-
-
 // Update a ticket
-
 
 export const updateTicket = async (req, res) => {
   try {
     const { id } = req.params;
-    console.log("body",req.body);
-    console.log("query",req.query);
-    console.log("params",req.params);
+    console.log("body", req.body);
+    console.log("query", req.query);
+    console.log("params", req.params);
 
     // Check if the ticket exists
     const ticket = await Ticket.findById(id);
     if (!ticket) {
-      return res.status(404).json({ message: 'Ticket not found' });
+      return res.status(404).json({ message: "Ticket not found" });
     }
 
     // Authorization: Both admin and tester can update any ticket
-    if (req.user.role === 'admin' || req.user.department!== "testing") {
-
+    if (req.user.role === "admin" || req.user.department !== "testing") {
       // console.log(req.user);
       // Build update object
       const updates = {};
@@ -521,7 +555,7 @@ export const updateTicket = async (req, res) => {
       if (req.body.assigned_to) updates.assigned_to = req.body.assigned_to;
       if (req.body.priority) updates.priority = req.body.priority;
       if (req.body.status) updates.status = req.body.status;
-       console.log(req.body.status);
+      console.log(req.body.status);
       if (req.body.severity) updates.severity = req.body.severity;
 
       // Handle file upload for attachments
@@ -532,32 +566,32 @@ export const updateTicket = async (req, res) => {
         }));
         updates.attachments = uploadedFiles;
       }
-      console.log('Status from request body:', req.body);
-
+      console.log("Status from request body:", req.body);
 
       // Update the updated_at timestamp
       updates.updated_at = new Date();
 
       // Update the ticket
-      const updatedTicket = await Ticket.findByIdAndUpdate(id, updates, { new: true });
+      const updatedTicket = await Ticket.findByIdAndUpdate(id, updates, {
+        new: true,
+      });
 
       return res.status(200).json({
         status: true,
-        message: 'Ticket updated successfully',
+        message: "Ticket updated successfully",
         ticket: updatedTicket,
       });
     }
 
     // If not admin or tester, deny access
-    return res.status(403).json({ message: 'No Authorization' });
+    return res.status(403).json({ message: "No Authorization" });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: 'Error updating ticket', error: error.message });
+    res
+      .status(500)
+      .json({ message: "Error updating ticket", error: error.message });
   }
 };
-
-
-
 
 // Delete a ticket
 export const deleteTicket = async (req, res) => {
@@ -566,11 +600,13 @@ export const deleteTicket = async (req, res) => {
     const deletedTicket = await Ticket.findByIdAndDelete(id);
 
     if (!deletedTicket) {
-      return res.status(404).json({ message: 'Ticket not found' });
+      return res.status(404).json({ message: "Ticket not found" });
     }
 
-    res.status(200).json({ message: 'Ticket deleted successfully' });
+    res.status(200).json({ message: "Ticket deleted successfully" });
   } catch (error) {
-    res.status(500).json({ message: 'Error deleting ticket', error: error.message });
+    res
+      .status(500)
+      .json({ message: "Error deleting ticket", error: error.message });
   }
 };
