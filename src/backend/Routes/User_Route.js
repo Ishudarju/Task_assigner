@@ -76,25 +76,22 @@ userRoute.post("/deleteTicket", Ticket.deleteTicket);
 
 
 
-// Set up multer storage configuration
-const storageprojects = multer.diskStorage({
+const projectstorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/'); // Directory where files will be uploaded
+    cb(null, 'uploads/');
   },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + '-' + file.originalname); // Naming the file with timestamp to avoid name conflicts
+    cb(null, Date.now() + '-' + file.originalname);
   },
 });
 
-// File size limit of 10MB
 const project_upload = multer({
-  storage: storageprojects,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB file size limit
-}).single('attachment'); // 'attachment' is the name of the field in the form
+  storage: projectstorage,
+  limits: { fileSize: 10 * 1024 * 1024 },
+}).single('attachment');
 
-
-userRoute.post('/createproject', User.authMiddleware,project_upload, Project.createProject);
-userRoute.put("/updateProject", Admin.authMiddleware, project_upload,Project.updateProject);
+userRoute.post('/createproject', User.authMiddleware, project_upload, Project.createProject);
+userRoute.put('/updateProject', User.authMiddleware, project_upload, Project.updateProject);
 
 
 

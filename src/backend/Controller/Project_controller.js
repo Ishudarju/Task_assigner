@@ -6,6 +6,7 @@ import MilestoneModel from "../Model/Milestone_schema.js";
 import { Mongoose } from "mongoose";
 // Create a new project
 
+
 // export const createProject = async (req, res) => {
 //   const {
 //     project_name,
@@ -69,9 +70,7 @@ import { Mongoose } from "mongoose";
 //     });
 //   }
 
-//   try {
-//     // Step 1: Create the project
-//     const newProject = new ProjectModel({
+
 //       project_name,
 //       project_description,
 //       project_ownership,
@@ -79,20 +78,14 @@ import { Mongoose } from "mongoose";
 //       endDate,
 //       project_status,
 //       estimated_hours: estimatedHours,
-//     });
 
 //     const project = await newProject.save();
 
-//     // Step 2: Create milestones and associate them with the project
-//     if (milestones && milestones.length > 0) {
 //       const milestoneDocuments = milestones.map((milestoneName) => ({
 //         name: milestoneName,
 //         project: project._id,
 //       }));
 
-//       const createdMilestones = await MilestoneModel.insertMany(
-//         milestoneDocuments
-//       );
 
 //       // Update project with milestone references
 //       project.milestones = createdMilestones.map((milestone) => milestone._id);
@@ -114,8 +107,6 @@ import { Mongoose } from "mongoose";
 // };
 
 
-
-
 export const createProject = async (req, res) => {
   const {
     project_name,
@@ -131,65 +122,23 @@ export const createProject = async (req, res) => {
   const { role } = req.user;
   const estimatedHours = parseInt(estimated_hours, 10);
 
-  // Authorization check
   if (role !== "admin" && role !== "manager") {
-    return res.status(403).json({
-      status: false,
-      message: "No authorization to create a project",
-    });
+    return res.status(403).json({ status: false, message: "No authorization" });
   }
 
-  // Validation
-  if (
-    !project_name ||
-    typeof project_name !== "string" ||
-    project_name.trim() === ""
-  ) {
-    return res.status(400).json({
-      status: false,
-      message: "Project name is required and must be a valid string.",
-    });
+  if (!project_name || typeof project_name !== "string" || project_name.trim() === "") {
+    return res.status(400).json({ status: false, message: "Project name is required." });
   }
 
-  if (startDate && isNaN(Date.parse(startDate))) {
-    return res.status(400).json({
-      status: false,
-      message: "Invalid start date format.",
-    });
-  }
-
-  if (endDate && isNaN(Date.parse(endDate))) {
-    return res.status(400).json({
-      status: false,
-      message: "Invalid end date format.",
-    });
-  }
-
-  if (!estimated_hours || isNaN(estimatedHours) || estimatedHours <= 0) {
-    return res.status(400).json({
-      status: false,
-      message: "Estimated hours are required and must be a positive number.",
-    });
-  }
-
-  if (milestones && !Array.isArray(milestones)) {
-    return res.status(400).json({
-      status: false,
-      message: "Milestones must be an array.",
-    });
-  }
-
-  // Step 1: Handle file upload
   let attachment = null;
   if (req.file) {
     attachment = {
       file_name: req.file.filename,
-      file_url: `/uploads/${req.file.filename}`, // Assuming you're serving the files from the 'uploads' directory
+      file_url: `/uploads/${req.file.filename}`,
       uploaded_at: new Date(),
     };
   }
 
-  // Step 2: Create the project
   try {
     const newProject = new ProjectModel({
       project_name,
@@ -199,36 +148,18 @@ export const createProject = async (req, res) => {
       endDate,
       project_status,
       estimated_hours: estimatedHours,
-      attachments: attachment ? [attachment] : [],
+      attachments: attachment,
     });
 
     const project = await newProject.save();
-
-    // Step 3: Create milestones and associate them with the project
-    if (milestones && milestones.length > 0) {
-      const milestoneDocuments = milestones.map((milestoneName) => ({
-        name: milestoneName,
-        project: project._id,
-      }));
-
-      const createdMilestones = await MilestoneModel.insertMany(milestoneDocuments);
-
-      // Update project with milestone references
-      project.milestones = createdMilestones.map((milestone) => milestone._id);
-      await project.save();
-    }
-
-    return res.status(201).json({
+    res.status(201).json({
       status: true,
-      message: "Project and milestones created successfully",
+      message: "Project created successfully",
       data: project,
     });
   } catch (error) {
-    console.error("Error creating project and milestones:", error);
-    return res.status(500).json({
-      status: false,
-      message: "An error occurred while creating the project and milestones",
-    });
+    console.error("Error creating project:", error);
+    return res.status(500).json({ status: false, message: "Error creating project" });
   }
 };
 
@@ -489,67 +420,32 @@ export const getProjectById = async (req, res) => {
 
 // Update a project
 
-export const updateProject = async (req, res) => {
-  const { _id, milestones, attachmentsToRemove, startDate, endDate, ...updateData } = req.body;
-  const { role } = req.user;
-console.log(req.body);
 
-    try {
-    // Authorization check
+
+
+export const updateProject = async (req, res) => {
+  const { _id, milestones, startDate, endDate, ...updateData } = req.body;
+  const { role } = req.user;
+
+  try {
     if (!["manager", "admin"].includes(role)) {
       return res.status(403).json({ error: "Access permissions Denied." });
     }
 
- // Log to check if the project ID is coming through correctly
- console.log("Project ID from request:", _id);
-
-    // Find the existing project
     let project = await ProjectModel.findById(_id).populate("milestones");
     if (!project) {
       return res.status(404).json({ error: "Project not found" });
     }
 
-    // Handle file uploads (Add new attachments)
+    // Handle file upload (replace existing attachment)
     if (req.file) {
-      const newAttachment = {
+      project.attachments = {
         file_name: req.file.filename,
         file_url: `/uploads/${req.file.filename}`,
         uploaded_at: new Date(),
       };
-      project.attachments.push(newAttachment);
     }
 
-    // Handle attachments removal
-    if (attachmentsToRemove && Array.isArray(attachmentsToRemove)) {
-      project.attachments = project.attachments.filter(
-        (attachment) => !attachmentsToRemove.includes(attachment.file_name)
-      );
-    }
-
-    // Handle milestones updates & new milestones
-    if (milestones && Array.isArray(milestones)) {
-      for (let milestone of milestones) {
-        if (milestone._id) {
-          // Update existing milestone
-          await MilestoneModel.findByIdAndUpdate(milestone._id, {
-            $set: { status: milestone.status, name: milestone.name },
-          });
-        } else {
-          // Create new milestone
-          const newMilestone = new MilestoneModel({
-            name: milestone.name,
-            status: milestone.status || "Not Started",
-            project: _id,
-          });
-          const savedMilestone = await newMilestone.save();
-
-          // Add new milestone to the project
-          project.milestones.push(savedMilestone._id);
-        }
-      }
-    }
-
-    // Handle startDate and endDate (do not overwrite with null unless provided)
     if (startDate) {
       project.startDate = new Date(startDate);
     }
@@ -557,11 +453,9 @@ console.log(req.body);
       project.endDate = new Date(endDate);
     }
 
-    // Update other fields with the provided data
     Object.assign(project, updateData);
     await project.save();
 
-    // Populate milestones for the response
     const updatedProject = await ProjectModel.findById(_id).populate("milestones");
 
     res.status(200).json({
@@ -571,12 +465,9 @@ console.log(req.body);
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Error updating project and milestones" });
+    res.status(500).json({ error: "Error updating project" });
   }
 };
-
-
-
 
 // Soft delete a project
 export const deleteProject = async (req, res) => {
