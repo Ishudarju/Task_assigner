@@ -5,6 +5,7 @@ const fileSchema = new mongoose.Schema(
     title: { type: String, required: true }, // Name of the file
     description: { type: String },          // Optional file description
     fileUrl: { type: String, required: true }, // File location (cloud storage or server)
+    fileName: { type: String, required: true }, // Store the original file name
     uploadedBy: { 
       type: mongoose.Schema.Types.ObjectId, // Referencing the HRUser model
       ref: 'user',                        // This tells MongoDB to use the 'HRUser' collection
