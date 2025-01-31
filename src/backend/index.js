@@ -28,6 +28,7 @@ app.use(express.urlencoded({ extended: true })); // Parse form data
 
 // Get the directory name using import.meta.url
 const __filename = url.fileURLToPath(import.meta.url);
+
 const __dirname = path.dirname(__filename);
 
 // Serve uploaded files from the 'uploads' folder

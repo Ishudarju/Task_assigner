@@ -1,7 +1,7 @@
 import ProjectModel from "../Model/Project_schema.js";
 import { TaskModel } from "../Model/Task_scheme.js";
 import MilestoneModel from "../Model/Milestone_schema.js";
-import upload_project from "../middleware/upload.js";
+
 // Ensure you import the Milestone model
 import { Mongoose } from "mongoose";
 // Create a new project
@@ -113,69 +113,121 @@ import { Mongoose } from "mongoose";
 //   }
 // };
 
+
+
+
 export const createProject = async (req, res) => {
+  const {
+    project_name,
+    project_description,
+    project_ownership,
+    startDate,
+    endDate,
+    project_status,
+    estimated_hours,
+    milestones,
+  } = req.body;
+
+  const { role } = req.user;
+  const estimatedHours = parseInt(estimated_hours, 10);
+
+  // Authorization check
+  if (role !== "admin" && role !== "manager") {
+    return res.status(403).json({
+      status: false,
+      message: "No authorization to create a project",
+    });
+  }
+
+  // Validation
+  if (
+    !project_name ||
+    typeof project_name !== "string" ||
+    project_name.trim() === ""
+  ) {
+    return res.status(400).json({
+      status: false,
+      message: "Project name is required and must be a valid string.",
+    });
+  }
+
+  if (startDate && isNaN(Date.parse(startDate))) {
+    return res.status(400).json({
+      status: false,
+      message: "Invalid start date format.",
+    });
+  }
+
+  if (endDate && isNaN(Date.parse(endDate))) {
+    return res.status(400).json({
+      status: false,
+      message: "Invalid end date format.",
+    });
+  }
+
+  if (!estimated_hours || isNaN(estimatedHours) || estimatedHours <= 0) {
+    return res.status(400).json({
+      status: false,
+      message: "Estimated hours are required and must be a positive number.",
+    });
+  }
+
+  if (milestones && !Array.isArray(milestones)) {
+    return res.status(400).json({
+      status: false,
+      message: "Milestones must be an array.",
+    });
+  }
+
+  // Step 1: Handle file upload
+  let attachment = null;
+  if (req.file) {
+    attachment = {
+      file_name: req.file.filename,
+      file_url: `/uploads/${req.file.filename}`, // Assuming you're serving the files from the 'uploads' directory
+      uploaded_at: new Date(),
+    };
+  }
+
+  // Step 2: Create the project
   try {
-    upload_project.single("project_document")(req, res, async (err) => {
-      if (err) {
-        return res.status(400).json({ status: false, message: err.message });
-      }
+    const newProject = new ProjectModel({
+      project_name,
+      project_description,
+      project_ownership,
+      startDate,
+      endDate,
+      project_status,
+      estimated_hours: estimatedHours,
+      attachments: attachment ? [attachment] : [],
+    });
 
-      const {
-        project_name,
-        project_description,
-        project_ownership,
-        startDate,
-        endDate,
-        project_status,
-        estimated_hours,
-        milestones,
-      } = req.body;
+    const project = await newProject.save();
 
-      const estimatedHours = parseInt(estimated_hours, 10);
-      const { role } = req.user;
+    // Step 3: Create milestones and associate them with the project
+    if (milestones && milestones.length > 0) {
+      const milestoneDocuments = milestones.map((milestoneName) => ({
+        name: milestoneName,
+        project: project._id,
+      }));
 
-      // Authorization check
-      if (role !== "admin" && role !== "manager") {
-        return res.status(403).json({
-          status: false,
-          message: "No authorization to create a project",
-        });
-      }
+      const createdMilestones = await MilestoneModel.insertMany(milestoneDocuments);
 
-      if (!project_name || typeof project_name !== "string") {
-        return res.status(400).json({
-          status: false,
-          message: "Project name is required and must be a valid string.",
-        });
-      }
+      // Update project with milestone references
+      project.milestones = createdMilestones.map((milestone) => milestone._id);
+      await project.save();
+    }
 
-      // Get document path if file is uploaded
-      const projectDocumentPath = req.file ? req.file.path : null;
-
-      const newProject = new ProjectModel({
-        project_name,
-        project_description,
-        project_ownership,
-        startDate,
-        endDate,
-        project_status,
-        estimated_hours: estimatedHours,
-        project_document: projectDocumentPath, // Save document path
-      });
-
-      const project = await newProject.save();
-
-      return res.status(201).json({
-        status: true,
-        message: "Project created successfully",
-        data: project,
-      });
+    return res.status(201).json({
+      status: true,
+      message: "Project and milestones created successfully",
+      data: project,
     });
   } catch (error) {
-    console.error("Error creating project:", error);
+    console.error("Error creating project and milestones:", error);
     return res.status(500).json({
       status: false,
-      message: "An error occurred while creating the project",
+      message: "An error occurred while creating the project and milestones",
     });
   }
 };
@@ -524,35 +576,7 @@ export const deleteProject = async (req, res) => {
   }
 };
 
-// export const getTaskRelatedToProject = async (req, res) => {
-//   const { projectId } = req.body;
 
-//   try {
-//     const tasks = await TaskModel.find({
-//       project: projectId,
-//       is_deleted: false,
-//     });
-
-//     if (!tasks.length) {
-//       return res.status(404).json({
-//         status: false,
-//         message: "No tasks found for this project",
-//       });
-//     }
-
-//     return res.status(200).json({
-//       status: true,
-//       tasks,
-//       message: "Tasks fetched successfully",
-//     });
-//   } catch (error) {
-//     console.error("Error fetching tasks:", error);
-//     return res.status(500).json({
-//       status: false,
-//       message: "An error occurred while fetching tasks",
-//     });
-//   }
-// };
 export const getTaskRelatedToProject = async (req, res) => {
   const { projectId } = req.body;
 

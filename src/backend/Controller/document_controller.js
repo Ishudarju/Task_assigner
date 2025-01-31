@@ -4,6 +4,9 @@ import fs from "fs";
 import { v4 as uuidv4 } from "uuid"; // For unique filename generation
 
 // Upload a single file
+
+
+// Upload a single file
 export const uploadFile = async (req, res) => {
   try {
     // Ensure the user is authenticated and has the correct role (HR or Admin)
@@ -22,8 +25,11 @@ export const uploadFile = async (req, res) => {
       return res.status(400).json({ message: "Title is required" });
     }
 
-    // Generate a unique filename to avoid conflicts
-    const fileUrl = `/uploads/${uuidv4()}_${req.file.originalname}`;
+    // Extract original file name from uploaded file
+    const fileName = req.file.originalname; // The original filename
+
+    // Generate a unique filename for storage (using uuid to avoid conflicts)
+    const fileUrl = `/uploads/${uuidv4()}_${fileName}`;
 
     // Ensure req.user._id is populated correctly
     const uploadedBy = req.user.id; // This should be set by the authentication middleware
@@ -37,6 +43,7 @@ export const uploadFile = async (req, res) => {
       title,
       description,
       fileUrl,
+      fileName,  // Store the original file name
       uploadedBy,
       accessRoles,
     });
@@ -49,6 +56,7 @@ export const uploadFile = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 
 // Get all files accessible by the user
