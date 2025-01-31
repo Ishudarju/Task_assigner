@@ -49,29 +49,28 @@ userRoute.post("/importXLSX", upload.single("file"), User.importXLSX);
 //Tickets routes
 
 
-// Set up multer storage to control the destination and filename
+// Set up multer storage to control the destination and filename 
 const Ticketstorage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads'); // Ensure the uploads folder exists
   },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname)); // Timestamped file name
+    cb(null, Date.now() + '-' + file.originalname); // Keep original file name with timestamp
   }
 });
 
 // Initialize multer with the storage configuration
-const uploads = multer({
+const ticket_upload = multer({
   storage: Ticketstorage, // Use the custom storage config
   limits: { fileSize: 10 * 1024 * 1024 }, // File size limit (10 MB)
 });
 
-
-
-userRoute.post("/updateTicket", Admin.authMiddleware,upload.array("attachments"), Ticket.updateTicket); // Ensure file uploads work
+// Update route: Ensure it correctly handles file uploads
+userRoute.post("/updateTicket", User.authMiddleware, ticket_upload.single("attachments"), Ticket.updateTicket);
 
 
 // userRoute.post("/createTicket", User.authMiddleware, Ticket.createTicket);
-userRoute.post('/createTicket', Admin.authMiddleware, uploads.array('attachments'), Ticket.createTicket);
+userRoute.post('/createTicket', User.authMiddleware, ticket_upload.single('attachments'), Ticket.createTicket);
 
 userRoute.post("/deleteTicket", Ticket.deleteTicket);
 
