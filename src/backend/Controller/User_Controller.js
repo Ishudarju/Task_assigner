@@ -219,14 +219,14 @@ export const user_dashboard = async (req, res) => {
   console.log("user_dashboard");
   const { id, role, mail, department } = req.user;
 
-  //  Ensure only users from the "testing" department can access this dashboard
-  if (department !== "testing") {
-    return res.status(403).json({
-      status: false,
-      message:
-        "Access denied. Only users from the testing department are authorized to view the dashboard.",
-    });
-  }
+  // //  Ensure only users from the "testing" department can access this dashboard
+  // if (department !== "testing") {
+  //   return res.status(403).json({
+  //     status: false,
+  //     message:
+  //       "Access denied. Only users from the testing department are authorized to view the dashboard.",
+  //   });
+  // }
 
   let result = "";
   // if(department === "testing"){

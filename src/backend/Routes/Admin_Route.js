@@ -38,7 +38,7 @@ adminRoute.put("/update", Admin.authMiddleware, User.updateUser);
 
 
 adminRoute.post("/verify/:userId", Admin.authMiddleware,Admin.verifyUserByAdmin);
-adminRoute.post("/approve/:userId", User.authMiddleware,User.approveUserByHR);
+adminRoute.post("/approve", User.authMiddleware,User.approveUserByHR);
 
 
 
@@ -47,7 +47,21 @@ adminRoute.post("/delete", Admin.authMiddleware, User.deleteUser);
 adminRoute.post("/findById", Admin.authMiddleware, User.findById);
 adminRoute.post("/empid-generate", Admin.authMiddleware, User.empid_generate);
 
-adminRoute.post("/updateTicket", Admin.authMiddleware, Ticket.updateTicket);
+// adminRoute.post("/updateTicket", Admin.authMiddleware, Ticket.updateTicket);
+// Multer Storage Setup
+// const storage = multer.diskStorage({
+//   destination: (req, file, cb) => {
+//     cb(null, "uploads/");
+//   },
+//   filename: (req, file, cb) => {
+//     cb(null, `${Date.now()}-${file.originalname}`);
+//   },
+// });
+
+// const upload = multer({ storage });
+
+
+
 // adminRoute.post("/getAllTicket", Admin.authMiddleware, Ticket.getAllTicket);
 adminRoute.post("/getTicketById", Ticket.getTicketById);
 
@@ -79,9 +93,10 @@ adminRoute.post('/createproject', Admin.authMiddleware,project_upload, Project.c
 
 
 
-
 adminRoute.post(  "/getAllProjects",  Admin.authMiddleware, Project.getAllProjectsPagination);
-adminRoute.put("/updateProject", Admin.authMiddleware, Project.updateProject);
+
+adminRoute.put("/updateProject", Admin.authMiddleware, project_upload,Project.updateProject);
+
 adminRoute.delete(
   "/deleteProject/:id",
   Admin.authMiddleware,
@@ -114,7 +129,7 @@ adminRoute.get("/hours_spent_progress", Admin.authMiddleware, Project.calculateP
 //Tickets routes
 
 // Set up multer storage to control the destination and filename
-const storage = multer.diskStorage({
+const Ticket_storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads'); // Ensure the uploads folder exists
   },
@@ -125,12 +140,14 @@ const storage = multer.diskStorage({
 
 // Initialize multer with the storage configuration
 const upload = multer({
-  storage: storage, // Use the custom storage config
+  storage: Ticket_storage, // Use the custom storage config
   limits: { fileSize: 10 * 1024 * 1024 }, // File size limit (10 MB)
 });
 
 // Define the route for creating tickets
 adminRoute.post('/createTicket', Admin.authMiddleware, upload.array('attachments'), Ticket.createTicket);
+
+adminRoute.post("/updateTicket", Admin.authMiddleware,upload.array("attachments"), Ticket.updateTicket); // Ensure file uploads work
 
 // Get all tickets with project and assigned employee details
 adminRoute.get('/getall_ticket', Admin.authMiddleware, Ticket.getTicketsWithDetails);
@@ -139,9 +156,9 @@ adminRoute.get('/getall_ticket', Admin.authMiddleware, Ticket.getTicketsWithDeta
 adminRoute.get('/tickets/:id', Admin.authMiddleware, Ticket.getTicketById);
 
 // // Update a ticket
-// router.post('/updatetick/:id', User.authMiddleware, updateTicket);
 
-adminRoute.post('/updatetick/:id', Admin.authMiddleware, Ticket.updateTicket);
+// adminRoute.put('/updateticket/:id', Admin.authMiddleware, Ticket.updateTicket);
+// adminRoute.post("/updateTicket", Admin.authMiddleware, Ticket.updateTicket);
 
 adminRoute.post('/updatetickstatus', Admin.authMiddleware, Ticket.updateTicketStatus);
 

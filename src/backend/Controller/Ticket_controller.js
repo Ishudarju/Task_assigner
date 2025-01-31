@@ -61,17 +61,33 @@ export const createTicket = async (req, res) => {
 
     }
 
+    // // Validate status for testers
+    // if (req.user.department === "testing") {
+    //   const testerAllowedStatuses = ["Open", "Closed", "Reopen"];
+    //   if (!status || !testerAllowedStatuses.includes(status)) {
+    //     return res.status(400).json({
+    //       status: false,
+    //       message: `Testers can only set the status to: ${testerAllowedStatuses.join(
+    //         ", "
+    //       )}`,
+    //     });
+    //   }
+    // }
+
     // Validate status for testers
-    if (req.user.department === "testing") {
-      const testerAllowedStatuses = ["Open", "Closed", "Reopen"];
-      if (!status || !testerAllowedStatuses.includes(status)) {
-        return res.status(400).json({
-          status: false,
-          message: `Testers can only set the status to: ${testerAllowedStatuses.join(
-            ", "
-          )}`,
-        });
-      }
+    if (req.user.department === "testing" && !["Open", "Closed", "Reopen"].includes(status)) {
+      return res.status(400).json({
+        status: false,
+        message: `Testers can only set the status to: Open, Closed, Reopen`,
+      });
+    }
+
+    // Admins can change any status
+    if (req.user.role === "admin" && !status) {
+      return res.status(400).json({
+        status: false,
+        message: "Status is required for admin users",
+      });
     }
 
     // Handle file attachments
@@ -391,69 +407,6 @@ export const getTicketById = async (req, res) => {
 
 
 
-export const updateTicket = async (req, res) => {
-  try {
-    const { id } = req.params;
-    console.log("body", req.body);
-    console.log("query", req.query);
-    console.log("params", req.params);
-
-    // Check if the ticket exists
-    const ticket = await Ticket.findById(id);
-    if (!ticket) {
-      return res.status(404).json({ message: "Ticket not found" });
-    }
-
-    // Authorization: Both admin and tester can update any ticket
-    if (req.user.role === "admin" || req.user.department !== "testing") {
-      // console.log(req.user);
-      // Build update object
-      const updates = {};
-      if (req.body.title) updates.title = req.body.title;
-      if (req.body.description) updates.description = req.body.description;
-      if (req.body.project) updates.project = req.body.project;
-
-      if (req.body.assigned_to) updates.assigned_to = req.body.assigned_to;
-      if (req.body.priority) updates.priority = req.body.priority;
-      if (req.body.status) updates.status = req.body.status;
-      console.log(req.body.status);
-      if (req.body.severity) updates.severity = req.body.severity;
-
-      // Handle file upload for attachments
-      if (req.files && req.files.attachments) {
-        const uploadedFiles = req.files.attachments.map((file) => ({
-          file_url: file.path, // Save file path
-          uploaded_at: new Date(),
-        }));
-        updates.attachments = uploadedFiles;
-      }
-      console.log("Status from request body:", req.body);
-
-      // Update the updated_at timestamp
-      updates.updated_at = new Date();
-
-      // Update the ticket
-      const updatedTicket = await Ticket.findByIdAndUpdate(id, updates, {
-        new: true,
-      });
-
-      return res.status(200).json({
-        status: true,
-        message: "Ticket updated successfully",
-        ticket: updatedTicket,
-      });
-    }
-
-    // If not admin or tester, deny access
-    return res.status(403).json({ message: "No Authorization" });
-  } catch (error) {
-    console.log(error);
-    res
-      .status(500)
-      .json({ message: "Error updating ticket", error: error.message });
-  }
-};
-
 // Delete a ticket
 export const deleteTicket = async (req, res) => {
   try {
@@ -471,3 +424,146 @@ export const deleteTicket = async (req, res) => {
       .json({ message: "Error deleting ticket", error: error.message });
   }
 };
+
+
+
+
+
+// export const updateTicket = async (req, res) => {
+//   try {
+//     const { id, title, description, tasks, project, assigned_to, priority, status, severity, main_category, sub_category } = req.body;
+
+//     console.log("Request Body:", req.body);
+   
+
+//     // Validate ID format
+//     if (!mongoose.Types.ObjectId.isValid(id)) {
+//       return res.status(400).json({ status: false, message: "Invalid Ticket ID" });
+//     }
+
+//     // Find the existing ticket
+//     const ticket = await Ticket.findById(id);
+//     if (!ticket) {
+//       return res.status(404).json({ status: false, message: "Ticket not found" });
+//     }
+
+//     // Authorization check (Only Admin or Testers)
+//     if (!(req.user.role === "admin" || req.user.department === "testing")) {
+//       return res.status(403).json({ status: false, message: "No Authorization to update ticket" });
+//     }
+
+//     const updates = {};
+//     if (title) updates.title = title;
+//     if (description) updates.description = description;
+//     if (project) updates.project = project;
+//     if (tasks) updates.tasks = tasks;
+//     if (assigned_to) updates.assigned_to = assigned_to;
+//     if (priority) updates.priority = priority;
+//     if (status) updates.status = status;
+//     if (severity) updates.severity = severity;
+//     if (main_category) updates.main_category = main_category;
+//     if (sub_category) updates.sub_category = sub_category;
+    
+//     // Handle file attachments
+//     if (req.files && req.files.length > 0) {
+//       const uploadedFiles = req.files.map(file => ({
+//         file_name: file.originalname,
+//         file_url: `/uploads/${file.filename}`,
+//         uploaded_at: new Date(),
+//       }));
+//       updates.attachments = [...ticket.attachments, ...uploadedFiles]; // Append new files
+//     }
+
+//     // Update `updated_at` timestamp
+//     updates.updated_at = new Date();
+
+//     // Update the ticket
+//     const updatedTicket = await Ticket.findByIdAndUpdate(id, updates, { new: true });
+
+//     return res.status(200).json({
+//       status: true,
+//       message: "Ticket updated successfully",
+//       ticket: updatedTicket,
+//     });
+//   } catch (error) {
+//     console.error("Error updating ticket:", error);
+//     res.status(500).json({ status: false, message: "Error updating ticket", error: error.message });
+//   }
+// };
+
+
+export const updateTicket = async (req, res) => {
+  try {
+    const { id, title, description, tasks, project, assigned_to, priority, status, severity, main_category, sub_category } = req.body;
+
+    console.log("Request Body:", req.body);
+
+    // Validate ID format
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ status: false, message: "Invalid Ticket ID" });
+    }
+
+    // Find the existing ticket
+    const ticket = await Ticket.findById(id);
+    if (!ticket) {
+      return res.status(404).json({ status: false, message: "Ticket not found" });
+    }
+
+    // Authorization check (Only Admin or Testing team)
+    if (!(req.user.role === "admin" || req.user.department === "testing")) {
+      return res.status(403).json({ status: false, message: "No Authorization to update ticket" });
+    }
+
+    const updates = {};
+    if (title) updates.title = title;
+    if (description) updates.description = description;
+    if (project) updates.project = project;
+    if (tasks) updates.tasks = tasks;
+    if (assigned_to) updates.assigned_to = assigned_to;
+    if (priority) updates.priority = priority;
+    if (severity) updates.severity = severity;
+    if (main_category) updates.main_category = main_category;
+    if (sub_category) updates.sub_category = sub_category;
+
+    // Enforce status update restrictions
+    if (status) {
+      const allowedStatusesForTesting = ["Open", "Closed", "Reopen"];
+
+      if (req.user.department === "testing" && !allowedStatusesForTesting.includes(status)) {
+        return res.status(403).json({
+          status: false,
+          message: "Testing team can only change status to 'Open', 'Closed', or 'Reopen'",
+        });
+      }
+      
+      updates.status = status; // Admin can update to any status
+    }
+
+    // Handle file attachments
+    if (req.files && req.files.length > 0) {
+      const uploadedFiles = req.files.map(file => ({
+        file_name: file.originalname,
+        file_url: `/uploads/${file.filename}`,
+        uploaded_at: new Date(),
+      }));
+      updates.attachments = [...ticket.attachments, ...uploadedFiles]; // Append new files
+    }
+
+    // Update `updated_at` timestamp
+    updates.updated_at = new Date();
+
+    // Update the ticket
+    const updatedTicket = await Ticket.findByIdAndUpdate(id, updates, { new: true });
+
+    return res.status(200).json({
+      status: true,
+      message: "Ticket updated successfully",
+      ticket: updatedTicket,
+    });
+  } catch (error) {
+    console.error("Error updating ticket:", error);
+    res.status(500).json({ status: false, message: "Error updating ticket", error: error.message });
+  }
+};
+
+

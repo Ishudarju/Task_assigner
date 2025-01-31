@@ -12,7 +12,6 @@ export const createTask = async (req, res) => {
     status = "Not started",
     priority = "Low",
     start_date,
-
     end_date,
     task_description,
     task_title,
