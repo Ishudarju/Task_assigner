@@ -46,7 +46,7 @@ const projectSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    attachments: [
+    attachments: 
       {
         file_name: {
           type: String,
@@ -61,7 +61,7 @@ const projectSchema = new mongoose.Schema(
           default: Date.now,
         },
       },
-    ],
+    
     milestones: [
       { 
         type: mongoose.Schema.Types.ObjectId,

@@ -508,17 +508,17 @@ export const deleteTicket = async (req, res) => {
 
 export const updateTicket = async (req, res) => {
   try {
-    const { id, title, description, tasks, project, assigned_to, priority, status, severity, main_category, sub_category } = req.body;
+    const { _id, title, description, tasks, project, assigned_to, priority, status, severity, main_category, sub_category } = req.body;
 
     console.log("Request Body:", req.body);
 
     // Validate ID format
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (!mongoose.Types.ObjectId.isValid(_id)) {
       return res.status(400).json({ status: false, message: "Invalid Ticket ID" });
     }
 
     // Find the existing ticket
-    const ticket = await Ticket.findById(id);
+    const ticket = await Ticket.findById(_id);
     if (!ticket) {
       return res.status(404).json({ status: false, message: "Ticket not found" });
     }
@@ -566,7 +566,7 @@ export const updateTicket = async (req, res) => {
     updates.updated_at = new Date();
 
     // Update the ticket
-    const updatedTicket = await Ticket.findByIdAndUpdate(id, updates, { new: true });
+    const updatedTicket = await Ticket.findByIdAndUpdate(_id, updates, { new: true });
 
     return res.status(200).json({
       status: true,
