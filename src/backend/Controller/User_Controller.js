@@ -45,7 +45,7 @@ export const authMiddleware = (req, res, next) => {
         .status(200)
         .json({ status: false, message: "Email Verification Pending " });
     }
-      // Log to verify user object
+    // Log to verify user object
     req.user = decoded;
     console.log("Authenticated user: ", req.user);
     next();
@@ -220,13 +220,13 @@ export const user_dashboard = async (req, res) => {
   const { id, role, mail, department } = req.user;
 
   //  Ensure only users from the "testing" department can access this dashboard
-  if (department !== "testing") {
-    return res.status(403).json({
-      status: false,
-      message:
-        "Access denied. Only users from the testing department are authorized to view the dashboard.",
-    });
-  }
+  // if (department !== "testing") {
+  //   return res.status(403).json({
+  //     status: false,
+  //     message:
+  //       "Access denied. Only users from the testing department are authorized to view the dashboard.",
+  //   });
+  // }
 
   let result = "";
   // if(department === "testing"){
@@ -418,6 +418,7 @@ export const updateUser = async (req, res) => {
     phone,
     role,
     admin_verify,
+    hr_approval,
     employee_id,
     department,
     starting_date,
@@ -430,6 +431,7 @@ export const updateUser = async (req, res) => {
     phone,
     role,
     admin_verify,
+    hr_approval,
     employee_id,
     department,
     starting_date,
