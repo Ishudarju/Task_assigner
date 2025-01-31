@@ -7,10 +7,20 @@ import ProjectModel from "../Model/Project_schema.js"; // Use named import
 
 
 export const createTicket = async (req, res) => {
-  const { title, description, project, assigned_to, tasks, priority, status, severity, main_category, sub_category } = req.body;
+  const {
+    title,
+    description,
+    project,
+    assigned_to,
+    tasks,
+    priority,
+    status,
+    severity,
+    main_category,
+    sub_category,
+  } = req.body;
 
   console.log("value", req.body);
-
 
   try {
     console.log(req.user);
@@ -26,21 +36,17 @@ export const createTicket = async (req, res) => {
 
     // Validation for required fields
     if (!main_category || !sub_category) {
-      return res
-        .status(400)
-        .json({
-          status: false,
-          message: "Main category and Sub category are required.",
-        });
+      return res.status(400).json({
+        status: false,
+        message: "Main category and Sub category are required.",
+      });
     }
 
     if (!title || !description || !project) {
-      return res
-        .status(400)
-        .json({
-          status: false,
-          message: "Title, Description, and Project are required.",
-        });
+      return res.status(400).json({
+        status: false,
+        message: "Title, Description, and Project are required.",
+      });
     }
 
     // Check if project exists
@@ -51,14 +57,14 @@ export const createTicket = async (req, res) => {
         .json({ status: false, message: "Project not found." });
     }
 
-
     let taskId = null;
     if (tasks) {
       if (!mongoose.Types.ObjectId.isValid(tasks)) {
-        return res.status(400).json({ status: false, message: 'Invalid task ID.' });
+        return res
+          .status(400)
+          .json({ status: false, message: "Invalid task ID." });
       }
       taskId = new mongoose.Types.ObjectId(tasks);
-
     }
 
     // // Validate status for testers
@@ -93,7 +99,7 @@ export const createTicket = async (req, res) => {
     // Handle file attachments
     let attachments = [];
     if (req.files && req.files.length > 0) {
-      attachments = req.files.map(file => ({
+      attachments = req.files.map((file) => ({
         file_name: file.originalname, // Fetch the original file name
         file_url: `/uploads/${file.filename}`, // Store the file path
         uploaded_at: new Date(),
@@ -122,9 +128,8 @@ export const createTicket = async (req, res) => {
     res.status(201).json({
       status: true,
 
-      message: 'Ticket created successfully',
+      message: "Ticket created successfully",
       ticket,
-
     });
   } catch (error) {
     console.error("Error creating ticket:", error);
@@ -135,7 +140,6 @@ export const createTicket = async (req, res) => {
     });
   }
 };
-
 
 //return ticket to tester
 
@@ -227,13 +231,11 @@ export const updateTicketStatus = async (req, res) => {
   }
 };
 
-
 export const getResolvedTickets = async (req, res) => {
   try {
     const user = req.user;
 
     console.log(user);
-
 
     // Check if the user is a project manager
     if (user.role !== "manager") {
@@ -263,9 +265,6 @@ export const getResolvedTickets = async (req, res) => {
     });
   }
 };
-
-
-
 
 export const getTicketsWithDetails = async (req, res) => {
   try {
@@ -308,8 +307,10 @@ export const getTicketsWithDetails = async (req, res) => {
         .sort(sortBy)
         .skip((pageNumber - 1) * limitNumber)
         .limit(limitNumber)
-        .populate('project', 'name description') // Populate project details
-        .populate('assigned_to', 'name mail'); // Populate assigned employee details
+        .populate("project", "name description") // Populate project details
+        .populate("assigned_to", "name mail") // Populate assigned employee details
+        .populate("raised_by", "name email") // Assuming 'name' and 'email' are in your User model
+        .populate("tasks", "task_title");
 
       // Count total tickets for this user
       const userTotalTickets = await Ticket.countDocuments({
@@ -343,8 +344,10 @@ export const getTicketsWithDetails = async (req, res) => {
       .sort(sortBy)
       .skip((pageNumber - 1) * limitNumber)
       .limit(limitNumber)
-      .populate('project', 'name description') // Populate project details
-      .populate('assigned_to', 'name mail'); // Populate assigned employee details
+      .populate("project", "name description") // Populate project details
+      .populate("assigned_to", "name mail") // Populate assigned employee details
+      .populate("raised_by", "name email") // Assuming 'name' and 'email' are in your User model
+      .populate("tasks", "task_title"); // Populate assigned employee details
 
     if (!tickets || tickets.length === 0) {
       return res
@@ -372,11 +375,6 @@ export const getTicketsWithDetails = async (req, res) => {
   }
 };
 
-
-
-
-
-
 export const getTicketById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -384,7 +382,9 @@ export const getTicketById = async (req, res) => {
     // Fetch the ticket, populate project and assigned_to
     const ticket = await Ticket.findById(id)
       .populate("project", "project_name project_description") // Assuming 'project_name' and 'project_description' are the fields in your Project model
-      .populate("assigned_to", "name email"); // Assuming 'name' and 'email' are in your User model
+      .populate("assigned_to", "name mail") // Assuming 'name' and 'email' are in your User model
+      .populate("raised_by", "name email") // Assuming 'name' and 'email' are in your User model
+      .populate("tasks", "task_title"); // Assuming 'name' and 'email' are in your User model
 
     // If no ticket is found
     if (!ticket) {
@@ -405,6 +405,72 @@ export const getTicketById = async (req, res) => {
   }
 };
 
+
+
+export const updateTicket = async (req, res) => {
+  try {
+    const { _id } = req.body;
+    console.log("body", req.body);
+    console.log("query", req.query);
+    console.log("params", req.params);
+
+    // Check if the ticket exists
+    const ticket = await Ticket.findById(_id);
+    if (!ticket) {
+      return res.status(404).json({ message: "Ticket not found" });
+    }
+
+    // Authorization: Both admin and tester can update any ticket
+    if (req.user.role === "admin" || req.user.department !== "testing") {
+      // console.log(req.user);
+      // Build update object
+      const updates = {};
+      if (req.body.title) updates.title = req.body.title;
+      if (req.body.description) updates.description = req.body.description;
+      if (req.body.project) updates.project = req.body.project;
+
+      if (req.body.assigned_to) updates.assigned_to = req.body.assigned_to;
+      if (req.body.priority) updates.priority = req.body.priority;
+      if (req.body.status) updates.status = req.body.status;
+      if (req.body.main_category) updates.main_category = req.body.main_category;
+      if (req.body.sub_category) updates.sub_category = req.body.sub_category;
+      console.log(req.body.status);
+      if (req.body.severity) updates.severity = req.body.severity;
+
+      // Handle file upload for attachments
+      if (req.files && req.files.attachments) {
+        const uploadedFiles = req.files.attachments.map((file) => ({
+          file_url: file.path, // Save file path
+          uploaded_at: new Date(),
+        }));
+        updates.attachments = uploadedFiles;
+      }
+      console.log("Status from request body:", req.body);
+
+      // Update the updated_at timestamp
+      updates.updated_at = new Date();
+
+      // Update the ticket
+      const updatedTicket = await Ticket.findByIdAndUpdate(_id, updates, {
+        new: true,
+      });
+
+      return res.status(200).json({
+        status: true,
+        message: "Ticket updated successfully",
+        ticket: updatedTicket,
+      });
+    }
+
+    // If not admin or tester, deny access
+    return res.status(403).json({ message: "No Authorization" });
+  } catch (error) {
+    console.log(error);
+    res
+      .status(500)
+      .json({ message: "Error updating ticket", error: error.message });
+  }
+};
 
 
 // Delete a ticket

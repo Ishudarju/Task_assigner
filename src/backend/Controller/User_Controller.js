@@ -45,7 +45,7 @@ export const authMiddleware = (req, res, next) => {
         .status(200)
         .json({ status: false, message: "Email Verification Pending " });
     }
-      // Log to verify user object
+    // Log to verify user object
     req.user = decoded;
     console.log("Authenticated user: ", req.user);
     next();
@@ -418,6 +418,7 @@ export const updateUser = async (req, res) => {
     phone,
     role,
     admin_verify,
+    hr_approval,
     employee_id,
     department,
     starting_date,
@@ -430,6 +431,7 @@ export const updateUser = async (req, res) => {
     phone,
     role,
     admin_verify,
+    hr_approval,
     employee_id,
     department,
     starting_date,
