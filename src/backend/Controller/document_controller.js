@@ -10,7 +10,7 @@ import { v4 as uuidv4 } from "uuid"; // For unique filename generation
 export const uploadFile = async (req, res) => {
   try {
     // Ensure the user is authenticated and has the correct role (HR or Admin)
-    if (!req.user || (req.user.role !== "hr" && req.user.role !== "admin")) {
+    if (!req.user || (req.user.role !== "manager" && req.user.role !== "admin")) {
       return res.status(403).json({ message: "Permission denied" });
     }
 
@@ -62,6 +62,7 @@ export const uploadFile = async (req, res) => {
 // Get all files accessible by the user
 export const getAllFiles = async (req, res) => {
   try {
+    // console.log(req.body)
     // Get the user's role from the authenticated session or JWT token
     const userRole = req.user.role;  // Assuming `req.user.role` contains the user's role
 

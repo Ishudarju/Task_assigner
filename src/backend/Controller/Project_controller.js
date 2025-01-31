@@ -6,7 +6,7 @@ import MilestoneModel from "../Model/Milestone_schema.js";
 import { Mongoose } from "mongoose";
 // Create a new project
 
-//correct code ishu
+
 // export const createProject = async (req, res) => {
 //   const {
 //     project_name,
@@ -70,19 +70,7 @@ import { Mongoose } from "mongoose";
 //     });
 //   }
 
-//   // Step 1: Handle file upload
-//   let attachment = null;
-//   if (req.file) {
-//     attachment = {
-//       file_name: req.file.filename,
-//       file_url: `/uploads/${req.file.filename}`, // Assuming you're serving the files from the 'uploads' directory
-//       uploaded_at: new Date(),
-//     };
-//   }
 
-//   // Step 2: Create the project
-//   try {
-//     const newProject = new ProjectModel({
 //       project_name,
 //       project_description,
 //       project_ownership,
@@ -90,19 +78,14 @@ import { Mongoose } from "mongoose";
 //       endDate,
 //       project_status,
 //       estimated_hours: estimatedHours,
-//       attachments: attachment ? [attachment] : [],
-//     });
 
 //     const project = await newProject.save();
 
-//     // Step 3: Create milestones and associate them with the project
-//     if (milestones && milestones.length > 0) {
 //       const milestoneDocuments = milestones.map((milestoneName) => ({
 //         name: milestoneName,
 //         project: project._id,
 //       }));
 
-//       const createdMilestones = await MilestoneModel.insertMany(milestoneDocuments);
 
 //       // Update project with milestone references
 //       project.milestones = createdMilestones.map((milestone) => milestone._id);
@@ -218,10 +201,7 @@ export const calculateProjectProgress = async (req, res) => {
   }
 };
 
-
 import { fetchProjectDetails } from "../Helper function/projectHelper.js";
-
-
 
 // import { fetchProjectDetails } from "../Helper function/projectHelper.js";
 export const getAllProject = async (req, res) => {
@@ -254,7 +234,9 @@ export const getAllProject = async (req, res) => {
     if (!projects.length) {
       return res.status(404).json({
         success: false,
-        message: `No projects found for the role: ${role}. Query: ${JSON.stringify(query)}`,
+        message: `No projects found for the role: ${role}. Query: ${JSON.stringify(
+          query
+        )}`,
       });
     }
 
@@ -286,10 +268,6 @@ export const getAllProject = async (req, res) => {
     });
   }
 };
-
-
-
-
 
 export const getAllProjectsPagination = async (req, res) => {
   try {
@@ -396,10 +374,6 @@ export const getAllProjectsPagination = async (req, res) => {
     });
   }
 };
-
-
-
-
 
 
 export const getProjectById = async (req, res) => {

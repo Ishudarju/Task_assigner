@@ -410,7 +410,7 @@ export const approveUserByHR = async (req, res) => {
 };
 
 export const updateUser = async (req, res) => {
-  console.log(req.body);
+  // console.log(req.body);
   const {
     name,
     mail,
