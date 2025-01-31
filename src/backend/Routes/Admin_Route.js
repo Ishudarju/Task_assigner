@@ -58,31 +58,32 @@ adminRoute.post("/getTicketById", Ticket.getTicketById);
 //   Ticket.getTicketByCategory
 // );
 
-// Set up multer storage configuration
 const projectstorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/'); // Directory where files will be uploaded
+    cb(null, 'uploads/');
   },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + '-' + file.originalname); // Naming the file with timestamp to avoid name conflicts
+    cb(null, Date.now() + '-' + file.originalname);
   },
 });
 
-// File size limit of 10MB
 const project_upload = multer({
   storage: projectstorage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB file size limit
-}).single('attachment'); // 'attachment' is the name of the field in the form
+  limits: { fileSize: 10 * 1024 * 1024 },
+}).single('attachment');
+
+adminRoute.post('/createproject', Admin.authMiddleware, project_upload, Project.createProject);
+adminRoute.put('/updateProject', Admin.authMiddleware, project_upload, Project.updateProject);
 
 
 // Route for creating a project
-adminRoute.post('/createproject', Admin.authMiddleware,project_upload, Project.createProject);
+// adminRoute.post('/createproject', Admin.authMiddleware,project_upload, Project.createProject);
 
 
 
 adminRoute.post(  "/getAllProjects",  Admin.authMiddleware, Project.getAllProjectsPagination);
 
-adminRoute.put("/updateProject", Admin.authMiddleware, project_upload,Project.updateProject);
+// adminRoute.put("/updateProject", Admin.authMiddleware, project_upload,Project.updateProject);
 
 adminRoute.delete(
   "/deleteProject/:id",
