@@ -113,9 +113,6 @@ import { Mongoose } from "mongoose";
 //   }
 // };
 
-
-
-
 export const createProject = async (req, res) => {
   try {
     upload_project.single("project_document")(req, res, async (err) => {
@@ -183,7 +180,6 @@ export const createProject = async (req, res) => {
   }
 };
 
-
 export const calculateProjectProgress = async (req, res) => {
   const { projectId } = req.body;
 
@@ -222,10 +218,7 @@ export const calculateProjectProgress = async (req, res) => {
   }
 };
 
-
 import { fetchProjectDetails } from "../Helper function/projectHelper.js";
-
-
 
 // import { fetchProjectDetails } from "../Helper function/projectHelper.js";
 export const getAllProject = async (req, res) => {
@@ -258,7 +251,9 @@ export const getAllProject = async (req, res) => {
     if (!projects.length) {
       return res.status(404).json({
         success: false,
-        message: `No projects found for the role: ${role}. Query: ${JSON.stringify(query)}`,
+        message: `No projects found for the role: ${role}. Query: ${JSON.stringify(
+          query
+        )}`,
       });
     }
 
@@ -290,10 +285,6 @@ export const getAllProject = async (req, res) => {
     });
   }
 };
-
-
-
-
 
 export const getAllProjectsPagination = async (req, res) => {
   try {
@@ -400,20 +391,6 @@ export const getAllProjectsPagination = async (req, res) => {
     });
   }
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 export const getProjectById = async (req, res) => {
   const { id } = req.params;
