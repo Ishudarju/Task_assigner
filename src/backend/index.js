@@ -21,13 +21,14 @@ app.use(bodyParser.json());
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true })); // For parsing URL-encoded data
 
+
 // Get the directory name using import.meta.url
 const __filename = url.fileURLToPath(import.meta.url);
 
 const __dirname = path.dirname(__filename);
 
 // Serve uploaded files from the 'uploads' folder
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("uploads", express.static(path.join(__dirname, "uploads")));
 
 app.use("/user", userRoute);
 

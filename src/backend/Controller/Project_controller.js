@@ -6,6 +6,115 @@ import MilestoneModel from "../Model/Milestone_schema.js";
 import { Mongoose } from "mongoose";
 // Create a new project
 
+// export const createProject = async (req, res) => {
+//   const {
+//     project_name,
+//     project_description,
+//     project_ownership,
+//     startDate,
+//     endDate,
+//     project_status,
+//     estimated_hours,
+//     milestones,
+//   } = req.body;
+
+//   const { role } = req.user;
+//   const estimatedHours = parseInt(estimated_hours, 10);
+
+//   // Authorization check
+//   if (role !== "admin" && role !== "manager") {
+//     return res.status(403).json({
+//       status: false,
+//       message: "No authorization to create a project",
+//     });
+//   }
+
+//   // Validation
+//   if (
+//     !project_name ||
+//     typeof project_name !== "string" ||
+//     project_name.trim() === ""
+//   ) {
+//     return res.status(400).json({
+//       status: false,
+//       message: "Project name is required and must be a valid string.",
+//     });
+//   }
+
+//   if (startDate && isNaN(Date.parse(startDate))) {
+//     return res.status(400).json({
+//       status: false,
+//       message: "Invalid start date format.",
+//     });
+//   }
+
+//   if (endDate && isNaN(Date.parse(endDate))) {
+//     return res.status(400).json({
+//       status: false,
+//       message: "Invalid end date format.",
+//     });
+//   }
+
+//   if (!estimated_hours || isNaN(estimatedHours) || estimatedHours <= 0) {
+//     return res.status(400).json({
+//       status: false,
+//       message: "Estimated hours are required and must be a positive number.",
+//     });
+//   }
+
+//   if (milestones && !Array.isArray(milestones)) {
+//     return res.status(400).json({
+//       status: false,
+//       message: "Milestones must be an array.",
+//     });
+//   }
+
+//   try {
+//     // Step 1: Create the project
+//     const newProject = new ProjectModel({
+//       project_name,
+//       project_description,
+//       project_ownership,
+//       startDate,
+//       endDate,
+//       project_status,
+//       estimated_hours: estimatedHours,
+//     });
+
+//     const project = await newProject.save();
+
+//     // Step 2: Create milestones and associate them with the project
+//     if (milestones && milestones.length > 0) {
+//       const milestoneDocuments = milestones.map((milestoneName) => ({
+//         name: milestoneName,
+//         project: project._id,
+//       }));
+
+//       const createdMilestones = await MilestoneModel.insertMany(
+//         milestoneDocuments
+//       );
+
+//       // Update project with milestone references
+//       project.milestones = createdMilestones.map((milestone) => milestone._id);
+//       await project.save();
+//     }
+
+//     return res.status(201).json({
+//       status: true,
+//       message: "Project and milestones created successfully",
+//       data: project,
+//     });
+//   } catch (error) {
+//     console.error("Error creating project and milestones:", error);
+//     return res.status(500).json({
+//       status: false,
+//       message: "An error occurred while creating the project and milestones",
+//     });
+//   }
+// };
+
+
+
 
 export const createProject = async (req, res) => {
   const {
@@ -123,7 +232,6 @@ export const createProject = async (req, res) => {
   }
 };
 
-
 export const calculateProjectProgress = async (req, res) => {
   const { projectId } = req.body;
 
@@ -162,10 +270,7 @@ export const calculateProjectProgress = async (req, res) => {
   }
 };
 
-
 import { fetchProjectDetails } from "../Helper function/projectHelper.js";
-
-
 
 // import { fetchProjectDetails } from "../Helper function/projectHelper.js";
 export const getAllProject = async (req, res) => {
@@ -198,7 +303,9 @@ export const getAllProject = async (req, res) => {
     if (!projects.length) {
       return res.status(404).json({
         success: false,
-        message: `No projects found for the role: ${role}. Query: ${JSON.stringify(query)}`,
+        message: `No projects found for the role: ${role}. Query: ${JSON.stringify(
+          query
+        )}`,
       });
     }
 
@@ -230,10 +337,6 @@ export const getAllProject = async (req, res) => {
     });
   }
 };
-
-
-
-
 
 export const getAllProjectsPagination = async (req, res) => {
   try {
@@ -340,10 +443,6 @@ export const getAllProjectsPagination = async (req, res) => {
     });
   }
 };
-
-
-
-
 
 
 export const getProjectById = async (req, res) => {
