@@ -47,19 +47,6 @@ adminRoute.post("/delete", Admin.authMiddleware, User.deleteUser);
 adminRoute.post("/findById", Admin.authMiddleware, User.findById);
 adminRoute.post("/empid-generate", Admin.authMiddleware, User.empid_generate);
 
-// adminRoute.post("/updateTicket", Admin.authMiddleware, Ticket.updateTicket);
-// Multer Storage Setup
-// const storage = multer.diskStorage({
-//   destination: (req, file, cb) => {
-//     cb(null, "uploads/");
-//   },
-//   filename: (req, file, cb) => {
-//     cb(null, `${Date.now()}-${file.originalname}`);
-//   },
-// });
-
-// const upload = multer({ storage });
-
 
 
 // adminRoute.post("/getAllTicket", Admin.authMiddleware, Ticket.getAllTicket);
@@ -128,26 +115,28 @@ adminRoute.get("/hours_spent_progress", Admin.authMiddleware, Project.calculateP
 
 //Tickets routes
 
-// Set up multer storage to control the destination and filename
-const Ticket_storage = multer.diskStorage({
+// Set up multer storage to control the destination and filename 
+const Ticketstorage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads'); // Ensure the uploads folder exists
   },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname)); // Timestamped file name
+    cb(null, Date.now() + '-' + file.originalname); // Keep original file name with timestamp
   }
 });
 
 // Initialize multer with the storage configuration
-const upload = multer({
-  storage: Ticket_storage, // Use the custom storage config
+const ticket_upload = multer({
+  storage: Ticketstorage, // Use the custom storage config
   limits: { fileSize: 10 * 1024 * 1024 }, // File size limit (10 MB)
 });
 
-// Define the route for creating tickets
-adminRoute.post('/createTicket', Admin.authMiddleware, upload.array('attachments'), Ticket.createTicket);
+// Update route: Ensure it correctly handles file uploads
+adminRoute.post("/updateTicket", Admin.authMiddleware, ticket_upload.single("attachments"), Ticket.updateTicket);
 
-adminRoute.post("/updateTicket", Admin.authMiddleware,upload.array("attachments"), Ticket.updateTicket); // Ensure file uploads work
+
+// userRoute.post("/createTicket", User.authMiddleware, Ticket.createTicket);
+adminRoute.post('/createTicket', Admin.authMiddleware, ticket_upload.single('attachments'), Ticket.createTicket);
 
 // Get all tickets with project and assigned employee details
 adminRoute.get('/getall_ticket', Admin.authMiddleware, Ticket.getTicketsWithDetails);
@@ -179,8 +168,24 @@ adminRoute.patch('/updateTesterApproval', Admin.authMiddleware, Task.updateTeste
 
 //document routes
 
+// Set up multer storage to control the destination and filename 
+const documentstorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads'); // Ensure the uploads folder exists
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + '-' + file.originalname); // Keep original file name with timestamp
+  }
+});
+
+// Initialize multer with the storage configuration
+const document_upload = multer({
+  storage: documentstorage, // Use the custom storage config
+  limits: { fileSize: 10 * 1024 * 1024 }, // File size limit (10 MB)
+});
+
 // Route to upload a file
-adminRoute.post("/upload", Admin.authMiddleware,upload.single("file"), document.uploadFile);
+adminRoute.post("/upload", Admin.authMiddleware,document_upload.single("file"), document.uploadFile);
 
 // Route to get all files
 adminRoute.get("/getAllfiles", Admin.authMiddleware,document.getAllFiles);
