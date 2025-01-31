@@ -16,15 +16,11 @@ const port = 4001;
 
 app.use(cors("*"));
 
+app.use(bodyParser.json());
+
 app.use(express.json());
-
-app.use(bodyParser.json()); // For parsing JSON bodies
-
 app.use(bodyParser.urlencoded({ extended: true })); // For parsing URL-encoded data
 
-// Enable parsing of JSON and URL-encoded data
-app.use(express.json()); // Parse JSON
-app.use(express.urlencoded({ extended: true })); // Parse form data
 
 // Get the directory name using import.meta.url
 const __filename = url.fileURLToPath(import.meta.url);
@@ -45,3 +41,57 @@ connectDatabase();
 app.listen({ port }, () => {
   console.log(`server running successfully ${port}`);
 });
+
+
+
+
+
+
+
+
+
+
+
+
+// import express from "express";
+// import cors from "cors";
+// import connectDatabase from "./Model/db.js";
+// import userRoute from "./Routes/User_Route.js";
+// import adminRoute from "./Routes/Admin_Route.js";
+// import bodyParser from "body-parser";
+// import path from "path";
+// import url from "url";
+// import multer from "multer";  // Add multer for file uploads
+// import dotenv from "dotenv";
+
+// dotenv.config();
+
+// const app = express();
+// const port = 4001;
+
+// app.use(cors("*"));
+
+// // Middleware Order Fix
+// app.use(express.json()); // Parse JSON requests
+// app.use(express.urlencoded({ extended: true })); // Parse URL-encoded requests
+// app.use(bodyParser.json()); // Body parser for JSON
+// app.use(bodyParser.urlencoded({ extended: true })); // Body parser for form data
+
+// // Get the directory name using import.meta.url
+// const __filename = url.fileURLToPath(import.meta.url);
+// const __dirname = path.dirname(__filename);
+
+// // Serve uploaded files from the 'uploads' folder
+// app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+
+// // Routes
+// app.use("/user", userRoute);
+// app.use("/admin", adminRoute);
+
+// // Connect Database
+// connectDatabase();
+
+// app.listen(port, () => {
+//   console.log(`Server running successfully on port ${port}`);
+// });

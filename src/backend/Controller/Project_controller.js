@@ -487,28 +487,46 @@ export const getProjectById = async (req, res) => {
 };
 
 // Update a project
+
 export const updateProject = async (req, res) => {
-  const { _id, milestones, ...updateData } = req.body;
+  const { _id, milestones, attachmentsToRemove, startDate, endDate, ...updateData } = req.body;
   const { role } = req.user;
-  try {
+console.log(req.body);
+
+    try {
+    // Authorization check
     if (!["manager", "admin"].includes(role)) {
       return res.status(403).json({ error: "Access permissions Denied." });
     }
-    // Update project fields (excluding milestones)
-    const updatedProject = await ProjectModel.findByIdAndUpdate(
-      _id,
-      updateData,
-      {
-        new: true,
-      }
-    );
 
-    if (!updatedProject) {
+ // Log to check if the project ID is coming through correctly
+ console.log("Project ID from request:", _id);
+
+    // Find the existing project
+    let project = await ProjectModel.findById(_id).populate("milestones");
+    if (!project) {
       return res.status(404).json({ error: "Project not found" });
     }
 
-    // Handle milestones if they are provided
-    if (milestones) {
+    // Handle file uploads (Add new attachments)
+    if (req.file) {
+      const newAttachment = {
+        file_name: req.file.filename,
+        file_url: `/uploads/${req.file.filename}`,
+        uploaded_at: new Date(),
+      };
+      project.attachments.push(newAttachment);
+    }
+
+    // Handle attachments removal
+    if (attachmentsToRemove && Array.isArray(attachmentsToRemove)) {
+      project.attachments = project.attachments.filter(
+        (attachment) => !attachmentsToRemove.includes(attachment.file_name)
+      );
+    }
+
+    // Handle milestones updates & new milestones
+    if (milestones && Array.isArray(milestones)) {
       for (let milestone of milestones) {
         if (milestone._id) {
           // Update existing milestone
@@ -524,26 +542,40 @@ export const updateProject = async (req, res) => {
           });
           const savedMilestone = await newMilestone.save();
 
-          // Add new milestone to the project's milestones array
-          updatedProject.milestones.push(savedMilestone._id);
+          // Add new milestone to the project
+          project.milestones.push(savedMilestone._id);
         }
       }
-
-      // Save the project with updated milestones array
-      await updatedProject.save();
     }
 
-    // Populate milestones for the response
-    const populatedProject = await ProjectModel.findById(_id).populate(
-      "milestones"
-    );
+    // Handle startDate and endDate (do not overwrite with null unless provided)
+    if (startDate) {
+      project.startDate = new Date(startDate);
+    }
+    if (endDate) {
+      project.endDate = new Date(endDate);
+    }
 
-    res.status(200).json(populatedProject);
+    // Update other fields with the provided data
+    Object.assign(project, updateData);
+    await project.save();
+
+    // Populate milestones for the response
+    const updatedProject = await ProjectModel.findById(_id).populate("milestones");
+
+    res.status(200).json({
+      success: true,
+      message: "Project updated successfully",
+      data: updatedProject,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Error updating project and milestones" });
   }
 };
+
+
+
 
 // Soft delete a project
 export const deleteProject = async (req, res) => {
