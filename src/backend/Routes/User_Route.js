@@ -38,7 +38,8 @@ userRoute.post("/daliyTaskUpdate", User.authMiddleware, Task.DailyTaskUpdate);
 
 // userRoute.post("/",User.authMiddleware,Task.create_skill_Improvement);
 
-userRoute.put("/updateProject", User.authMiddleware, Project.updateProject);
+
+
 userRoute.get("/exportXLSX", User.exportXLSX);
 // userRoute.post("/profie", View_profile);
 userRoute.get("/getEmpMails", User.authMiddleware, User.getAllUserEmpMail);
@@ -46,7 +47,7 @@ userRoute.post("/importXLSX", upload.single("file"), User.importXLSX);
 
 
 //Tickets routes
-//Tickets routes
+
 
 // Set up multer storage to control the destination and filename
 const Ticketstorage = multer.diskStorage({
@@ -63,6 +64,10 @@ const uploads = multer({
   storage: Ticketstorage, // Use the custom storage config
   limits: { fileSize: 10 * 1024 * 1024 }, // File size limit (10 MB)
 });
+
+
+
+userRoute.post("/updateTicket", Admin.authMiddleware,upload.array("attachments"), Ticket.updateTicket); // Ensure file uploads work
 
 
 // userRoute.post("/createTicket", User.authMiddleware, Ticket.createTicket);
@@ -90,6 +95,7 @@ const project_upload = multer({
 
 
 userRoute.post('/createproject', User.authMiddleware,project_upload, Project.createProject);
+userRoute.put("/updateProject", Admin.authMiddleware, project_upload,Project.updateProject);
 
 
 
@@ -118,10 +124,7 @@ userRoute.get('/getall_ticket', User.authMiddleware, Ticket.getTicketsWithDetail
 // Get a ticket by ID
 userRoute.get('/tickets/:id', User.authMiddleware, Ticket.getTicketById);
 
-// // Update a ticket
-// router.post('/updatetick/:id', User.authMiddleware, updateTicket);
 
-userRoute.post('/updatetick/:id', User.authMiddleware, Ticket.updateTicket);
 
 userRoute.post('/updatetickstatus', User.authMiddleware, Ticket.updateTicketStatus);
 

@@ -219,7 +219,7 @@ export const user_dashboard = async (req, res) => {
   console.log("user_dashboard");
   const { id, role, mail, department } = req.user;
 
-  //  Ensure only users from the "testing" department can access this dashboard
+  // //  Ensure only users from the "testing" department can access this dashboard
   // if (department !== "testing") {
   //   return res.status(403).json({
   //     status: false,
