@@ -69,7 +69,7 @@ const TicketSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
-    attachments: [
+    attachments: 
       {
         file_name: {
           type: String,
@@ -84,7 +84,7 @@ const TicketSchema = new mongoose.Schema(
           default: Date.now,
         },
       },
-    ],
+    
   },
   {
     timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
