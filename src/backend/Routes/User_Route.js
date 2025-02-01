@@ -163,7 +163,7 @@ const documentUpload = multer({
 userRoute.post(  "/upload_document",  User.authMiddleware, documentUpload.single("file"),  document.uploadFile);
 
 // Route to update a file
-userRoute.put(  "/update/:fileId",  User.authMiddleware,  documentUpload.single("file"),  document.updateFile);
+// userRoute.put(  "/update/:fileId",  User.authMiddleware,  documentUpload.single("file"),  document.updateFile);
 
 // Route to delete a file
 userRoute.delete(  "/delete/:id",  User.authMiddleware, document.deleteFile);
