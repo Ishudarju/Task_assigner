@@ -144,37 +144,40 @@ userRoute.get("/tasks_uat", User.authMiddleware, Task.listUATTasksForTesters);
 userRoute.post('/updateTesterApproval', User.authMiddleware, Task.updateTesterApproval);
 
 
-
-
-// Set up storage for multer
-const storage = multer.diskStorage({
+// Multer storage config
+const documentStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/"); // Folder to save uploaded files
+    cb(null, "uploads");
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "_" + Math.round(Math.random() * 1e9);
-    cb(null, file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname)); // Make filenames unique
+    cb(null, Date.now() + "-" + file.originalname);
   },
 });
 
-// const upload = multer({ storage: storage });
+const documentUpload = multer({
+  storage: documentStorage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB limit
+});
 
-// Route to upload a file
-userRoute.post("/uploaddocument", User.authMiddleware,upload.single("file"), document.uploadFile);
+// Route to upload a single file
+userRoute.post(  "/upload_document",  User.authMiddleware, documentUpload.single("file"),  document.uploadFile);
 
+// Route to update a file
+userRoute.put(  "/update/:fileId",  User.authMiddleware,  documentUpload.single("file"),  document.updateFile);
 
+// Route to delete a file
+userRoute.delete(  "/delete/:id",  User.authMiddleware, document.deleteFile);
 
-
-
-
-
-// Route to get all files
 userRoute.get("/getAllfiles", User.authMiddleware,document.getAllFiles);
 
-// Route to get a single file by ID
-userRoute.get("/file/:id", User.authMiddleware,document.getFileById);
 
-userRoute.delete('/deletefiles/:id', User.authMiddleware,document.deleteFiles);
+// // Route to get all files
+// userRoute.get("/getAllfiles", User.authMiddleware,document.getAllFiles);
+
+// // Route to get a single file by ID
+// userRoute.get("/file/:id", User.authMiddleware,document.getFileById);
+
+// userRoute.delete('/deletefiles/:id', User.authMiddleware,document.deleteFiles);
 
 
 

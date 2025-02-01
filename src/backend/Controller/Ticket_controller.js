@@ -6,25 +6,145 @@ import ProjectModel from "../Model/Project_schema.js"; // Use named import
 // import { TaskModel } from '../Model/Task_scheme.js'
 
 
+// export const createTicket = async (req, res) => {
+//   const {
+//     title,
+//     description,
+//     project,
+//     assigned_to,
+//     tasks,
+//     priority,
+//     status,
+//     severity,
+//     main_category,
+//     sub_category,
+//   } = req.body;
+
+//   console.log("value", req.body);
+
+//   try {
+//     console.log(req.user);
+
+//     // Authorization Check
+//     if (req.user.department !== "testing" && req.user.role !== "admin") {
+//       return res.status(403).json({
+//         status: false,
+//         message:
+//           "Access denied. Only users from the testing department or admins are authorized.",
+//       });
+//     }
+
+//     // Validation for required fields
+//     if (!main_category || !sub_category) {
+//       return res.status(400).json({
+//         status: false,
+//         message: "Main category and Sub category are required.",
+//       });
+//     }
+
+//     if (!title || !description || !project) {
+//       return res.status(400).json({
+//         status: false,
+//         message: "Title, Description, and Project are required.",
+//       });
+//     }
+
+//     // Check if project exists
+//     const projectExists = await ProjectModel.findById(project);
+//     if (!projectExists) {
+//       return res
+//         .status(404)
+//         .json({ status: false, message: "Project not found." });
+//     }
+
+//     let taskId = null;
+//     if (tasks) {
+//       if (!mongoose.Types.ObjectId.isValid(tasks)) {
+//         return res
+//           .status(400)
+//           .json({ status: false, message: "Invalid task ID." });
+//       }
+//       taskId = new mongoose.Types.ObjectId(tasks);
+//     }
+
+//     // // Validate status for testers
+//     // if (req.user.department === "testing") {
+//     //   const testerAllowedStatuses = ["Open", "Closed", "Reopen"];
+//     //   if (!status || !testerAllowedStatuses.includes(status)) {
+//     //     return res.status(400).json({
+//     //       status: false,
+//     //       message: `Testers can only set the status to: ${testerAllowedStatuses.join(
+//     //         ", "
+//     //       )}`,
+//     //     });
+//     //   }
+//     // }
+
+//     // Validate status for testers
+//     if (req.user.department === "testing" && !["Open", "Closed", "Reopen"].includes(status)) {
+//       return res.status(400).json({
+//         status: false,
+//         message: `Testers can only set the status to: Open, Closed, Reopen`,
+//       });
+//     }
+
+//     // Admins can change any status
+//     if (req.user.role === "admin" && !status) {
+//       return res.status(400).json({
+//         status: false,
+//         message: "Status is required for admin users",
+//       });
+//     }
+
+//     // Handle file attachments
+//     let attachments = [];
+//     if (req.files && req.files.length > 0) {
+//       attachments = req.files.map((file) => ({
+//         file_name: file.originalname, // Fetch the original file name
+//         file_url: `/uploads/${file.filename}`, // Store the file path
+//         uploaded_at: new Date(),
+//       }));
+//     }
+
+//     // Create a new ticket
+//     const ticket = new Ticket({
+//       title,
+//       description,
+//       project,
+//       assigned_to,
+//       priority,
+//       tasks,
+//       status,
+//       severity,
+//       main_category,
+//       sub_category,
+//       raised_by: req.user.id,
+//       attachments,
+//     });
+
+//     // Save ticket to database
+//     await ticket.save();
+
+//     res.status(201).json({
+//       status: true,
+
+//       message: "Ticket created successfully",
+//       ticket,
+//     });
+//   } catch (error) {
+//     console.error("Error creating ticket:", error);
+//     res.status(500).json({
+//       status: false,
+//       message: "An error occurred while creating the ticket.",
+//       error: error.message,
+//     });
+//   }
+// };
+
+
+
 export const createTicket = async (req, res) => {
-  const {
-    title,
-    description,
-    project,
-    assigned_to,
-    tasks,
-    priority,
-    status,
-    severity,
-    main_category,
-    sub_category,
-  } = req.body;
-
-  console.log("value", req.body);
-
   try {
-    console.log(req.user);
-
     // Authorization Check
     if (req.user.department !== "testing" && req.user.role !== "admin") {
       return res.status(403).json({
@@ -33,6 +153,20 @@ export const createTicket = async (req, res) => {
           "Access denied. Only users from the testing department or admins are authorized.",
       });
     }
+
+    // Extract ticket fields from the request body (except raised_by)
+    const {
+      title,
+      description,
+      project,
+      tasks,
+      assigned_to,
+      priority,
+      status,
+      severity,
+      main_category,
+      sub_category,
+    } = req.body;
 
     // Validation for required fields
     if (!main_category || !sub_category) {
@@ -52,43 +186,27 @@ export const createTicket = async (req, res) => {
     // Check if project exists
     const projectExists = await ProjectModel.findById(project);
     if (!projectExists) {
-      return res
-        .status(404)
-        .json({ status: false, message: "Project not found." });
+      return res.status(404).json({ status: false, message: "Project not found." });
     }
 
+    // Validate and process task ID if provided
     let taskId = null;
     if (tasks) {
       if (!mongoose.Types.ObjectId.isValid(tasks)) {
-        return res
-          .status(400)
-          .json({ status: false, message: "Invalid task ID." });
+        return res.status(400).json({ status: false, message: "Invalid task ID." });
       }
       taskId = new mongoose.Types.ObjectId(tasks);
     }
 
-    // // Validate status for testers
-    // if (req.user.department === "testing") {
-    //   const testerAllowedStatuses = ["Open", "Closed", "Reopen"];
-    //   if (!status || !testerAllowedStatuses.includes(status)) {
-    //     return res.status(400).json({
-    //       status: false,
-    //       message: `Testers can only set the status to: ${testerAllowedStatuses.join(
-    //         ", "
-    //       )}`,
-    //     });
-    //   }
-    // }
-
     // Validate status for testers
-    if (req.user.department === "testing" && !["Open", "Closed", "Reopen"].includes(status)) {
+    if (req.user.department === "testing" && status && !["Open", "Closed", "Reopen"].includes(status)) {
       return res.status(400).json({
         status: false,
-        message: `Testers can only set the status to: Open, Closed, Reopen`,
+        message: "Testers can only set the status to: Open, Closed, Reopen",
       });
     }
 
-    // Admins can change any status
+    // Admins must provide a status
     if (req.user.role === "admin" && !status) {
       return res.status(400).json({
         status: false,
@@ -96,50 +214,55 @@ export const createTicket = async (req, res) => {
       });
     }
 
-    // Handle file attachments
-    let attachments = [];
-    if (req.files && req.files.length > 0) {
-      attachments = req.files.map((file) => ({
-        file_name: file.originalname, // Fetch the original file name
-        file_url: `/uploads/${file.filename}`, // Store the file path
-        uploaded_at: new Date(),
-      }));
+    // Build the attachments object from the uploaded file (if any)
+    let attachments = {};
+    if (req.file) {
+      attachments = {
+        file_name: req.file.originalname, // Original file name
+        file_url: req.file.path,          // File path (or URL if using cloud storage)
+        uploaded_at: Date.now(),
+      };
     }
 
-    // Create a new ticket
-    const ticket = new Ticket({
+    // Create a new ticket instance
+    const newTicket = new Ticket({
       title,
       description,
       project,
-      assigned_to,
+      tasks: taskId, // Use validated task ID (or null)
+      raised_by: req.user.id, // Automatically set raised_by to the logged-in user's id
+      assigned_to: assigned_to , // Ensure null is stored if not provided
       priority,
-      tasks,
       status,
       severity,
       main_category,
       sub_category,
-      raised_by: req.user.id,
-      attachments,
+      attachments, // Single attachment document (not an array)
     });
 
-    // Save ticket to database
-    await ticket.save();
+    // Save the ticket to the database
+    await newTicket.save();
 
-    res.status(201).json({
+    // Respond with success and the newly created ticket
+    return res.status(201).json({
       status: true,
-
-      message: "Ticket created successfully",
-      ticket,
+      message: 'Ticket created successfully',
+      data: newTicket,
     });
   } catch (error) {
     console.error("Error creating ticket:", error);
-    res.status(500).json({
+    return res.status(500).json({
       status: false,
-      message: "An error occurred while creating the ticket.",
+      message: 'Server error',
       error: error.message,
     });
   }
 };
+
+
+
+
+
 
 //return ticket to tester
 
