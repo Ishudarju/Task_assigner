@@ -76,14 +76,13 @@ adminRoute.post('/createproject', Admin.authMiddleware, project_upload, Project.
 adminRoute.put('/updateProject', Admin.authMiddleware, project_upload, Project.updateProject);
 
 
-// Route for creating a project
-// adminRoute.post('/createproject', Admin.authMiddleware,project_upload, Project.createProject);
+
 
 
 
 adminRoute.post(  "/getAllProjects",  Admin.authMiddleware, Project.getAllProjectsPagination);
 
-// adminRoute.put("/updateProject", Admin.authMiddleware, project_upload,Project.updateProject);
+
 
 adminRoute.delete(
   "/deleteProject/:id",
@@ -119,7 +118,7 @@ adminRoute.get("/hours_spent_progress", Admin.authMiddleware, Project.calculateP
 // Set up multer storage to control the destination and filename 
 const Ticketstorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads'); // Ensure the uploads folder exists
+    cb(null, 'uploads/'); // Ensure the uploads folder exists
   },
   filename: (req, file, cb) => {
     cb(null, Date.now() + '-' + file.originalname); // Keep original file name with timestamp
@@ -147,8 +146,6 @@ adminRoute.get('/tickets/:id', Admin.authMiddleware, Ticket.getTicketById);
 
 // // Update a ticket
 
-// adminRoute.put('/updateticket/:id', Admin.authMiddleware, Ticket.updateTicket);
-// adminRoute.post("/updateTicket", Admin.authMiddleware, Ticket.updateTicket);
 
 adminRoute.post('/updatetickstatus', Admin.authMiddleware, Ticket.updateTicketStatus);
 
@@ -192,9 +189,9 @@ adminRoute.post("/upload", Admin.authMiddleware,document_upload.single("file"), 
 adminRoute.get("/getAllfiles", Admin.authMiddleware,document.getAllFiles);
 
 // Route to get a single file by ID
-adminRoute.get("/file/:id", Admin.authMiddleware,document.getFileById);
+adminRoute.get("/file/:id", Admin.authMiddleware,document.getAllFiles);
 
-adminRoute.delete('/deletefiles', Admin.authMiddleware,document.deleteFiles);
+adminRoute.delete('/deletefiles', Admin.authMiddleware,document.deleteFile);
 
 
 
