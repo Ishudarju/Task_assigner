@@ -47,7 +47,7 @@ export const authMiddleware = (req, res, next) => {
     }
     // Log to verify user object
     req.user = decoded;
-    console.log("Authenticated user: ", req.user);
+    // console.log("Authenticated user: ", req.user);
     next();
   });
 };
@@ -195,7 +195,7 @@ export const user_login = async (req, res) => {
     };
 
     // Log user data for debugging purposes
-    console.log("User details:", userData);
+    // console.log("User details:", userData);
 
     // Send success response
     return res.status(200).json({
@@ -352,14 +352,12 @@ export const createUser = async (req, res) => {
   }
 };
 
-
-
 export const approveUserByHR = async (req, res) => {
   const { userId, hr_approval } = req.body;
 
   try {
-    // Ensure only HR can approve users
-    if (req.user.role !== "hr") {
+    // Ensure only HR and Admin can approve users
+    if (req.user.role !== "hr" && req.user.role !== "admin") {
       return res.status(403).json({ status: false, message: "Access denied" });
     }
 
@@ -377,7 +375,20 @@ export const approveUserByHR = async (req, res) => {
       return res.status(404).json({ status: false, message: "User not found" });
     }
 
-    // Ensure the user is verified by admin before HR approval
+    // ✅ If the user is an admin, approval is not needed
+    if (user.role === "admin") {
+      return res.status(200).json({
+        status: true,
+        message: "Approval is not required for admin accounts.",
+        data: {
+          userId: user._id,
+          name: user.name,
+          role: user.role,
+        },
+      });
+    }
+
+    // ✅ Ensure only non-admin users require admin verification
     if (!user.admin_verify) {
       return res.status(400).json({
         status: false,
@@ -391,8 +402,8 @@ export const approveUserByHR = async (req, res) => {
 
     // Send a success response
     const message = hr_approval
-      ? "User approved by HR. User can now proceed with work."
-      : "HR approval has been revoked for the user.";
+      ? "User approved successfully."
+      : "User approval has been revoked.";
 
     res.status(200).json({
       status: true,
@@ -404,10 +415,80 @@ export const approveUserByHR = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error updating HR approval status:", error);
+    console.error("Error updating approval status:", error);
     res.status(500).json({ status: false, message: "Internal server error" });
   }
 };
+
+
+// export const approveUserByHR = async (req, res) => {
+//   const { userId, hr_approval } = req.body;
+
+//   try {
+//     // Ensure only HR can approve users
+//     if (req.user.role !== "hr" && req.user.role !== "admin") {
+//       return res.status(403).json({ status: false, message: "Access denied" });
+//     }
+
+//     // Validate hr_approval field
+//     if (typeof hr_approval !== "boolean") {
+//       return res.status(400).json({
+//         status: false,
+//         message: "hr_approval must be a boolean value (true or false).",
+//       });
+//     }
+
+//     // Find the user by ID
+//     const user = await UserModel.findById(userId);
+//     if (!user) {
+//       return res.status(404).json({ status: false, message: "User not found" });
+//     }
+
+
+//      // ✅ If the user is an admin, HR approval is not required
+//      if (user.role === "admin") {
+//       return res.status(200).json({
+//         status: true,
+//         message: "HR approval is not required for admin accounts.",
+//         data: {
+//           userId: user._id,
+//           name: user.name,
+//           role: user.role,
+//         },
+//       });
+//     }
+
+//     // Ensure the user is verified by admin before HR approval
+//     if (!user.admin_verify) {
+//       return res.status(400).json({
+//         status: false,
+//         message: "User must be verified by admin first.",
+//       });
+//     }
+
+//     // Update hr_approval status
+//     user.hr_approval = hr_approval;
+//     await user.save();
+
+//     // Send a success response
+//     const message = hr_approval
+//       ? "User approved by HR. User can now proceed with work."
+//       : "HR approval has been revoked for the user.";
+
+//     res.status(200).json({
+//       status: true,
+//       message,
+//       data: {
+//         userId: user._id,
+//         name: user.name,
+//         hr_approval: user.hr_approval,
+//       },
+//     });
+//   } catch (error) {
+//     console.error("Error updating HR approval status:", error);
+//     res.status(500).json({ status: false, message: "Internal server error" });
+//   }
+// };
 
 export const updateUser = async (req, res) => {
   // console.log(req.body);
@@ -424,6 +505,7 @@ export const updateUser = async (req, res) => {
     starting_date,
     lastWorking_date,
   } = req?.body;
+
   const updateData = {
     name,
     mail,

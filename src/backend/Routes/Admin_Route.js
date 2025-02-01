@@ -40,6 +40,9 @@ adminRoute.put("/update", Admin.authMiddleware, User.updateUser);
 adminRoute.post("/verify/:userId", Admin.authMiddleware,Admin.verifyUserByAdmin);
 adminRoute.post("/approve", User.authMiddleware,User.approveUserByHR);
 
+// userRoute.post("/verify/:userId", User.authMiddleware,verifyUserByAdmin);
+adminRoute.post("/approveHr", Admin.authMiddleware,User.approveUserByHR);
+
 
 
 
