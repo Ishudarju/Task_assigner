@@ -84,7 +84,6 @@ export const createTask = async (req, res) => {
 
 
 
-
 export const updateUATStatus = async (req, res) => {
   const { taskId, move_to_uat } = req.body; // Use taskId and move_to_uav from the body
 
