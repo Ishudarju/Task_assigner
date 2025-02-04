@@ -233,7 +233,7 @@ export const user_dashboard = async (req, res) => {
   //   result = await TaskModel.find({ assigned_to: id });
   // }
 
-  if (role === "hr" || role === "manager" || role === "team lead") {
+  if ((department=== "Human-resource" && role === "hr") || role === "manager" || role === "team lead") {
     // For HR, get overall tasks with specific statuses
     result = await TaskModel.find({
       status: { $in: ["Pending", "Completed", "Not started", "In progress"] },
@@ -601,58 +601,104 @@ export const findById = async (req, res) => {
     });
 };
 
+//fazil correct code
+// export const getAllUserEmpMail = async (req, res) => {
+//   try {
+//     console.log(req.user); // Debugging log to verify `req.user` is populated
+
+//     if (!req.user || !req.user.role) {
+//       return res.status(403).json({
+//         status: false,
+//         message: "Access denied: User role is undefined",
+//       });
+//     }
+
+//     const loggedInUserRole = req.user.role; // Extract the logged-in user's role
+//     let filterRoles;
+
+//     // Set filter roles based on the user's role
+//     if (loggedInUserRole === "admin") {
+//       filterRoles = ["manager", "team lead", "member"];
+//     } else if (loggedInUserRole === "manager") {
+//       filterRoles = ["team lead", "member"];
+//     } else if (loggedInUserRole === "team lead") {
+//       filterRoles = ["member"];
+//     } else {
+//       filterRoles = ["member"];
+//     }
+
+//     // Query database for emails based on filterRoles
+//     const emails = await UserModel.find(
+//       { role: { $in: filterRoles } }, // Apply dynamic filtering
+//       { mail: 1, name: 1 } // Select specific fields
+//     );
+
+//     // Respond with appropriate messages
+//     if (emails.length > 0) {
+//       return res.status(200).json({
+//         status: true,
+//         message: "Fetched user emails successfully",
+//         data: emails,
+//       });
+//     } else {
+//       return res.status(404).json({
+//         status: false,
+//         message: "No users found",
+//       });
+//     }
+//   } catch (error) {
+//     return res.status(500).json({
+//       status: false,
+//       message: "Error in fetching users' emails",
+//       error: error.message,
+//     });
+//   }
+// };
+
+
+//ishu corrected code 
+
 export const getAllUserEmpMail = async (req, res) => {
   try {
-    console.log(req.user); // Debugging log to verify `req.user` is populated
+    const { role } = req.user; // Get logged-in user's role
 
-    if (!req.user || !req.user.role) {
+    let filterRoles = [];
+
+    // Apply role-based filtering
+    if (role === "admin") {
+      filterRoles = ["manager", "team lead", "member", "tester"];
+    } else if (role === "manager") {
+      filterRoles = ["team lead", "member", "tester"]; // No other managers
+    } else if (role === "team lead") {
+      filterRoles = ["member"];
+    } else {
       return res.status(403).json({
         status: false,
-        message: "Access denied: User role is undefined",
+        message: "No authorization to view this data",
       });
     }
 
-    const loggedInUserRole = req.user.role; // Extract the logged-in user's role
-    let filterRoles;
-
-    // Set filter roles based on the user's role
-    if (loggedInUserRole === "admin") {
-      filterRoles = ["manager", "team lead", "member"];
-    } else if (loggedInUserRole === "manager") {
-      filterRoles = ["team lead", "member"];
-    } else if (loggedInUserRole === "team lead") {
-      filterRoles = ["member"];
-    } else {
-      filterRoles = ["member"];
-    }
-
-    // Query database for emails based on filterRoles
-    const emails = await UserModel.find(
-      { role: { $in: filterRoles } }, // Apply dynamic filtering
-      { mail: 1, name: 1 } // Select specific fields
+    // Fetch users based on allowed roles
+    const users = await UserModel.find({ role: { $in: filterRoles } }).select(
+      "name mail role"
     );
 
-    // Respond with appropriate messages
-    if (emails.length > 0) {
-      return res.status(200).json({
-        status: true,
-        message: "Fetched user emails successfully",
-        data: emails,
-      });
-    } else {
-      return res.status(404).json({
-        status: false,
-        message: "No users found",
-      });
-    }
+    return res.status(200).json({
+      status: true,
+      message: "Fetched user emails successfully",
+      data: users,
+    });
   } catch (error) {
+    console.error(error);
     return res.status(500).json({
       status: false,
-      message: "Error in fetching users' emails",
-      error: error.message,
+      message: "Error fetching user emails",
     });
   }
 };
+
+
+
 
 export const getAllUserEmpMailForProject = async (req, res) => {
   try {
