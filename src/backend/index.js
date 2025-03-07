@@ -27,8 +27,12 @@ const __filename = url.fileURLToPath(import.meta.url);
 
 const __dirname = path.dirname(__filename);
 
-// Serve uploaded files from the 'uploads' folder
-app.use("uploads", express.static(path.join(__dirname, "uploads")));
+
+// Serving 'uploads' from correct location (move up two levels)
+app.use("/uploads", express.static(path.join(__dirname, "../../uploads")));
+
+
+
 
 app.use("/user", userRoute);
 

@@ -2,8 +2,6 @@ import ProjectModel from "../Model/Project_schema.js";
 import { TaskModel } from "../Model/Task_scheme.js";
 import MilestoneModel from "../Model/Milestone_schema.js";
 
-// Ensure you import the Milestone model
-import { Mongoose } from "mongoose";
 // Create a new project
 
 
@@ -106,40 +104,131 @@ import { Mongoose } from "mongoose";
 //   }
 // };
 
+//now correct code
+// export const createProject = async (req, res) => {
+//   try {
+//     const {
+//       project_name,
+//       project_description,
+//       project_ownership,
+//       startDate,
+//       endDate,
+//       project_status,
+//       estimated_hours,
+//       milestones, // This might be a string
+//     } = req.body;
+
+//     const { role } = req.user;
+//     const estimatedHours = parseInt(estimated_hours, 10);
+
+//     // Convert milestones from string to array if needed
+//     let milestoneList = milestones;
+//     if (typeof milestones === "string") {
+//       try {
+//         milestoneList = JSON.parse(milestones);
+//       } catch (error) {
+//         return res.status(400).json({
+//           status: false,
+//           message: "Milestones must be an array of names.",
+//         });
+//       }
+//     }
+
+//     if (milestoneList && !Array.isArray(milestoneList)) {
+//       return res.status(400).json({
+//         status: false,
+//         message: "Milestones must be an array of names.",
+//       });
+//     }
+
+//     // Create a new project
+//     const newProject = new ProjectModel({
+//       project_name,
+//       project_description,
+//       project_ownership,
+//       startDate,
+//       endDate,
+//       project_status,
+//       estimated_hours: estimatedHours,
+//     });
+
+//     const project = await newProject.save();
+
+//     // If milestones exist, create them
+//     if (milestoneList && milestoneList.length > 0) {
+//       const milestoneDocuments = milestoneList.map((name) => ({
+//         name,
+//         project: project._id,
+//       }));
+
+//       const createdMilestones = await MilestoneModel.insertMany(milestoneDocuments);
+
+//       project.milestones = createdMilestones.map((m) => m._id);
+//       await project.save();
+//     }
+
+//     return res.status(201).json({
+//       status: true,
+//       message: "Project and milestones created successfully",
+//       data: project,
+//     });
+//   } catch (error) {
+//     console.error("Error:", error);
+//     return res.status(500).json({
+//       status: false,
+//       message: "An error occurred while creating the project and milestones",
+//     });
+//   }
+// };
+
 
 export const createProject = async (req, res) => {
-  const {
-    project_name,
-    project_description,
-    project_ownership,
-    startDate,
-    endDate,
-    project_status,
-    estimated_hours,
-    milestones,
-  } = req.body;
-
-  const { role } = req.user;
-  const estimatedHours = parseInt(estimated_hours, 10);
-
-  if (role !== "admin" && role !== "manager") {
-    return res.status(403).json({ status: false, message: "No authorization" });
-  }
-
-  if (!project_name || typeof project_name !== "string" || project_name.trim() === "") {
-    return res.status(400).json({ status: false, message: "Project name is required." });
-  }
-
-  let attachment = null;
-  if (req.file) {
-    attachment = {
-      file_name: req.file.filename,
-      file_url: `/uploads/${req.file.filename}`,
-      uploaded_at: new Date(),
-    };
-  }
-
   try {
+    const {
+      project_name,
+      project_description,
+      project_ownership,
+      startDate,
+      endDate,
+      project_status,
+      estimated_hours,
+      milestones, // This might be a string
+    } = req.body;
+
+    const { role } = req.user;
+    const estimatedHours = parseInt(estimated_hours, 10);
+
+    // Convert milestones from string to array if needed
+    let milestoneList = milestones;
+    if (typeof milestones === "string") {
+      try {
+        milestoneList = JSON.parse(milestones);
+      } catch (error) {
+        return res.status(400).json({
+          status: false,
+          message: "Milestones must be an array of names.",
+        });
+      }
+    }
+
+    if (milestoneList && !Array.isArray(milestoneList)) {
+      return res.status(400).json({
+        status: false,
+        message: "Milestones must be an array of names.",
+      });
+    }
+
+    // Handle file attachment
+    let attachment = null;
+    if (req.file) {
+      attachment = {
+        file_name: req.file.filename,
+        file_url: `/uploads/${req.file.filename}`,
+        uploaded_at: new Date(),
+      };
+    }
+
+    // Create a new project
     const newProject = new ProjectModel({
       project_name,
       project_description,
@@ -148,20 +237,40 @@ export const createProject = async (req, res) => {
       endDate,
       project_status,
       estimated_hours: estimatedHours,
-      attachments: attachment,
+      attachments: attachment, // Add the file attachment
     });
 
     const project = await newProject.save();
-    res.status(201).json({
+
+    // If milestones exist, create them
+    if (milestoneList && milestoneList.length > 0) {
+      const milestoneDocuments = milestoneList.map((name) => ({
+        name,
+        project: project._id,
+      }));
+
+      const createdMilestones = await MilestoneModel.insertMany(milestoneDocuments);
+
+      project.milestones = createdMilestones.map((m) => m._id);
+      await project.save();
+    }
+
+    return res.status(201).json({
       status: true,
-      message: "Project created successfully",
+      message: "Project and milestones created successfully",
       data: project,
     });
   } catch (error) {
-    console.error("Error creating project:", error);
-    return res.status(500).json({ status: false, message: "Error creating project" });
+    console.error("Error:", error);
+    return res.status(500).json({
+      status: false,
+      message: "An error occurred while creating the project and milestones",
+    });
   }
 };
+
+
+
 
 export const calculateProjectProgress = async (req, res) => {
   const { projectId } = req.body;
@@ -419,10 +528,6 @@ export const getProjectById = async (req, res) => {
 };
 
 // Update a project
-
-
-
-
 export const updateProject = async (req, res) => {
   const { _id, milestones, startDate, endDate, ...updateData } = req.body;
   const { role } = req.user;
@@ -453,6 +558,56 @@ export const updateProject = async (req, res) => {
       project.endDate = new Date(endDate);
     }
 
+    // Handle milestones update (update existing & create new)
+    if (milestones) {
+      let milestoneList = milestones;
+      
+      if (typeof milestones === "string") {
+        try {
+          milestoneList = JSON.parse(milestones);
+        } catch (error) {
+          return res.status(400).json({
+            status: false,
+            message: "Milestones must be an array of objects (id, name).",
+          });
+        }
+      }
+
+      if (!Array.isArray(milestoneList)) {
+        return res.status(400).json({
+          status: false,
+          message: "Milestones must be an array.",
+        });
+      }
+
+      const updatedMilestones = [];
+      const newMilestones = [];
+
+      for (const milestone of milestoneList) {
+        if (milestone._id) {
+          // If milestone ID exists, update it
+          await MilestoneModel.findByIdAndUpdate(milestone._id, {
+            name: milestone.name,
+            status: milestone.status
+          });
+          updatedMilestones.push(milestone._id);
+        } else {
+          // If milestone ID is not provided, create a new milestone
+          newMilestones.push({ name: milestone.name, project: project._id });
+        }
+      }
+
+      // Insert new milestones and get their IDs
+      if (newMilestones.length > 0) {
+        const createdMilestones = await MilestoneModel.insertMany(newMilestones);
+        updatedMilestones.push(...createdMilestones.map((m) => m._id));
+      }
+
+      // Update project milestones
+      project.milestones = updatedMilestones;
+    }
+
+    // Apply other updates
     Object.assign(project, updateData);
     await project.save();
 
@@ -468,6 +623,56 @@ export const updateProject = async (req, res) => {
     res.status(500).json({ error: "Error updating project" });
   }
 };
+
+
+
+
+
+// export const updateProject = async (req, res) => {
+//   const { _id, milestones, startDate, endDate, ...updateData } = req.body;
+//   const { role } = req.user;
+
+//   try {
+//     if (!["manager", "admin"].includes(role)) {
+//       return res.status(403).json({ error: "Access permissions Denied." });
+//     }
+
+//     let project = await ProjectModel.findById(_id).populate("milestones");
+//     if (!project) {
+//       return res.status(404).json({ error: "Project not found" });
+//     }
+
+//     // Handle file upload (replace existing attachment)
+//     if (req.file) {
+//       project.attachments = {
+//         file_name: req.file.filename,
+//         file_url: `/uploads/${req.file.filename}`,
+//         uploaded_at: new Date(),
+//       };
+//     }
+
+//     if (startDate) {
+//       project.startDate = new Date(startDate);
+//     }
+//     if (endDate) {
+//       project.endDate = new Date(endDate);
+//     }
+
+//     Object.assign(project, updateData);
+//     await project.save();
+
+//     const updatedProject = await ProjectModel.findById(_id).populate("milestones");
+
+//     res.status(200).json({
+//       success: true,
+//       message: "Project updated successfully",
+//       data: updatedProject,
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ error: "Error updating project" });
+//   }
+// };
 
 // Soft delete a project
 export const deleteProject = async (req, res) => {
