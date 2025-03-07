@@ -214,15 +214,29 @@ export const createTicket = async (req, res) => {
       });
     }
 
+    // // Build the attachments object from the uploaded file (if any)
+    // let attachments = {};
+    // if (req.file) {
+    //   attachments = {
+    //     file_name: req.file.originalname, // Original file name
+    //     file_url: req.file.path,          // File path (or URL if using cloud storage)
+        
+    //     // uploaded_at: Date.now(),
+    //   };
+    // }
+
+
+
     // Build the attachments object from the uploaded file (if any)
     let attachments = {};
     if (req.file) {
       attachments = {
-        file_name: req.file.originalname, // Original file name
-        file_url: req.file.path,          // File path (or URL if using cloud storage)
-        uploaded_at: Date.now(),
+        file_name: req.file.originalname, 
+        file_url: `/uploads/${req.file.filename}`,
+         uploaded_at: Date.now(),
       };
     }
+
 
     // Create a new ticket instance
     const newTicket = new Ticket({
@@ -607,6 +621,12 @@ export const getTicketById = async (req, res) => {
     if (!ticket) {
       return res.status(404).json({ message: "Ticket not found" });
     }
+
+
+// Fix the file URL only if attachments exist
+if (ticket.attachments && ticket.attachments.file_url) {
+  ticket.attachments.file_url = `${req.protocol}://${req.get("host")}/uploads/${path.basename(ticket.attachments.file_url)}`;
+}
 
     // Return the ticket details
     res.status(200).json({
