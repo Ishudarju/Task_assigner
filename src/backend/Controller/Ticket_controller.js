@@ -4,7 +4,7 @@ import fs from "fs";
 import path from "path";
 import ProjectModel from "../Model/Project_schema.js"; // Use named import
 // import { TaskModel } from '../Model/Task_scheme.js'
-
+import { fileURLToPath } from "url";
 
 // export const createTicket = async (req, res) => {
 //   const {
@@ -141,8 +141,6 @@ import ProjectModel from "../Model/Project_schema.js"; // Use named import
 //   }
 // };
 
-
-
 export const createTicket = async (req, res) => {
   try {
     // Authorization Check
@@ -186,20 +184,28 @@ export const createTicket = async (req, res) => {
     // Check if project exists
     const projectExists = await ProjectModel.findById(project);
     if (!projectExists) {
-      return res.status(404).json({ status: false, message: "Project not found." });
+      return res
+        .status(404)
+        .json({ status: false, message: "Project not found." });
     }
 
     // Validate and process task ID if provided
     let taskId = null;
     if (tasks) {
       if (!mongoose.Types.ObjectId.isValid(tasks)) {
-        return res.status(400).json({ status: false, message: "Invalid task ID." });
+        return res
+          .status(400)
+          .json({ status: false, message: "Invalid task ID." });
       }
       taskId = new mongoose.Types.ObjectId(tasks);
     }
 
     // Validate status for testers
-    if (req.user.department === "testing" && status && !["Open", "Closed", "Reopen"].includes(status)) {
+    if (
+      req.user.department === "testing" &&
+      status &&
+      !["Open", "Closed", "Reopen"].includes(status)
+    ) {
       return res.status(400).json({
         status: false,
         message: "Testers can only set the status to: Open, Closed, Reopen",
@@ -220,23 +226,43 @@ export const createTicket = async (req, res) => {
     //   attachments = {
     //     file_name: req.file.originalname, // Original file name
     //     file_url: req.file.path,          // File path (or URL if using cloud storage)
-        
+
     //     // uploaded_at: Date.now(),
     //   };
     // }
 
-
-
     // Build the attachments object from the uploaded file (if any)
     let attachments = {};
-    if (req.file) {
-      attachments = {
-        file_name: req.file.originalname, 
-        file_url: `/uploads/${req.file.filename}`,
-         uploaded_at: Date.now(),
-      };
+    const timestamp = Date.now();
+    const originalFileName = req.file.originalname;
+    const newFileName = `${timestamp}-${originalFileName}`;
+    const uploadDir = path.join(__dirname, "../../uploads");
+
+    // ✅ Ensure the upload directory exists
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
     }
 
+    const newFilePath = path.join(uploadDir, newFileName);
+
+    fs.renameSync(req.file.path, newFilePath);
+
+    // const file_url = `/uploads/${newFileName}`;
+    if (req.file) {
+      attachments = {
+        file_name: req.file.originalname,
+        file_url: `/uploads/${newFileName}`, // Use `newFileName` instead of `req.file.filename`
+        uploaded_at: Date.now(),
+      };
+    }
+    // let attachments = {};
+    // if (req.file) {
+    //   attachments = {
+    //     file_name: req.file.originalname,
+    //     file_url: `/uploads/${req.file.filename}`,
+    //      uploaded_at: Date.now(),
+    //   };
+    // }
 
     // Create a new ticket instance
     const newTicket = new Ticket({
@@ -245,7 +271,7 @@ export const createTicket = async (req, res) => {
       project,
       tasks: taskId, // Use validated task ID (or null)
       raised_by: req.user.id, // Automatically set raised_by to the logged-in user's id
-      assigned_to: assigned_to , // Ensure null is stored if not provided
+      assigned_to: assigned_to, // Ensure null is stored if not provided
       priority,
       status,
       severity,
@@ -260,23 +286,18 @@ export const createTicket = async (req, res) => {
     // Respond with success and the newly created ticket
     return res.status(201).json({
       status: true,
-      message: 'Ticket created successfully',
+      message: "Ticket created successfully",
       data: newTicket,
     });
   } catch (error) {
     console.error("Error creating ticket:", error);
     return res.status(500).json({
       status: false,
-      message: 'Server error',
+      message: "Server error",
       error: error.message,
     });
   }
 };
-
-
-
-
-
 
 //return ticket to tester
 
@@ -403,7 +424,6 @@ export const getResolvedTickets = async (req, res) => {
   }
 };
 
-
 //ishu corrected code//pagination
 
 // export const getTicketsWithDetails = async (req, res) => {
@@ -515,10 +535,9 @@ export const getResolvedTickets = async (req, res) => {
 //   }
 // };
 
-
 export const getTicketsWithDetails = async (req, res) => {
   try {
-    const { page = 1, limit = 10, status, search=''  } = req.query;
+    const { page = 1, limit = 10, status, search = "" } = req.query;
     console.log("Request Query:", req.query);
     const { role, id: userId, department } = req.user;
 
@@ -531,12 +550,20 @@ export const getTicketsWithDetails = async (req, res) => {
     }
 
     // Status filtering
-    const validStatuses = ["Open", "In Progress", "Resolved", "Closed", "Reopen"];
+    const validStatuses = [
+      "Open",
+      "In Progress",
+      "Resolved",
+      "Closed",
+      "Reopen",
+    ];
     if (status) {
       if (!validStatuses.includes(status)) {
         return res.status(400).json({
           status: false,
-          message: `Invalid status provided. Valid statuses are: ${validStatuses.join(", ")}`,
+          message: `Invalid status provided. Valid statuses are: ${validStatuses.join(
+            ", "
+          )}`,
         });
       }
       filter.status = status;
@@ -605,7 +632,6 @@ export const getTicketsWithDetails = async (req, res) => {
   }
 };
 
-
 export const getTicketById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -622,11 +648,17 @@ export const getTicketById = async (req, res) => {
       return res.status(404).json({ message: "Ticket not found" });
     }
 
-
-// Fix the file URL only if attachments exist
-if (ticket.attachments && ticket.attachments.file_url) {
-  ticket.attachments.file_url = `${req.protocol}://${req.get("host")}/uploads/${path.basename(ticket.attachments.file_url)}`;
-}
+    // Fix the file URL only if attachments exist
+    // if (ticket.attachments && ticket.attachments.file_url) {
+    //   ticket.attachments.file_url = `${req.protocol}://${req.get(
+    //     "host"
+    //   )}/uploads/${path.basename(ticket.attachments.file_url)}`;
+    // }
+    if (ticket.attachments && ticket.attachments.file_url) {
+      ticket.attachments.file_url = `${path.basename(
+        ticket.attachments.file_url
+      )}`;
+    }
 
     // Return the ticket details
     res.status(200).json({
@@ -642,9 +674,26 @@ if (ticket.attachments && ticket.attachments.file_url) {
   }
 };
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
+export const getFile = async (req, res) => {
+  try {
+    const { fileName } = req.params; // Use filename from URL
+    console.log("asd", fileName);
+    const filePath = path.join(__dirname, "../../uploads", fileName);
 
-
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: "File not found" });
+    }
+    res.setHeader("Content-Disposition", `inline; filename="${fileName}"`);
+    res.setHeader("Content-Type", "application/pdf");
+    res.sendFile(filePath);
+  } catch (error) {
+    console.error("Error retrieving file:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
 
 export const deleteTicket = async (req, res) => {
   try {
@@ -662,9 +711,6 @@ export const deleteTicket = async (req, res) => {
       .json({ message: "Error deleting ticket", error: error.message });
   }
 };
-
-
-
 
 // export const updateTicket = async (req, res) => {
 //   try {
@@ -709,7 +755,7 @@ export const deleteTicket = async (req, res) => {
 //           message: "Testing team can only change status to 'Open', 'Closed', or 'Reopen'",
 //         });
 //       }
-      
+
 //       updates.status = status; // Admin can update to any status
 //     }
 
@@ -740,28 +786,44 @@ export const deleteTicket = async (req, res) => {
 //   }
 // };
 
-
-
 export const updateTicket = async (req, res) => {
   try {
-    const { _id, title, description, tasks, project, assigned_to, priority, status, severity, main_category, sub_category } = req.body;
+    const {
+      _id,
+      title,
+      description,
+      tasks,
+      project,
+      assigned_to,
+      priority,
+      status,
+      severity,
+      main_category,
+      sub_category,
+    } = req.body;
 
     console.log("Request Body:", req.body);
 
     // Validate ID format
     if (!mongoose.Types.ObjectId.isValid(_id)) {
-      return res.status(400).json({ status: false, message: "Invalid Ticket ID" });
+      return res
+        .status(400)
+        .json({ status: false, message: "Invalid Ticket ID" });
     }
 
     // Find the existing ticket
     const ticket = await Ticket.findById(_id);
     if (!ticket) {
-      return res.status(404).json({ status: false, message: "Ticket not found" });
+      return res
+        .status(404)
+        .json({ status: false, message: "Ticket not found" });
     }
 
     // Authorization check (Only Admin or Testing team)
     if (!(req.user.role === "admin" || req.user.department === "testing")) {
-      return res.status(403).json({ status: false, message: "No Authorization to update ticket" });
+      return res
+        .status(403)
+        .json({ status: false, message: "No Authorization to update ticket" });
     }
 
     const updates = {};
@@ -779,10 +841,14 @@ export const updateTicket = async (req, res) => {
     if (status) {
       const allowedStatusesForTesting = ["Open", "Closed", "Reopen"];
 
-      if (req.user.department === "testing" && !allowedStatusesForTesting.includes(status)) {
+      if (
+        req.user.department === "testing" &&
+        !allowedStatusesForTesting.includes(status)
+      ) {
         return res.status(403).json({
           status: false,
-          message: "Testing team can only change status to 'Open', 'Closed', or 'Reopen'",
+          message:
+            "Testing team can only change status to 'Open', 'Closed', or 'Reopen'",
         });
       }
 
@@ -790,7 +856,8 @@ export const updateTicket = async (req, res) => {
     }
 
     // Handle file attachment (Single document)
-    if (req.file) {  // Corrected from req.files to req.file
+    if (req.file) {
+      // Corrected from req.files to req.file
       updates.attachments = {
         file_name: req.file.originalname,
         file_url: `/uploads/${req.file.filename}`, // Correct filename reference
@@ -802,7 +869,9 @@ export const updateTicket = async (req, res) => {
     updates.updated_at = new Date();
 
     // Update the ticket
-    const updatedTicket = await Ticket.findByIdAndUpdate(_id, updates, { new: true });
+    const updatedTicket = await Ticket.findByIdAndUpdate(_id, updates, {
+      new: true,
+    });
 
     return res.status(200).json({
       status: true,
@@ -811,9 +880,10 @@ export const updateTicket = async (req, res) => {
     });
   } catch (error) {
     console.error("Error updating ticket:", error);
-    res.status(500).json({ status: false, message: "Error updating ticket", error: error.message });
+    res.status(500).json({
+      status: false,
+      message: "Error updating ticket",
+      error: error.message,
+    });
   }
 };
-
-
-

@@ -1,9 +1,13 @@
 import ProjectModel from "../Model/Project_schema.js";
 import { TaskModel } from "../Model/Task_scheme.js";
 import MilestoneModel from "../Model/Milestone_schema.js";
+import { fileURLToPath } from "url";
+import fs from "fs";
+import path from "path";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 // Create a new project
-
 
 // export const createProject = async (req, res) => {
 //   const {
@@ -68,7 +72,6 @@ import MilestoneModel from "../Model/Milestone_schema.js";
 //     });
 //   }
 
-
 //       project_name,
 //       project_description,
 //       project_ownership,
@@ -83,7 +86,6 @@ import MilestoneModel from "../Model/Milestone_schema.js";
 //         name: milestoneName,
 //         project: project._id,
 //       }));
-
 
 //       // Update project with milestone references
 //       project.milestones = createdMilestones.map((milestone) => milestone._id);
@@ -181,7 +183,6 @@ import MilestoneModel from "../Model/Milestone_schema.js";
 //   }
 // };
 
-
 export const createProject = async (req, res) => {
   try {
     const {
@@ -220,10 +221,24 @@ export const createProject = async (req, res) => {
 
     // Handle file attachment
     let attachment = null;
+    const timestamp = Date.now();
+        const originalFileName = req.file.originalname;
+        const newFileName = `${timestamp}-${originalFileName}`;
+        const uploadDir = path.join(__dirname, "../../uploads");
+    
+        // ✅ Ensure the upload directory exists
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true });
+        }
+    
+        const newFilePath = path.join(uploadDir, newFileName);
+    
+        fs.renameSync(req.file.path, newFilePath);
+    
     if (req.file) {
       attachment = {
-        file_name: req.file.filename,
-        file_url: `/uploads/${req.file.filename}`,
+        file_name: req.file.originalname,
+        file_url: `${newFileName}`,
         uploaded_at: new Date(),
       };
     }
@@ -249,7 +264,9 @@ export const createProject = async (req, res) => {
         project: project._id,
       }));
 
-      const createdMilestones = await MilestoneModel.insertMany(milestoneDocuments);
+      const createdMilestones = await MilestoneModel.insertMany(
+        milestoneDocuments
+      );
 
       project.milestones = createdMilestones.map((m) => m._id);
       await project.save();
@@ -268,9 +285,6 @@ export const createProject = async (req, res) => {
     });
   }
 };
-
-
-
 
 export const calculateProjectProgress = async (req, res) => {
   const { projectId } = req.body;
@@ -484,7 +498,6 @@ export const getAllProjectsPagination = async (req, res) => {
   }
 };
 
-
 export const getProjectById = async (req, res) => {
   const { id } = req.params;
   console.log(req.params);
@@ -561,7 +574,7 @@ export const updateProject = async (req, res) => {
     // Handle milestones update (update existing & create new)
     if (milestones) {
       let milestoneList = milestones;
-      
+
       if (typeof milestones === "string") {
         try {
           milestoneList = JSON.parse(milestones);
@@ -588,7 +601,7 @@ export const updateProject = async (req, res) => {
           // If milestone ID exists, update it
           await MilestoneModel.findByIdAndUpdate(milestone._id, {
             name: milestone.name,
-            status: milestone.status
+            status: milestone.status,
           });
           updatedMilestones.push(milestone._id);
         } else {
@@ -599,7 +612,9 @@ export const updateProject = async (req, res) => {
 
       // Insert new milestones and get their IDs
       if (newMilestones.length > 0) {
-        const createdMilestones = await MilestoneModel.insertMany(newMilestones);
+        const createdMilestones = await MilestoneModel.insertMany(
+          newMilestones
+        );
         updatedMilestones.push(...createdMilestones.map((m) => m._id));
       }
 
@@ -611,7 +626,9 @@ export const updateProject = async (req, res) => {
     Object.assign(project, updateData);
     await project.save();
 
-    const updatedProject = await ProjectModel.findById(_id).populate("milestones");
+    const updatedProject = await ProjectModel.findById(_id).populate(
+      "milestones"
+    );
 
     res.status(200).json({
       success: true,
@@ -624,9 +641,23 @@ export const updateProject = async (req, res) => {
   }
 };
 
+export const getFile = async (req, res) => {
+  try {
+    const { fileName } = req.params; // Use filename from URL
+    console.log("asd", fileName);
+    const filePath = path.join(__dirname, "../../uploads", fileName);
 
-
-
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: "File not found" });
+    }
+    res.setHeader("Content-Disposition", `inline; filename="${fileName}"`);
+    res.setHeader("Content-Type", "application/pdf");
+    res.sendFile(filePath);
+  } catch (error) {
+    console.error("Error retrieving file:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
 
 // export const updateProject = async (req, res) => {
 //   const { _id, milestones, startDate, endDate, ...updateData } = req.body;
@@ -704,7 +735,6 @@ export const deleteProject = async (req, res) => {
     });
   }
 };
-
 
 export const getTaskRelatedToProject = async (req, res) => {
   const { projectId } = req.body;

@@ -29,7 +29,8 @@ const __dirname = path.dirname(__filename);
 
 
 // Serving 'uploads' from correct location (move up two levels)
-app.use("/uploads", express.static(path.join(__dirname, "../../uploads")));
+// app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+app.use("/uploads", express.static("uploads"));
 
 
 
