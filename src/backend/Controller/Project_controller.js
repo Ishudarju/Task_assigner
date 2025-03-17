@@ -1,6 +1,7 @@
 import ProjectModel from "../Model/Project_schema.js";
 import { TaskModel } from "../Model/Task_scheme.js";
 import MilestoneModel from "../Model/Milestone_schema.js";
+import { fetchProjectDetails } from "../Helper function/projectHelper.js";
 
 // Create a new project
 
@@ -211,6 +212,8 @@ export const createProject = async (req, res) => {
       }
     }
 
+   
+
     if (milestoneList && !Array.isArray(milestoneList)) {
       return res.status(400).json({
         status: false,
@@ -226,6 +229,9 @@ export const createProject = async (req, res) => {
         file_url: `/uploads/${req.file.filename}`,
         uploaded_at: new Date(),
       };
+
+      console.log("Saved file:", req.file);
+
     }
 
     // Create a new project
@@ -254,6 +260,25 @@ export const createProject = async (req, res) => {
       project.milestones = createdMilestones.map((m) => m._id);
       await project.save();
     }
+
+
+//     // If milestones exist, create them
+// if (milestoneList && milestoneList.length > 0) {
+//   const milestoneDocuments = milestoneList.map((name) => ({
+//     name,
+//     project: project._id,
+//     status: "Not Started", // Explicitly setting default status
+//     developer_status: "In Progress", // Ensure correct developer status
+//     tester_status: "In Progress", // Ensure correct tester status
+//   }));
+
+//   const createdMilestones = await MilestoneModel.insertMany(milestoneDocuments);
+
+//   project.milestones = createdMilestones.map((m) => m._id);
+//   await project.save();
+// }
+    
+    
 
     return res.status(201).json({
       status: true,
@@ -310,7 +335,7 @@ export const calculateProjectProgress = async (req, res) => {
   }
 };
 
-import { fetchProjectDetails } from "../Helper function/projectHelper.js";
+
 
 // import { fetchProjectDetails } from "../Helper function/projectHelper.js";
 export const getAllProject = async (req, res) => {
@@ -378,6 +403,8 @@ export const getAllProject = async (req, res) => {
   }
 };
 
+//already correctly worked the code i will change the date 17/03
+
 export const getAllProjectsPagination = async (req, res) => {
   try {
     const { page = 1, limit = 10, status, search = "" } = req.query;
@@ -428,7 +455,7 @@ export const getAllProjectsPagination = async (req, res) => {
     const [projects, totalProjects, allProjects] = await Promise.all([
       ProjectModel.find(filter)
         .populate("project_ownership", "name mail")
-        .populate("milestones", "name status")
+        .populate("milestones", "name status developer_status")
         .sort({ createdAt: -1 })
         .skip((pageNumber - 1) * limitNumber)
         .limit(limitNumber)
@@ -436,6 +463,13 @@ export const getAllProjectsPagination = async (req, res) => {
       ProjectModel.countDocuments(filter),
       ProjectModel.find({ is_deleted: false }).lean(),
     ]);
+
+    // const milestones = await MilestoneModel.find({}, "name status developer_status");
+    // console.log(milestones);
+
+ 
+    
+
 
     // Calculate status summary
     const statusSummary = validStatuses.reduce((summary, status) => {
@@ -485,6 +519,8 @@ export const getAllProjectsPagination = async (req, res) => {
 };
 
 
+
+
 export const getProjectById = async (req, res) => {
   const { id } = req.params;
   console.log(req.params);
@@ -502,7 +538,7 @@ export const getProjectById = async (req, res) => {
     console.log(id);
     const project = await ProjectModel.findById(id)
       .populate("project_ownership", "name mail")
-      .populate("milestones", "name status");
+      .populate("milestones", "name status developer_status");
 
     if (!project || project.is_deleted) {
       return res.status(404).json({

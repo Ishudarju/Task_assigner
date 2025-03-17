@@ -226,7 +226,6 @@ export const createTicket = async (req, res) => {
     // }
 
 
-
     // Build the attachments object from the uploaded file (if any)
     let attachments = {};
     if (req.file) {
@@ -236,6 +235,8 @@ export const createTicket = async (req, res) => {
          uploaded_at: Date.now(),
       };
     }
+
+    console.log("Attachments:", attachments);
 
 
     // Create a new ticket instance
@@ -254,6 +255,7 @@ export const createTicket = async (req, res) => {
       attachments, // Single attachment document (not an array)
     });
 
+    console.log("New Ticket:", newTicket);
     // Save the ticket to the database
     await newTicket.save();
 
@@ -556,19 +558,34 @@ export const getTicketsWithDetails = async (req, res) => {
     const limitNumber = Math.min(100, Math.max(1, parseInt(limit, 10)));
 
     // Fetch tickets and count asynchronously
-    const [tickets, totalTickets, allTickets] = await Promise.all([
-      Ticket.find(filter)
-        .populate("project", "name description")
-        .populate("assigned_to", "name mail")
-        .populate("raised_by", "name email")
-        .populate("tasks", "task_title")
-        .sort({ createdAt: -1 })
-        .skip((pageNumber - 1) * limitNumber)
-        .limit(limitNumber)
-        .lean(),
-      Ticket.countDocuments(filter),
-      Ticket.find().lean(),
-    ]);
+    // const [tickets, totalTickets, allTickets] = await Promise.all([
+    //   Ticket.find(filter)
+    //     .populate("project", "name description")
+    //     .populate("assigned_to", "name mail")
+    //     .populate("raised_by", "name email")
+    //     .populate("tasks", "task_title")
+    //     .sort({ createdAt: -1 })
+    //     .skip((pageNumber - 1) * limitNumber)
+    //     .limit(limitNumber)
+    //     .lean(),
+    //   Ticket.countDocuments(filter),
+    //   Ticket.find().lean(),
+    // ]);
+
+    // Fetch tickets and count asynchronously
+const [tickets, totalTickets, userTickets] = await Promise.all([
+  Ticket.find(filter)
+    .populate("project", "name description")
+    .populate("assigned_to", "name mail")
+    .populate("raised_by", "name email")
+    .populate("tasks", "task_title")
+    .sort({ createdAt: -1 })
+    .skip((pageNumber - 1) * limitNumber)
+    .limit(limitNumber)
+    .lean(),
+  Ticket.countDocuments(filter),
+  Ticket.find({ $or: [{ assigned_to: userId }, { raised_by: userId }] }).lean(), // Fetch only the logged-in user's tickets
+]);
 
     // Calculate status summary
     const statusSummary = validStatuses.reduce((summary, status) => {
@@ -576,7 +593,7 @@ export const getTicketsWithDetails = async (req, res) => {
       return summary;
     }, {});
 
-    allTickets.forEach((ticket) => {
+    userTickets.forEach((ticket) => {
       if (statusSummary[ticket.status] !== undefined) {
         statusSummary[ticket.status]++;
       }

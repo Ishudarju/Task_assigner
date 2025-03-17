@@ -1,6 +1,7 @@
 import { TaskModel } from "../Model/Task_scheme.js";
 import { UserModel } from "../Model/User_scheme.js";
 import ProjectModel from "../Model/Project_schema.js";
+import MilestoneModel from "../Model/Milestone_schema.js"
 
 
 export const createTask = async (req, res) => {
@@ -16,7 +17,7 @@ export const createTask = async (req, res) => {
     task_description,
     task_title,
     milestone,
-    move_to_uav = false, // New field with default value
+    move_to_uat = false, // New field with default value
     tester_approval = null, // New field with default value
   } = req.body;
 
@@ -58,7 +59,7 @@ export const createTask = async (req, res) => {
       task_description,
       task_title,
       milestone, // Including the milestone reference
-      move_to_uav, // Include the new field
+      move_to_uat, // Include the new field
       testerApproval: tester_approval, // Include the new field with standardized naming
     });
 
@@ -81,6 +82,34 @@ export const createTask = async (req, res) => {
     });
   }
 };
+
+
+// ✅ Update task status & check if milestone should be updated
+export const updateTaskStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    const task = await TaskModel.findById(req.params.id);
+    if (!task) return res.status(404).json({ message: "Task not found" });
+
+    // Update task status
+    task.status = status;
+    await task.save();
+
+    // ✅ Automatically update milestone status
+    const milestone = await MilestoneModel.findById(task.milestone).populate("tasks");
+    if (!milestone) return res.status(404).json({ message: "Milestone not found" });
+
+    // Check if all tasks are completed
+    const allTasksCompleted = milestone.tasks.every(task => task.status === "Completed");
+    milestone.developer_status = allTasksCompleted ? "Completed" : "In Progress";
+    await milestone.save();
+
+    res.json({ message: "Task updated & milestone status checked", task });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
 
 
 
@@ -271,133 +300,8 @@ export const editTaskStatus = async (req, res) => {
 };
 
 
-// export const getAllTask = async (req, res) => {
-//   try {
-//     const { page = 1, limit = 10, status, search = "" } = req.query;
 
-//     const pageNumber = parseInt(page, 10);
-//     const limitNumber = parseInt(limit, 10);
-
-//     const userId = req.user.id; // ID of the logged-in user
-//     const userRole = req.user.role; // Role of the logged-in user (e.g., Manager, Team Lead, Member)
-
-//     // Define the filter based on the role
-//     let filter = { is_deleted: false };
-
-//     if (userRole === "manager") {
-//       // Manager: Tasks they assigned or in projects they own
-//       const managerProjects = await ProjectModel.find({
-//         project_ownership: userId,
-//       }).select("_id");
-//       filter.$or = [
-//         { report_to: userId },
-//         { project: { $in: managerProjects } },
-//       ];
-//     } else if (userRole === "team lead") {
-//       // Team Lead: Tasks assigned to them or assigned by them
-//       filter.$or = [{ assigned_to: userId }, { assigned_by: userId }];
-//     } else if (userRole === "member") {
-//       // Team Member: Tasks directly assigned to them
-//       filter.assigned_to = userId;
-//     }
-//     // Default: No additional filtering for admin
-//     const validStatuses = [
-//       "Completed",
-//       "In progress",
-//       "Not started",
-//       "Pending",
-//       "Cancelled",
-//     ];
-
-//     if (status) {
-//       if (!validStatuses.includes(status)) {
-//         return res.status(400).json({
-//           status: false,
-//           message: `Invalid status provided. Valid statuses are: ${validStatuses.join(
-//             ", "
-//           )}`,
-//         });
-//       }
-//       filter.status = status;
-//     }
-
-//     if (search.trim()) {
-//       const searchRegex = new RegExp(search.trim(), "i");
-//       filter.$or = [
-//         { task_title: { $regex: searchRegex } },
-//         { task_description: { $regex: searchRegex } },
-//       ];
-//     }
-//     // Fetch tasks with pagination and populate references
-//     const tasks = await TaskModel.find(filter)
-//       .sort({ _id: -1 })
-//       .skip((pageNumber - 1) * limitNumber)
-//       .limit(limitNumber)
-//       .populate({
-//         path: "assigned_to",
-//         select: "name mail",
-//       })
-//       .populate({
-//         path: "assigned_by",
-//         select: "name mail",
-//       })
-//       .populate({
-//         path: "report_to",
-//         select: "name mail",
-//       })
-//       .populate({
-//         path: "milestone",
-//         select: "name status",
-//       })
-//       .populate({
-//         path: "project",
-//         select: "project_name",
-//       });
-
-//     // Count total tasks grouped by status
-//     const taskStatusCounts = await TaskModel.aggregate([
-//       { $match: filter },
-//       {
-//         $group: {
-//           _id: "$status", // Group by status
-//           count: { $sum: 1 }, // Count the tasks in each group
-//         },
-//       },
-//     ]);
-
-//     // Transform the status counts into a key-value object
-//     const statusSummary = {};
-//     taskStatusCounts.forEach((status) => {
-//       statusSummary[status._id] = status.count;
-//     });
-
-//     // Count total tasks for pagination
-//     const totalTasks = await TaskModel.countDocuments(filter);
-
-//     return res.status(200).json({
-//       status: true,
-//       message: "Tasks fetched successfully",
-//       data: {
-//         total: totalTasks,
-//         statusSummary, // Include the total count of tasks grouped by status
-//         tasks,
-//         pagination: {
-//           currentPage: pageNumber,
-//           totalPages: Math.ceil(totalTasks / limitNumber),
-//         },
-//       },
-//     });
-//   } catch (error) {
-//     console.error(`[getAllTask]: Error fetching tasks - ${error.message}`);
-//     return res.status(500).json({
-//       status: false,
-//       message: "An error occurred while fetching tasks",
-//     });
-//   }
-// };
-
-
-
+//correctly worked code
 export const getAllTask = async (req, res) => {
   try {
     const { page = 1, limit = 10, status, search = "" } = req.query;
@@ -457,6 +361,8 @@ export const getAllTask = async (req, res) => {
       });
     }
 
+       
+
     // Handle valid statuses
     const validStatuses = [
       "Completed",
@@ -465,6 +371,8 @@ export const getAllTask = async (req, res) => {
       "Pending",
       "Cancelled",
     ];
+
+    
 
     if (status) {
       if (!validStatuses.includes(status)) {
@@ -523,13 +431,21 @@ export const getAllTask = async (req, res) => {
       },
     ]);
 
-    // Transform the status counts into a key-value object
-    const statusSummary = {};
-    taskStatusCounts.forEach((status) => {
-      statusSummary[status._id] = status.count;
-    });
+    
 
-    // Count total tasks for pagination
+    // Transform the status counts into a key-value object
+    // const statusSummary = {};
+    // taskStatusCounts.forEach((status) => {
+    //   statusSummary[status._id] = status.count;
+    // });
+
+    // Compute status summary
+const statusSummary = tasks.reduce((acc, task) => {
+  acc[task.status] = (acc[task.status] || 0) + 1;
+  return acc;
+}, {});
+
+      // Count total tasks for pagination
     const totalTasks = await TaskModel.countDocuments(filter);
 
     return res.status(200).json({
@@ -555,10 +471,95 @@ export const getAllTask = async (req, res) => {
 };
 
 
+// export const getAllTask = async (req, res) => {
+//   try {
+//     const { page = 1, limit = 10, status, search = "" } = req.query;
 
+//     const pageNumber = parseInt(page, 10);
+//     const limitNumber = parseInt(limit, 10);
 
+//     const userId = req.user.id;
+//     const userRole = req.user.role;
+//     const userDepartment = req.user.department;
 
+//     let filter = { is_deleted: false };
 
+//     if (userRole === "tester") {
+//       // Fetch tasks only related to milestones assigned to the tester
+//       const testerMilestones = await MilestoneModel.find({
+//         assigned_to: userId,
+//       }).select("_id");
+
+//       filter.milestone = { $in: testerMilestones };
+//     } else if (userRole === "manager") {
+//       const managerProjects = await ProjectModel.find({
+//         project_ownership: userId,
+//       }).select("_id");
+
+//       filter.$or = [{ report_to: userId }, { project: { $in: managerProjects } }];
+//     } else if (userRole === "team lead") {
+//       filter.$or = [{ assigned_to: userId }, { assigned_by: userId }];
+//     } else if (userRole === "member") {
+//       filter.assigned_to = userId;
+//     }
+
+//     if (status) {
+//       const validStatuses = ["Completed", "In progress", "Not started", "Pending", "Cancelled"];
+//       if (!validStatuses.includes(status)) {
+//         return res.status(400).json({
+//           status: false,
+//           message: `Invalid status provided. Valid statuses are: ${validStatuses.join(", ")}`,
+//         });
+//       }
+//       filter.status = status;
+//     }
+
+//     if (search.trim()) {
+//       const searchRegex = new RegExp(search.trim(), "i");
+//       filter.$or = [
+//         { task_title: { $regex: searchRegex } },
+//         { task_description: { $regex: searchRegex } },
+//       ];
+//     }
+
+//     const tasks = await TaskModel.find(filter)
+//       .sort({ _id: -1 })
+//       .skip((pageNumber - 1) * limitNumber)
+//       .limit(limitNumber)
+//       .populate("assigned_to", "name email")
+//       .populate("assigned_by", "name email")
+//       .populate("report_to", "name email")
+//       .populate("milestone", "name status")
+//       .populate("project", "project_name");
+
+//     const statusSummary = tasks.reduce((acc, task) => {
+//       acc[task.status] = (acc[task.status] || 0) + 1;
+//       return acc;
+//     }, {});
+
+//     const totalTasks = await TaskModel.countDocuments(filter);
+
+//     return res.status(200).json({
+//       status: true,
+//       message: "Tasks fetched successfully",
+//       data: {
+//         total: totalTasks,
+//         statusSummary,
+//         tasks,
+//         pagination: {
+//           currentPage: pageNumber,
+//           totalPages: Math.ceil(totalTasks / limitNumber),
+//         },
+//       },
+//     });
+//   } catch (error) {
+//     console.error(`[getAllTask]: Error fetching tasks - ${error.message}`);
+//     return res.status(500).json({
+//       status: false,
+//       message: "An error occurred while fetching tasks",
+//     });
+//   }
+// };
 
 
 export const getTask = async (req, res) => {
