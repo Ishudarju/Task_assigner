@@ -58,32 +58,32 @@ export const deleteMilestone = async (req, res) => {
 
 
 // Function to check and update milestone developer_status
-const updateMilestoneStatus = async () => {
-  try {
-    const milestones = await MilestoneModel.find({ is_deleted: false });
+// const updateMilestoneStatus = async () => {
+//   try {
+//     const milestones = await MilestoneModel.find({ is_deleted: false });
 
-    for (const milestone of milestones) {
-      const tasks = await TaskModel.find({ milestone: milestone._id, is_deleted: false });
-      const allTasksCompleted = tasks.every(task => task.status === "Completed");
+//     for (const milestone of milestones) {
+//       const tasks = await TaskModel.find({ milestone: milestone._id, is_deleted: false });
+//       const allTasksCompleted = tasks.every(task => task.status === "Completed");
 
-      if (allTasksCompleted) {
-        await MilestoneModel.findByIdAndUpdate(milestone._id, { developer_status: "Completed" });
-      } else {
-        await MilestoneModel.findByIdAndUpdate(milestone._id, { developer_status: "In Progress" });
-      }
-    }
-  } catch (error) {
-    console.error("Error updating milestone developer status:", error);
-  }
-};
+//       if (allTasksCompleted) {
+//         await MilestoneModel.findByIdAndUpdate(milestone._id, { developer_status: "Completed" });
+//       } else {
+//         await MilestoneModel.findByIdAndUpdate(milestone._id, { developer_status: "In Progress" });
+//       }
+//     }
+//   } catch (error) {
+//     console.error("Error updating milestone developer status:", error);
+//   }
+// };
 
 
-// Schedule the cron job to run every minute
-cron.schedule("* * * * *", updateMilestoneStatus);
+// // Schedule the cron job to run every minute
+// cron.schedule("* * * * *", updateMilestoneStatus);
 
-export { updateMilestoneStatus };
+// export { updateMilestoneStatus };
 
-updateMilestoneStatus().then(() => console.log("Milestone status updated!"));
+// updateMilestoneStatus().then(() => console.log("Milestone status updated!"));
 
 //developer side
 
@@ -137,11 +137,44 @@ export const getMilestones_project_WithTasks_status = async (req, res) => {
 
 
 
+// export const checkAndUpdateMilestoneStatus = async () => {
+//   try {
+//     console.log("⏳ Checking milestone statuses...");
+
+//     const milestones = await MilestoneModel.find({}).lean(); // ✅ Read optimization
+
+//     for (const milestone of milestones) {
+//       const tasks = await TaskModel.find({
+//         milestone: milestone._id,
+//         role: { $in: ["Member", "Admin"] },
+//       }).lean();
+
+//       const allTasksCompleted = tasks.length > 0 && tasks.every(task => task.status === "Completed");
+//       const newStatus = allTasksCompleted ? "Completed" : "In Progress";
+
+//       // ✅ Only update if there's a change
+//       if (milestone.developer_status !== newStatus) {
+//         await MilestoneModel.findByIdAndUpdate(
+//           milestone._id,
+//           { developer_status: newStatus, updatedAt: new Date() }, // ✅ Ensure timestamps update
+//           { new: true }
+//         );
+//         console.log(`✅ Milestone "${milestone.name}" updated to "${newStatus}"`);
+//       }
+//     }
+//     console.log("✅ All milestone statuses updated successfully.");
+//   } catch (error) {
+//     console.error("❌ Error updating milestone status:", error);
+//   }
+// };
+
+
+
 export const checkAndUpdateMilestoneStatus = async () => {
   try {
     console.log("⏳ Checking milestone statuses...");
 
-    const milestones = await MilestoneModel.find({}).lean(); // ✅ Read optimization
+    const milestones = await MilestoneModel.find({ is_deleted: false }).lean();
 
     for (const milestone of milestones) {
       const tasks = await TaskModel.find({
@@ -152,21 +185,17 @@ export const checkAndUpdateMilestoneStatus = async () => {
       const allTasksCompleted = tasks.length > 0 && tasks.every(task => task.status === "Completed");
       const newStatus = allTasksCompleted ? "Completed" : "In Progress";
 
-      // ✅ Only update if there's a change
       if (milestone.developer_status !== newStatus) {
         await MilestoneModel.findByIdAndUpdate(
           milestone._id,
-          { developer_status: newStatus, updatedAt: new Date() }, // ✅ Ensure timestamps update
+          { developer_status: newStatus, updatedAt: new Date() },
           { new: true }
         );
         console.log(`✅ Milestone "${milestone.name}" updated to "${newStatus}"`);
       }
     }
-    console.log("✅ All milestone statuses updated successfully.");
+    console.log("✅ Milestone status check complete.");
   } catch (error) {
     console.error("❌ Error updating milestone status:", error);
   }
 };
-
-
-
