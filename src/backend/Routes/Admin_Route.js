@@ -35,6 +35,9 @@ adminRoute.post("/create", Admin.authMiddleware, User.createUser);
 
 adminRoute.put("/update", Admin.authMiddleware, User.updateUser);
 
+//milestone routes
+
+
 
 
 adminRoute.post("/verify/:userId", Admin.authMiddleware,Admin.verifyUserByAdmin);
@@ -61,19 +64,43 @@ adminRoute.post("/getTicketById", Ticket.getTicketById);
 //   Ticket.getTicketByCategory
 // );
 
-const projectstorage = multer.diskStorage({
+// const projectstorage = multer.diskStorage({
+//   destination: (req, file, cb) => {
+//     cb(null, 'uploads/');
+//   },
+//   filename: (req, file, cb) => {
+//     const fileExtension = path.extname(file.originalname);
+//     cb(null, Date.now() + '-' + file.originalname + fileExtension);
+//   }
+  
+// });
+
+// const project_upload = multer({
+//   storage: projectstorage,
+//   limits: { fileSize: 10 * 1024 * 1024 },
+// }).single('attachment');
+
+const projectstorage = multer.diskStorage({ 
   destination: (req, file, cb) => {
-    cb(null, 'uploads/');
+    cb(null, 'uploads/');  // Ensure 'uploads/' exists
   },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + '-' + file.originalname);
-  },
+    const fileExtension = path.extname(file.originalname);  
+    const baseName = path.basename(file.originalname, fileExtension);  // Remove extra extension
+
+    // Ensure only one extension in filename
+    const filename = `${Date.now()}-${baseName}${fileExtension}`;
+
+    console.log("Saved file as:", filename);
+    cb(null, filename);
+  }
 });
 
 const project_upload = multer({
   storage: projectstorage,
-  limits: { fileSize: 10 * 1024 * 1024 },
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB file size limit
 }).single('attachment');
+
 
 adminRoute.post('/createproject', Admin.authMiddleware, project_upload, Project.createProject);
 adminRoute.put('/updateProject', Admin.authMiddleware, project_upload, Project.updateProject);
@@ -195,6 +222,7 @@ adminRoute.get("/getAllfiles", Admin.authMiddleware,document.getAllFiles);
 adminRoute.get("/file/:id", Admin.authMiddleware,document.getAllFiles);
 
 adminRoute.delete('/deletefiles', Admin.authMiddleware,document.deleteFile);
+
 
 
 

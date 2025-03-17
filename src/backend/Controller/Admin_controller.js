@@ -54,7 +54,7 @@ export const admin_check = async (req, res) => {
         message: "User not found",
       });
     }
-    console.log(user);
+    // console.log(user);
     // Compare hashed password with the one stored in the database
     const isMatch = await bcrypt.compare(password, user.password);
     console.log(isMatch);
@@ -142,7 +142,7 @@ export const authMiddleware = (req, res, next) => {
       }
     }
     req.user = decoded;
-    console.log(req.user);
+    // console.log(req.user);
     next();
   });
 };
@@ -172,7 +172,7 @@ export const getAllUserEmpMail = async (req, res) => {
 
 export const login_check = (req, res) => {
   const { mail, password } = req.body;
-  console.log(req.body);
+  // console.log(req.body);
   UserModel.findOne({ mail: mail?.toLowerCase() })
     // .select( -password )
 
