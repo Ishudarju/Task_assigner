@@ -36,7 +36,7 @@ adminRoute.post("/create", Admin.authMiddleware, User.createUser);
 adminRoute.put("/update", Admin.authMiddleware, User.updateUser);
 
 //milestone routes
-
+adminRoute.get("/get_project_milestone/:projectId", Admin.authMiddleware, Milestone.getMilestones_project_WithTasks_status);
 
 
 

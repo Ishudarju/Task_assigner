@@ -48,92 +48,55 @@ export const deleteMilestone = async (req, res) => {
 };
 
 
-//changes
-
-
-
-
-
-
-
-
-// Function to check and update milestone developer_status
-// const updateMilestoneStatus = async () => {
-//   try {
-//     const milestones = await MilestoneModel.find({ is_deleted: false });
-
-//     for (const milestone of milestones) {
-//       const tasks = await TaskModel.find({ milestone: milestone._id, is_deleted: false });
-//       const allTasksCompleted = tasks.every(task => task.status === "Completed");
-
-//       if (allTasksCompleted) {
-//         await MilestoneModel.findByIdAndUpdate(milestone._id, { developer_status: "Completed" });
-//       } else {
-//         await MilestoneModel.findByIdAndUpdate(milestone._id, { developer_status: "In Progress" });
-//       }
-//     }
-//   } catch (error) {
-//     console.error("Error updating milestone developer status:", error);
-//   }
-// };
-
-
-// // Schedule the cron job to run every minute
-// cron.schedule("* * * * *", updateMilestoneStatus);
-
-// export { updateMilestoneStatus };
-
-// updateMilestoneStatus().then(() => console.log("Milestone status updated!"));
-
-//developer side
-
-
 
 export const getMilestones_project_WithTasks_status = async (req, res) => {
   try {
-    const { projectId } = req.params;
+      const { projectId } = req.params;
+      console.log("Received projectId:", projectId);
 
-    // Fetch all milestones related to the project
-    const milestones = await MilestoneModel.find({ project: projectId, is_deleted: false });
+      // Ensure milestone status updates before fetching
+      await checkAndUpdateMilestoneStatus();
 
-    // Fetch tasks related to each milestone
-    const milestonesWithTasks = await Promise.all(
-      milestones.map(async (milestone) => {
-        // Get tasks linked to this milestone
-        const tasks = await TaskModel.find({ milestone: milestone._id });
+      // Fetch all milestones related to the project
+      const milestones = await MilestoneModel.find({ project: projectId, is_deleted: false });
 
-        // Check if all tasks are completed
-        const allTasksCompleted = tasks.length > 0 && tasks.every(task => task.status === "Completed");
+      if (milestones.length === 0) {
+          return res.status(200).json({ success: true, developer_status: "Completed", milestones: [] });
+      }
 
-        // Add task details to the milestone response
-        return {
-          ...milestone.toObject(),
-          tasks: tasks.map(task => ({
-            _id: task._id,
-            name: task.name,
-            status: task.status,
-            role: task.role,
-          })),
-          allTasksCompleted: allTasksCompleted ? "Yes" : "No"
-        };
-      })
-    );
+      // Fetch tasks related to each milestone
+      const milestonesWithTasks = await Promise.all(
+          milestones.map(async (milestone) => {
+              const tasks = await TaskModel.find({ milestone: milestone._id });
 
-    // Determine the overall developer status for the project
-    const overallDeveloperStatus = milestonesWithTasks.every(milestone => milestone.developer_status === "Completed") 
-      ? "Completed" 
-      : "In Progress";
+              return {
+                  ...milestone.toObject(),
+                  tasks: tasks.map(task => ({
+                      _id: task._id,
+                      name: task.name,
+                      status: task.status,
+                      role: task.role,
+                  })),
+                  allTasksCompleted: tasks.length > 0 && tasks.every(task => task.status === "Completed") ? "Yes" : "No"
+              };
+          })
+      );
 
-    res.status(200).json({
-      success: true,
-      developer_status: overallDeveloperStatus,
-      milestones: milestonesWithTasks,
-    });
+      res.status(200).json({
+          success: true,
+          developer_status: milestonesWithTasks.every(milestone => milestone.allTasksCompleted === "Yes") 
+              ? "Completed" 
+              : "In Progress",
+          milestones: milestonesWithTasks,
+      });
+
   } catch (error) {
-    console.error("Error fetching milestones:", error);
-    res.status(500).json({ success: false, message: "Server error" });
+      console.error("Error fetching milestones:", error);
+      res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+//correctly worked code
 
 
 
@@ -141,28 +104,41 @@ export const getMilestones_project_WithTasks_status = async (req, res) => {
 //   try {
 //     console.log("⏳ Checking milestone statuses...");
 
-//     const milestones = await MilestoneModel.find({}).lean(); // ✅ Read optimization
+//     const milestones = await MilestoneModel.find({ is_deleted: false });
 
 //     for (const milestone of milestones) {
-//       const tasks = await TaskModel.find({
-//         milestone: milestone._id,
-//         role: { $in: ["Member", "Admin"] },
-//       }).lean();
+//         // 해당 milestone의 모든 tasks 가져오기
+//         const tasks = await TaskModel.find({ milestone: milestone._id });
 
-//       const allTasksCompleted = tasks.length > 0 && tasks.every(task => task.status === "Completed");
-//       const newStatus = allTasksCompleted ? "Completed" : "In Progress";
+//         // console.log("task comming", tasks);
 
-//       // ✅ Only update if there's a change
-//       if (milestone.developer_status !== newStatus) {
-//         await MilestoneModel.findByIdAndUpdate(
-//           milestone._id,
-//           { developer_status: newStatus, updatedAt: new Date() }, // ✅ Ensure timestamps update
-//           { new: true }
-//         );
-//         console.log(`✅ Milestone "${milestone.name}" updated to "${newStatus}"`);
-//       }
+//         // Developer Status Check
+//         const allTasksCompleted = tasks.length > 0 && tasks.every(task => task.status === "Completed");
+//         const newDeveloperStatus = allTasksCompleted ? "Completed" : "In Progress";
+
+//         if (milestone.developer_status !== newDeveloperStatus) {
+//             milestone.developer_status = newDeveloperStatus;
+//             milestone.updatedAt = new Date();
+//             await milestone.save();
+//             // console.log(`✅ Milestone "${milestone.name}" updated to "${newDeveloperStatus}"`);
+//         }
+
+//         // **Tester Status Check**
+//         if (newDeveloperStatus === "Completed") { // Only check if Developer side is completed
+//             const allTesterApproved = tasks.length > 0 && tasks.every(task => task.tester_approval === true);
+
+//             const newTesterStatus = allTesterApproved ? "Completed" : "In Progress";
+
+//             if (milestone.tester_status !== newTesterStatus) {
+//                 milestone.tester_status = newTesterStatus;
+//                 milestone.updatedAt = new Date();
+//                 await milestone.save();
+//                 // console.log(`✅ Milestone "${milestone.name}" tester status updated to "${newTesterStatus}"`);
+//             }
+//         }
 //     }
-//     console.log("✅ All milestone statuses updated successfully.");
+
+//     console.log("✅ Milestone status check complete.");
 //   } catch (error) {
 //     console.error("❌ Error updating milestone status:", error);
 //   }
@@ -174,26 +150,45 @@ export const checkAndUpdateMilestoneStatus = async () => {
   try {
     console.log("⏳ Checking milestone statuses...");
 
-    const milestones = await MilestoneModel.find({ is_deleted: false }).lean();
+    const milestones = await MilestoneModel.find({ is_deleted: false });
 
     for (const milestone of milestones) {
-      const tasks = await TaskModel.find({
-        milestone: milestone._id,
-        role: { $in: ["Member", "Admin"] },
-      }).lean();
+      // 해당 milestone의 모든 tasks 가져오기
+      const tasks = await TaskModel.find({ milestone: milestone._id });
 
+      // Developer Status Check
       const allTasksCompleted = tasks.length > 0 && tasks.every(task => task.status === "Completed");
-      const newStatus = allTasksCompleted ? "Completed" : "In Progress";
+      const newDeveloperStatus = allTasksCompleted ? "Completed" : "In Progress";
 
-      if (milestone.developer_status !== newStatus) {
-        await MilestoneModel.findByIdAndUpdate(
-          milestone._id,
-          { developer_status: newStatus, updatedAt: new Date() },
-          { new: true }
-        );
-        console.log(`✅ Milestone "${milestone.name}" updated to "${newStatus}"`);
+      if (milestone.developer_status !== newDeveloperStatus) {
+        milestone.developer_status = newDeveloperStatus;
+        milestone.updatedAt = new Date();
+        await milestone.save();
+      }
+
+      // Tester Status Check (Only if Developer side is completed)
+      if (newDeveloperStatus === "Completed") {
+        const allTesterApproved = tasks.length > 0 && tasks.every(task => task.tester_approval === true);
+        const newTesterStatus = allTesterApproved ? "Completed" : "In Progress";
+
+        if (milestone.tester_status !== newTesterStatus) {
+          milestone.tester_status = newTesterStatus;
+          milestone.updatedAt = new Date();
+          await milestone.save();
+        }
+      }
+
+      // **Milestone Status Update (Only if both Developer & Tester are completed)**
+      if (milestone.developer_status === "Completed" && milestone.tester_status === "Completed") {
+        if (milestone.status !== "Completed") {
+          milestone.status = "Completed";
+          milestone.updatedAt = new Date();
+          await milestone.save();
+          console.log(`🎯 Milestone "${milestone.name}" marked as Completed ✅`);
+        }
       }
     }
+
     console.log("✅ Milestone status check complete.");
   } catch (error) {
     console.error("❌ Error updating milestone status:", error);

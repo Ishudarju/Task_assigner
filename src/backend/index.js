@@ -6,6 +6,8 @@ import adminRoute from "./Routes/Admin_Route.js";
 import bodyParser from "body-parser";
 import path from "path";
 import url from "url";
+import "./Service/Milestone_service.js"; // Adjust the path based on your folder structure
+
 // import ticketRoute from "./Routes/Ticket_Route.js";
 
 

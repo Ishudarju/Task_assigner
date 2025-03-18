@@ -259,25 +259,7 @@ export const createProject = async (req, res) => {
 
       project.milestones = createdMilestones.map((m) => m._id);
       await project.save();
-    }
-
-
-//     // If milestones exist, create them
-// if (milestoneList && milestoneList.length > 0) {
-//   const milestoneDocuments = milestoneList.map((name) => ({
-//     name,
-//     project: project._id,
-//     status: "Not Started", // Explicitly setting default status
-//     developer_status: "In Progress", // Ensure correct developer status
-//     tester_status: "In Progress", // Ensure correct tester status
-//   }));
-
-//   const createdMilestones = await MilestoneModel.insertMany(milestoneDocuments);
-
-//   project.milestones = createdMilestones.map((m) => m._id);
-//   await project.save();
-// }
-    
+    } 
     
 
     return res.status(201).json({
@@ -405,6 +387,120 @@ export const getAllProject = async (req, res) => {
 
 //already correctly worked the code i will change the date 17/03
 
+// export const getAllProjectsPagination = async (req, res) => {
+//   try {
+//     const { page = 1, limit = 10, status, search = "" } = req.query;
+//     const { role, id: userId } = req.user;
+
+//     // Initialize filters
+//     const filter = { is_deleted: false };
+
+//     // Role-based filtering
+//     if (role === "manager" || role === "team lead") {
+//       filter.project_ownership = userId;
+//     }
+
+//     // Status filtering
+//     const validStatuses = [
+//       "Completed",
+//       "In Progress",
+//       "Not Started",
+//       "Pending",
+//       "Cancelled",
+//     ];
+//     if (status) {
+//       if (!validStatuses.includes(status)) {
+//         return res.status(400).json({
+//           status: false,
+//           message: `Invalid status provided. Valid statuses are: ${validStatuses.join(
+//             ", "
+//           )}`,
+//         });
+//       }
+//       filter.project_status = status;
+//     }
+
+//     // Search filtering
+//     if (search.trim()) {
+//       const searchRegex = new RegExp(search.trim(), "i");
+//       filter.$or = [
+//         { project_name: { $regex: searchRegex } },
+//         { project_description: { $regex: searchRegex } },
+//       ];
+//     }
+
+//     // Parse and validate pagination parameters
+//     const pageNumber = Math.max(1, parseInt(page, 10));
+//     const limitNumber = Math.min(100, Math.max(1, parseInt(limit, 10)));
+
+//     // Fetch projects and count asynchronously
+//     const [projects, totalProjects, allProjects] = await Promise.all([
+//       ProjectModel.find(filter)
+//         .populate("project_ownership", "name mail")
+//         .populate("milestones", "name status developer_status tester_status")
+//         .sort({ createdAt: -1 })
+//         .skip((pageNumber - 1) * limitNumber)
+//         .limit(limitNumber)
+//         .lean(),
+//       ProjectModel.countDocuments(filter),
+//       ProjectModel.find({ is_deleted: false }).lean(),
+//     ]);
+
+//     console.log(await MilestoneModel.findOne({}, "name status developer_status tester_status"));
+
+
+ 
+    
+
+
+//     // Calculate status summary
+//     const statusSummary = validStatuses.reduce((summary, status) => {
+//       summary[status] = 0; // Initialize with 0
+//       return summary;
+//     }, {});
+
+//     allProjects.forEach((project) => {
+//       const projectStatus = project.project_status;
+//       if (statusSummary[projectStatus] !== undefined) {
+//         statusSummary[projectStatus]++;
+//       }
+//     });
+
+//     // Fetch additional details for each project
+//     const projectsWithDetails = [];
+//     for (const project of projects) {
+//       const {
+//         project: fullProject,
+//         tasks,
+//         totalHoursSpent,
+//       } = await fetchProjectDetails(project._id);
+//       projectsWithDetails.push({
+//         ...fullProject.toObject(),
+//         tasks,
+//         totalHoursSpent,
+//       });
+//     }
+
+//     // Return response
+//     return res.status(200).json({
+//       status: true,
+//       data: {
+//         total: totalProjects,
+//         statusSummary,
+//         projects: projectsWithDetails,
+//       },
+//       message: "Projects fetched successfully",
+//     });
+//   } catch (error) {
+//     console.error("Error fetching projects:", error);
+//     return res.status(500).json({
+//       status: false,
+//       message: "An error occurred while fetching projects",
+//     });
+//   }
+// };
+
+
 export const getAllProjectsPagination = async (req, res) => {
   try {
     const { page = 1, limit = 10, status, search = "" } = req.query;
@@ -451,29 +547,31 @@ export const getAllProjectsPagination = async (req, res) => {
     const pageNumber = Math.max(1, parseInt(page, 10));
     const limitNumber = Math.min(100, Math.max(1, parseInt(limit, 10)));
 
-    // Fetch projects and count asynchronously
+    // Fetch all projects with milestone details
     const [projects, totalProjects, allProjects] = await Promise.all([
       ProjectModel.find(filter)
-        .populate("project_ownership", "name mail")
-        .populate("milestones", "name status developer_status")
+      .populate({
+        path: "milestones",
+        model: "Milestone",
+        select: "name status developer_status tester_status",
+      })
         .sort({ createdAt: -1 })
         .skip((pageNumber - 1) * limitNumber)
         .limit(limitNumber)
         .lean(),
+        
       ProjectModel.countDocuments(filter),
       ProjectModel.find({ is_deleted: false }).lean(),
     ]);
 
-    // const milestones = await MilestoneModel.find({}, "name status developer_status");
+    console.log("Fetched Projects:", JSON.stringify(projects, null, 2));
+
+
+    // const milestones = await MilestoneModel.find().lean();
     // console.log(milestones);
-
- 
-    
-
-
     // Calculate status summary
     const statusSummary = validStatuses.reduce((summary, status) => {
-      summary[status] = 0; // Initialize with 0
+      summary[status] = 0;
       return summary;
     }, {});
 
@@ -519,26 +617,16 @@ export const getAllProjectsPagination = async (req, res) => {
 };
 
 
-
-
 export const getProjectById = async (req, res) => {
   const { id } = req.params;
   console.log(req.params);
   console.log(req.body);
-  // Validate ObjectId
-  // if (!mongoose.Types.ObjectId.isValid(id)) {
-  //   return res.status(400).json({
-  //     status: false,
-  //     message: "Invalid project ID format",
-  //   });
-  // }
 
   try {
-    // Fetch project with populated fields
     console.log(id);
     const project = await ProjectModel.findById(id)
       .populate("project_ownership", "name mail")
-      .populate("milestones", "name status developer_status");
+      .populate("milestones", "name status developer_status tester_status"); // Added tester_status
 
     if (!project || project.is_deleted) {
       return res.status(404).json({
@@ -563,7 +651,52 @@ export const getProjectById = async (req, res) => {
   }
 };
 
+//fazil code 
+// export const getProjectById = async (req, res) => {
+//   const { id } = req.params;
+//   console.log(req.params);
+//   console.log(req.body);
+//   // Validate ObjectId
+//   // if (!mongoose.Types.ObjectId.isValid(id)) {
+//   //   return res.status(400).json({
+//   //     status: false,
+//   //     message: "Invalid project ID format",
+//   //   });
+//   // }
+
+//   try {
+//     // Fetch project with populated fields
+//     console.log(id);
+//     const project = await ProjectModel.findById(id)
+//       .populate("project_ownership", "name mail")
+//       .populate("milestones", "name status developer_status");
+
+//     if (!project || project.is_deleted) {
+//       return res.status(404).json({
+//         status: false,
+//         message: "Project not found",
+//       });
+//     }
+
+//     return res.status(200).json({
+//       status: true,
+//       data: project,
+//     });
+//   } catch (error) {
+//     console.error("Error fetching project by ID:", {
+//       error: error.message,
+//       stack: error.stack,
+//     });
+//     return res.status(500).json({
+//       status: false,
+//       message: "An error occurred while fetching the project",
+//     });
+//   }
+// };
+
 // Update a project
+
+
 export const updateProject = async (req, res) => {
   const { _id, milestones, startDate, endDate, ...updateData } = req.body;
   const { role } = req.user;
