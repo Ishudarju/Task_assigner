@@ -92,6 +92,7 @@ const project_upload = multer({
 
 userRoute.post('/createproject', User.authMiddleware, project_upload, Project.createProject);
 userRoute.put('/updateProject', User.authMiddleware, project_upload, Project.updateProject);
+userRoute.get('/get_project_document/:fileName',User.authMiddleware, Project.getFile)
 
 
 
@@ -169,7 +170,7 @@ userRoute.post(  "/upload_document",  User.authMiddleware, documentUpload.single
 userRoute.delete(  "/delete/:id",  User.authMiddleware, document.deleteFile);
 
 userRoute.get("/getAllfiles", User.authMiddleware,document.getAllFiles);
-
+userRoute.get("/uploads/:fileName", User.authMiddleware,document.getFile);
 
 // // Route to get all files
 // userRoute.get("/getAllfiles", User.authMiddleware,document.getAllFiles);
