@@ -320,6 +320,7 @@ export const calculateProjectProgress = async (req, res) => {
 
 
 // import { fetchProjectDetails } from "../Helper function/projectHelper.js";
+
 export const getAllProject = async (req, res) => {
   try {
     const { role, _id: userId } = req.user;

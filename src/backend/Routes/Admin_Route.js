@@ -14,6 +14,8 @@ import * as document from "../Controller/document_controller.js";
 
 const adminRoute = express.Router();
 
+//check
+
 
 adminRoute.post("/login", Admin.admin_check);
 adminRoute.post("/createUser", Admin.authMiddleware, User.createUser);
