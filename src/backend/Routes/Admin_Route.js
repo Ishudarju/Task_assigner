@@ -105,6 +105,7 @@ const project_upload = multer({
 adminRoute.post('/createproject', Admin.authMiddleware, project_upload, Project.createProject);
 adminRoute.put('/updateProject', Admin.authMiddleware, project_upload, Project.updateProject);
 
+adminRoute.get('/get_project_document/:fileName',Admin.authMiddleware, Project.getFile)
 
 
 
@@ -182,7 +183,7 @@ adminRoute.post('/updatetickstatus', Admin.authMiddleware, Ticket.updateTicketSt
 
 // Delete a ticket
 adminRoute.delete('/deleteTickets/:id', Admin.authMiddleware, Ticket.deleteTicket);
-
+adminRoute.get('/get_ticket_document/:fileName', Ticket.getFile)
 
 //Tasks routes
 
@@ -221,8 +222,8 @@ adminRoute.get("/getAllfiles", Admin.authMiddleware,document.getAllFiles);
 // Route to get a single file by ID
 adminRoute.get("/file/:id", Admin.authMiddleware,document.getAllFiles);
 
-adminRoute.delete('/deletefiles', Admin.authMiddleware,document.deleteFile);
-
+adminRoute.delete('/deletefiles/:id', Admin.authMiddleware,document.deleteFile);
+adminRoute.get("/uploads/:fileName", Admin.authMiddleware,document.getFile);
 
 
 

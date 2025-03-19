@@ -661,7 +661,8 @@ export const findById = async (req, res) => {
 export const getAllUserEmpMail = async (req, res) => {
   try {
     const { role } = req.user; // Get logged-in user's role
-
+    const { department } = req.user; // Get logged-in user's role
+    // console.log("jaskodl", req.user);
     let filterRoles = [];
 
     // Apply role-based filtering
@@ -671,6 +672,8 @@ export const getAllUserEmpMail = async (req, res) => {
       filterRoles = ["team lead", "member", "tester"]; // No other managers
     } else if (role === "team lead") {
       filterRoles = ["member"];
+    } else if (department === "testing") {
+      filterRoles = ["manager", "team lead", "member"]; // No other testers
     } else {
       return res.status(403).json({
         status: false,

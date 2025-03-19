@@ -6,10 +6,12 @@ import mongoose from "mongoose";
 import { fileURLToPath } from "url";
 
 // Upload a single file
+
+
+
 export const uploadFile = async (req, res) => {
   try {
-    // Ensure only HR and Admin can upload
-    if (!req.user || (req.user.role !== "hr" && req.user.role !== "admin")) {
+    if (!req.user || (req.user.department !== "human-resource" && req.user.role !== "admin")) {
       return res.status(403).json({ message: "Permission denied" });
     }
 
@@ -18,21 +20,34 @@ export const uploadFile = async (req, res) => {
     }
 
     const { title, description, accessRoles } = req.body;
-
     if (!title) {
       return res.status(400).json({ message: "Title is required" });
     }
 
-    // Extract file details
-    const file_name = req.file.originalname;
-    const file_url = `/uploads/${uuidv4()}_${file_name}`;
+    // ✅ Generate timestamp ONCE and use it everywhere
+    const timestamp = Date.now();
+    const originalFileName = req.file.originalname;
+    const newFileName = `${timestamp}-${originalFileName}`;
+    const uploadDir = path.join(__dirname, "uploads");
 
+    // ✅ Ensure the upload directory exists
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    const newFilePath = path.join(uploadDir, newFileName);
+
+    // ✅ Move the uploaded file
+    fs.renameSync(req.file.path, newFilePath);
+
+    const file_url = `/uploads/${newFileName}`;
     const uploadedBy = req.user.id;
 
+    // ✅ Store the EXACT file name in the database
     const newFile = new FileModel({
       title,
       description,
-      attachments: { file_name, file_url },
+      attachments: { file_name: newFileName, file_url },
       uploadedBy,
       accessRoles,
     });
@@ -48,6 +63,21 @@ export const uploadFile = async (req, res) => {
 
 
 
+export const getFile = async (req, res) => {
+  try {
+    const { fileName } = req.params; // Use filename from URL
+    const filePath = path.join(__dirname, "uploads", fileName);
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: "File not found" });
+    }
+
+    res.sendFile(filePath);
+  } catch (error) {
+    console.error("Error retrieving file:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
 
 // export const updateFile = async (req, res) => {
 //   try {
@@ -134,9 +164,10 @@ const __dirname = path.dirname(__filename);
 export const deleteFile = async (req, res) => {
   try {
     const userRole = req.user.role;
+    const department = req.user.department;
     let fileId = req.params.id;
 
-    console.log("Raw fileId:", fileId);
+    // console.log("Raw fileId:", fileId);
 
     // Remove invalid characters (like a leading colon)
     fileId = fileId.replace(/^:/, "");
@@ -147,7 +178,7 @@ export const deleteFile = async (req, res) => {
     }
 
     // Only Admin & HR can delete
-    if (userRole !== "admin" && userRole !== "hr") {
+    if (userRole !== "admin" && department !== "human-resource") {
       return res.status(403).json({ message: "Unauthorized! Only HR and Admin can delete files." });
     }
 
@@ -181,7 +212,6 @@ export const deleteFile = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 
 
